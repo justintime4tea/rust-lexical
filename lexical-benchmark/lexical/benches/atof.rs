@@ -12,7 +12,6 @@ extern crate lexical_core;
 extern crate serde_json;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use lexical_core::parse as lexical_parse;
 
 /// Return the `target/debug` directory path.
 pub fn debug_dir() -> PathBuf {
@@ -69,213 +68,266 @@ lazy_static! {
 
 fn denormal10(criterion: &mut Criterion) {
     let data: &[String] = &DENORMAL_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("denormal10", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[0].as_bytes()).unwrap());
+        let bytes = data[0].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn denormal20(criterion: &mut Criterion) {
     let data: &[String] = &DENORMAL_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("denormal20", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[1].as_bytes()).unwrap());
+        let bytes = data[1].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn denormal30(criterion: &mut Criterion) {
     let data: &[String] = &DENORMAL_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("denormal30", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[2].as_bytes()).unwrap());
+        let bytes = data[2].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn denormal40(criterion: &mut Criterion) {
     let data: &[String] = &DENORMAL_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("denormal40", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[3].as_bytes()).unwrap());
+        let bytes = data[3].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn denormal50(criterion: &mut Criterion) {
     let data: &[String] = &DENORMAL_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("denormal50", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[4].as_bytes()).unwrap());
+        let bytes = data[4].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn denormal100(criterion: &mut Criterion) {
     let data: &[String] = &DENORMAL_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("denormal100", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[5].as_bytes()).unwrap());
+        let bytes = data[5].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn denormal200(criterion: &mut Criterion) {
     let data: &[String] = &DENORMAL_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("denormal200", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[6].as_bytes()).unwrap());
+        let bytes = data[6].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn denormal400(criterion: &mut Criterion) {
     let data: &[String] = &DENORMAL_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("denormal400", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[7].as_bytes()).unwrap());
+        let bytes = data[7].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn denormal800(criterion: &mut Criterion) {
     let data: &[String] = &DENORMAL_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("denormal800", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[8].as_bytes()).unwrap());
+        let bytes = data[8].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn denormal1600(criterion: &mut Criterion) {
     let data: &[String] = &DENORMAL_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("denormal1600", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[9].as_bytes()).unwrap());
+        let bytes = data[9].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn denormal3200(criterion: &mut Criterion) {
     let data: &[String] = &DENORMAL_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("denormal3200", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[10].as_bytes()).unwrap());
+        let bytes = data[10].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn denormal6400(criterion: &mut Criterion) {
     let data: &[String] = &DENORMAL_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("denormal6400", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[11].as_bytes()).unwrap());
+        let bytes = data[11].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn large10(criterion: &mut Criterion) {
     let data: &[String] = &LARGE_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("large10", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[0].as_bytes()).unwrap());
+        let bytes = data[0].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn large20(criterion: &mut Criterion) {
     let data: &[String] = &LARGE_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("large20", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[1].as_bytes()).unwrap());
+        let bytes = data[1].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn large30(criterion: &mut Criterion) {
     let data: &[String] = &LARGE_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("large30", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[2].as_bytes()).unwrap());
+        let bytes = data[2].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn large40(criterion: &mut Criterion) {
     let data: &[String] = &LARGE_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("large40", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[3].as_bytes()).unwrap());
+        let bytes = data[3].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn large50(criterion: &mut Criterion) {
     let data: &[String] = &LARGE_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("large50", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[4].as_bytes()).unwrap());
+        let bytes = data[4].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn large100(criterion: &mut Criterion) {
     let data: &[String] = &LARGE_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("large100", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[5].as_bytes()).unwrap());
+        let bytes = data[5].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn large200(criterion: &mut Criterion) {
     let data: &[String] = &LARGE_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("large200", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[6].as_bytes()).unwrap());
+        let bytes = data[6].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn large400(criterion: &mut Criterion) {
     let data: &[String] = &LARGE_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("large400", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[7].as_bytes()).unwrap());
+        let bytes = data[7].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn large800(criterion: &mut Criterion) {
     let data: &[String] = &LARGE_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("large800", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[8].as_bytes()).unwrap());
+        let bytes = data[8].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn large1600(criterion: &mut Criterion) {
     let data: &[String] = &LARGE_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("large1600", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[9].as_bytes()).unwrap());
+        let bytes = data[9].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn large3200(criterion: &mut Criterion) {
     let data: &[String] = &LARGE_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("large3200", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[10].as_bytes()).unwrap());
+        let bytes = data[10].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn large6400(criterion: &mut Criterion) {
     let data: &[String] = &LARGE_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("large6400", |b| b.iter(|| {
-        black_box(lexical_parse::<f64>(data[11].as_bytes()).unwrap());
+        let bytes = data[11].as_bytes();
+        black_box(lexical_core::parse_with_options::<f64>(bytes, &options).unwrap());
     }));
 }
 
 fn digits2(criterion: &mut Criterion) {
     let data: &[String] = &DIGITS2_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("digits2", |b| b.iter(|| {
         for value in data.iter() {
-            black_box(lexical_parse::<f64>(value.as_bytes()).unwrap());
+            black_box(lexical_core::parse_with_options::<f64>(value.as_bytes(), &options).unwrap());
         }
     }));
 }
 
 fn digits8(criterion: &mut Criterion) {
     let data: &[String] = &DIGITS8_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("digits8", |b| b.iter(|| {
         for value in data.iter() {
-            black_box(lexical_parse::<f64>(value.as_bytes()).unwrap());
+            black_box(lexical_core::parse_with_options::<f64>(value.as_bytes(), &options).unwrap());
         }
     }));
 }
 
 fn digits16(criterion: &mut Criterion) {
     let data: &[String] = &DIGITS16_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("digits16", |b| b.iter(|| {
         for value in data.iter() {
-            black_box(lexical_parse::<f64>(value.as_bytes()).unwrap());
+            black_box(lexical_core::parse_with_options::<f64>(value.as_bytes(), &options).unwrap());
         }
     }));
 }
 
 fn digits32(criterion: &mut Criterion) {
     let data: &[String] = &DIGITS32_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("digits32", |b| b.iter(|| {
         for value in data.iter() {
-            black_box(lexical_parse::<f64>(value.as_bytes()).unwrap());
+            black_box(lexical_core::parse_with_options::<f64>(value.as_bytes(), &options).unwrap());
         }
     }));
 }
 
 fn digits64(criterion: &mut Criterion) {
     let data: &[String] = &DIGITS64_DATA;
+    let options = lexical_core::ParseFloatOptions::default();
     criterion.bench_function("digits64", |b| b.iter(|| {
         for value in data.iter() {
-            black_box(lexical_parse::<f64>(value.as_bytes()).unwrap());
+            black_box(lexical_core::parse_with_options::<f64>(value.as_bytes(), &options).unwrap());
         }
     }));
 }

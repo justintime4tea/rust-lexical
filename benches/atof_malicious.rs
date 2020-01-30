@@ -4,8 +4,6 @@ extern crate criterion;
 extern crate lexical_core;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use lexical_core::parse as lexical_parse;
-use lexical_core::parse_lossy as lexical_parse_lossy;
 
 // BENCH GENERATORS
 
@@ -13,11 +11,9 @@ use lexical_core::parse_lossy as lexical_parse_lossy;
 macro_rules! lexical_generator {
     ($name:ident, $data:ident, $t:ty) => {
         fn $name(criterion: &mut Criterion) {
-            criterion.bench_function(stringify!($name), |b| {
-                b.iter(|| {
-                    $data.iter().for_each(|x| {
-                        black_box(lexical_parse::<$t>(x.as_bytes()).unwrap());
-                    })
+            criterion.bench_function(stringify!($name), |b| b.iter(|| {
+                $data.iter().for_each(|x| {
+                    black_box(lexical_core::parse::<$t>(x.as_bytes()).unwrap());
                 })
             });
         }
@@ -34,6 +30,13 @@ macro_rules! lexical_lossy_generator {
                         black_box(lexical_parse_lossy::<$t>(x.as_bytes()).unwrap());
                         black_box(lexical_parse::<$t>(x.as_bytes()).unwrap());
                     })
+            let options = lexical_core::ParseFloatOptions::builder()
+                .lossy(true)
+                .build()
+                .unwrap();
+            criterion.bench_function(stringify!($name), |b| b.iter(|| {
+                $data.iter().for_each(|x| {
+                    black_box(lexical_core::parse_with_options::<$t>(x.as_bytes(), &options).unwrap());
                 })
             });
         }
