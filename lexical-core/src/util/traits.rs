@@ -170,7 +170,10 @@ macro_rules! from_lexical {
             #[cfg(feature = "radix")]
             fn from_lexical_radix(bytes: &[u8], radix: u8) -> Result<$type>
             {
-                let options = <$options>::from_radix(radix).expect("Numerical base must be from 2-36.");
+                let options = <$options>::builder()
+                    .radix(radix)
+                    .build()
+                    .expect("Numerical base must be from 2-36.");
                 to_complete!($parse_with_options, bytes, &options)
             }
 
@@ -178,7 +181,10 @@ macro_rules! from_lexical {
             #[cfg(feature = "radix")]
             fn from_lexical_partial_radix(bytes: &[u8], radix: u8) -> Result<($type, usize)>
             {
-                let options = <$options>::from_radix(radix).expect("Numerical base must be from 2-36.");
+                let options = <$options>::builder()
+                    .radix(radix)
+                    .build()
+                    .expect("Numerical base must be from 2-36.");
                 $parse_with_options(bytes, &options)
             }
         }
@@ -189,14 +195,20 @@ macro_rules! from_lexical {
             #[inline]
             fn from_lexical_format(bytes: &[u8], format: NumberFormat) -> Result<$type>
             {
-                let options = <$options>::from_format(format).expect("Invalid NumberFormat");
+                let options = <$options>::builder()
+                    .format(format)
+                    .build()
+                    .expect("Invalid NumberFormat");
                 to_complete!($parse_with_options, bytes, &options)
             }
 
             #[inline]
             fn from_lexical_partial_format(bytes: &[u8], format: NumberFormat) -> Result<($type, usize)>
             {
-                let options = <$options>::from_format(format).expect("Invalid NumberFormat");
+                let options = <$options>::builder()
+                    .format(format)
+                    .build()
+                    .expect("Invalid NumberFormat");
                 $parse_with_options(bytes, &options)
             }
 
@@ -204,7 +216,11 @@ macro_rules! from_lexical {
             #[inline]
             fn from_lexical_format_radix(bytes: &[u8], radix: u8, format: NumberFormat) -> Result<$type>
             {
-                let options = <$options>::from_format_and_radix(format, radix).expect("Invalid NumberFormat or radix");
+                let options = <$options>::builder()
+                    .format(format)
+                    .radix(radix)
+                    .build()
+                    .expect("Invalid NumberFormat or radix");
                 to_complete!($parse_with_options, bytes, &options)
             }
 
@@ -212,7 +228,11 @@ macro_rules! from_lexical {
             #[inline]
             fn from_lexical_partial_format_radix(bytes: &[u8], radix: u8, format: NumberFormat) -> Result<($type, usize)>
             {
-                let options = <$options>::from_format_and_radix(format, radix).expect("Invalid NumberFormat or radix");
+                let options = <$options>::builder()
+                    .format(format)
+                    .radix(radix)
+                    .build()
+                    .expect("Invalid NumberFormat or radix");
                 $parse_with_options(bytes, &options)
             }
         }
@@ -320,14 +340,20 @@ macro_rules! from_lexical_lossy {
             #[inline]
             fn from_lexical_lossy(bytes: &[u8]) -> Result<$type>
             {
-                let options = <$options>::from_lossy(true).expect("Invalid use of lossy parser.");
+                let options = <$options>::builder()
+                    .lossy(true)
+                    .build()
+                    .expect("Invalid use of lossy parser.");
                 to_complete!($parse_with_options, bytes, &options)
             }
 
             #[inline]
             fn from_lexical_partial_lossy(bytes: &[u8]) -> Result<($type, usize)>
             {
-                let options = <$options>::from_lossy(true).expect("Invalid use of lossy parser.");
+                let options = <$options>::builder()
+                    .lossy(true)
+                    .build()
+                    .expect("Invalid use of lossy parser.");
                 $parse_with_options(bytes, &options)
             }
 
@@ -335,7 +361,11 @@ macro_rules! from_lexical_lossy {
             #[cfg(feature = "radix")]
             fn from_lexical_lossy_radix(bytes: &[u8], radix: u8) -> Result<$type>
             {
-                let options = <$options>::from_lossy_and_radix(true, radix).expect("Numerical base must be from 2-36.");
+                let options = <$options>::builder()
+                    .lossy(true)
+                    .radix(radix)
+                    .build()
+                    .expect("Numerical base must be from 2-36.");
                 to_complete!($parse_with_options, bytes, &options)
             }
 
@@ -343,7 +373,11 @@ macro_rules! from_lexical_lossy {
             #[cfg(feature = "radix")]
             fn from_lexical_partial_lossy_radix(bytes: &[u8], radix: u8) -> Result<($type, usize)>
             {
-                let options = <$options>::from_lossy_and_radix(true, radix).expect("Numerical base must be from 2-36.");
+                let options = <$options>::builder()
+                    .lossy(true)
+                    .radix(radix)
+                    .build()
+                    .expect("Numerical base must be from 2-36.");
                 $parse_with_options(bytes, &options)
             }
         }
@@ -354,14 +388,22 @@ macro_rules! from_lexical_lossy {
             #[inline]
             fn from_lexical_lossy_format(bytes: &[u8], format: NumberFormat) -> Result<$type>
             {
-                let options = <$options>::from_lossy_and_format(true, format).expect("Invalid NumberFormat");
+                let options = <$options>::builder()
+                    .lossy(true)
+                    .format(format)
+                    .build()
+                    .expect("Invalid NumberFormat.");
                 to_complete!($parse_with_options, bytes, &options)
             }
 
             #[inline]
             fn from_lexical_partial_lossy_format(bytes: &[u8], format: NumberFormat) -> Result<($type, usize)>
             {
-                let options = <$options>::from_lossy_and_format(true, format).expect("Invalid NumberFormat");
+                let options = <$options>::builder()
+                    .lossy(true)
+                    .format(format)
+                    .build()
+                    .expect("Invalid NumberFormat.");
                 $parse_with_options(bytes, &options)
             }
 
@@ -369,7 +411,12 @@ macro_rules! from_lexical_lossy {
             #[inline]
             fn from_lexical_lossy_format_radix(bytes: &[u8], radix: u8, format: NumberFormat) -> Result<$type>
             {
-                let options = <$options>::from_lossy_and_format_and_radix(true, format, radix).expect("Invalid NumberFormat or radix");
+                let options = <$options>::builder()
+                    .lossy(true)
+                    .format(format)
+                    .radix(radix)
+                    .build()
+                    .expect("Invalid NumberFormat or radix.");
                 to_complete!($parse_with_options, bytes, &options)
             }
 
@@ -377,7 +424,12 @@ macro_rules! from_lexical_lossy {
             #[inline]
             fn from_lexical_partial_lossy_format_radix(bytes: &[u8], radix: u8, format: NumberFormat) -> Result<($type, usize)>
             {
-                let options = <$options>::from_lossy_and_format_and_radix(true, format, radix).expect("Invalid NumberFormat or radix");
+                let options = <$options>::builder()
+                    .lossy(true)
+                    .format(format)
+                    .radix(radix)
+                    .build()
+                    .expect("Invalid NumberFormat or radix.");
                 $parse_with_options(bytes, &options)
             }
         }
@@ -702,7 +754,10 @@ macro_rules! to_lexical {
             fn to_lexical_radix<'a>(self, radix: u8, bytes: &'a mut [u8])
                 -> &'a mut [u8]
             {
-                let options = <$options>::from_radix(radix).expect("Numerical base must be from 2-36.");
+                let options = <$options>::builder()
+                    .radix(radix)
+                    .build()
+                    .expect("Numerical base must be from 2-36.");
                 assert_buffer!(radix, bytes, $type);
                 let len = $write_with_options(self, bytes, &options);
                 &mut index_mut!(bytes[..len])

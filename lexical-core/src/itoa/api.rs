@@ -110,7 +110,7 @@ fn unsigned<Narrow, Wide>(value: Narrow, buffer: &mut [u8])
     where Narrow: UnsignedInteger,
           Wide: Itoa
 {
-    let options = WriteIntegerOptions::new();
+    let options = WriteIntegerOptions::default();
     unsigned_with_options::<Narrow, Wide>(value, buffer, &options)
 }}
 
@@ -156,7 +156,7 @@ fn signed<Narrow, Wide, Unsigned>(value: Narrow, buffer: &mut [u8])
           Wide: SignedInteger,
           Unsigned: Itoa
 {
-    let options = WriteIntegerOptions::new();
+    let options = WriteIntegerOptions::default();
     signed_with_options::<Narrow, Wide, Unsigned>(value, buffer, &options)
 }}
 
@@ -381,7 +381,10 @@ mod tests {
 
         let mut buffer = new_buffer();
         for (base, expected) in data.iter() {
-            let options = write_integer_options!(radix: *base,);
+            let options = WriteIntegerOptions::builder()
+                .radix(*base)
+                .build()
+                .unwrap();
             assert_eq!(expected.as_bytes(), 37.to_lexical_with_options(&mut buffer, &options));
         }
     }

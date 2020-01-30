@@ -594,35 +594,55 @@ mod tests {
         // rounding schemes from this.
 
         // Nearest, tie-even
-        let options = parse_float_options!(radix: 2, rounding: RoundingKind::NearestTieEven,);
+        let options = ParseFloatOptions::builder()
+            .radix(radix)
+            .rounding(RoundingKind::NearestTieEven)
+            .build()
+            .unwrap();
         assert_eq!(f64::from_lexical_with_options(b"-100000000000000000000000000000000000000000000000000001", &options).unwrap(), -9007199254740992.0);
         assert_eq!(f64::from_lexical_with_options(b"-100000000000000000000000000000000000000000000000000011", &options).unwrap(), -9007199254740996.0);
         assert_eq!(f64::from_lexical_with_options(b"100000000000000000000000000000000000000000000000000001", &options).unwrap(), 9007199254740992.0);
         assert_eq!(f64::from_lexical_with_options(b"100000000000000000000000000000000000000000000000000011", &options).unwrap(), 9007199254740996.0);
 
         // Nearest, tie-away-zero
-        let options = parse_float_options!(radix: 2, rounding: RoundingKind::NearestTieAwayZero,);
+        let options = ParseFloatOptions::builder()
+            .radix(radix)
+            .rounding(RoundingKind::NearestTieAwayZero)
+            .build()
+            .unwrap();
         assert_eq!(f64::from_lexical_with_options(b"-100000000000000000000000000000000000000000000000000001", &options).unwrap(), -9007199254740994.0);
         assert_eq!(f64::from_lexical_with_options(b"-100000000000000000000000000000000000000000000000000011", &options).unwrap(), -9007199254740996.0);
         assert_eq!(f64::from_lexical_with_options(b"100000000000000000000000000000000000000000000000000001", &options).unwrap(), 9007199254740994.0);
         assert_eq!(f64::from_lexical_with_options(b"100000000000000000000000000000000000000000000000000011", &options).unwrap(), 9007199254740996.0);
 
         // Toward positive infinity
-        let options = parse_float_options!(radix: 2, rounding: RoundingKind::TowardPositiveInfinity,);
+        let options = ParseFloatOptions::builder()
+            .radix(radix)
+            .rounding(RoundingKind::TowardPositiveInfinity)
+            .build()
+            .unwrap();
         assert_eq!(f64::from_lexical_with_options(b"-100000000000000000000000000000000000000000000000000001", &options).unwrap(), -9007199254740992.0);
         assert_eq!(f64::from_lexical_with_options(b"-100000000000000000000000000000000000000000000000000011", &options).unwrap(), -9007199254740994.0);
         assert_eq!(f64::from_lexical_with_options(b"100000000000000000000000000000000000000000000000000001", &options).unwrap(), 9007199254740994.0);
         assert_eq!(f64::from_lexical_with_options(b"100000000000000000000000000000000000000000000000000011", &options).unwrap(), 9007199254740996.0);
 
         // Toward negative infinity
-        let options = parse_float_options!(radix: 2, rounding: RoundingKind::TowardNegativeInfinity,);
+        let options = ParseFloatOptions::builder()
+            .radix(radix)
+            .rounding(RoundingKind::TowardNegativeInfinity)
+            .build()
+            .unwrap();
         assert_eq!(f64::from_lexical_with_options(b"-100000000000000000000000000000000000000000000000000001", &options).unwrap(), -9007199254740994.0);
         assert_eq!(f64::from_lexical_with_options(b"-100000000000000000000000000000000000000000000000000011", &options).unwrap(), -9007199254740996.0);
         assert_eq!(f64::from_lexical_with_options(b"100000000000000000000000000000000000000000000000000001", &options).unwrap(), 9007199254740992.0);
         assert_eq!(f64::from_lexical_with_options(b"100000000000000000000000000000000000000000000000000011", &options).unwrap(), 9007199254740994.0);
 
         // Toward zero
-        let options = parse_float_options!(radix: 2, rounding: RoundingKind::TowardZero,);
+        let options = ParseFloatOptions::builder()
+            .radix(radix)
+            .rounding(RoundingKind::TowardZero)
+            .build()
+            .unwrap();
         assert_eq!(f64::from_lexical_with_options(b"-100000000000000000000000000000000000000000000000000001", &options).unwrap(), -9007199254740992.0);
         assert_eq!(f64::from_lexical_with_options(b"-100000000000000000000000000000000000000000000000000011", &options).unwrap(), -9007199254740994.0);
         assert_eq!(f64::from_lexical_with_options(b"100000000000000000000000000000000000000000000000000001", &options).unwrap(), 9007199254740992.0);

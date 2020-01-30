@@ -274,7 +274,7 @@ perftools_inline!{
 fn parse<F: StringToFloat>(bytes: &[u8])
     -> Result<(F, usize)>
 {
-    let options = ParseFloatOptions::new();
+    let options = ParseFloatOptions::default();
     let index = | ptr | distance(bytes.as_ptr(), ptr);
     match atof::<F>(bytes, &options) {
         Ok((value, ptr)) => Ok((value, index(ptr))),
@@ -407,10 +407,19 @@ mod tests {
     #[test]
     #[cfg(feature = "radix")]
     fn f32_radix_test() {
-        let options = parse_float_options!(exponent_char: b'^', radix: 36,);
+        let options = ParseFloatOptions::builder()
+            .exponent_char(b'^')
+            .radix(36)
+            .build()
+            .unwrap();
         assert_f32_eq!(1234.0, f32::from_lexical_with_options(b"YA", &options).unwrap());
 
-        let options = parse_float_options!(lossy: true, exponent_char: b'^', radix: 36,);
+        let options = ParseFloatOptions::builder()
+            .lossy(true)
+            .exponent_char(b'^')
+            .radix(36)
+            .build()
+            .unwrap();
         assert_f32_eq!(1234.0, f32::from_lexical_with_options(b"YA", &options).unwrap());
     }
 
@@ -550,16 +559,28 @@ mod tests {
     #[test]
     #[cfg(feature = "radix")]
     fn f64_radix_test() {
-        let options = parse_float_options!(exponent_char: b'^', radix: 36,);
+        let options = ParseFloatOptions::builder()
+            .exponent_char(b'^')
+            .radix(36)
+            .build()
+            .unwrap();
         assert_f64_eq!(1234.0, f64::from_lexical_with_options(b"YA", &options).unwrap());
 
-        let options = parse_float_options!(lossy: true, exponent_char: b'^', radix: 36,);
+        let options = ParseFloatOptions::builder()
+            .lossy(true)
+            .exponent_char(b'^')
+            .radix(36)
+            .build()
+            .unwrap();
         assert_f64_eq!(1234.0, f64::from_lexical_with_options(b"YA", &options).unwrap());
     }
 
     #[test]
     fn f32_lossy_decimal_test() {
-        let options = parse_float_options!(lossy: true,);
+        let options = ParseFloatOptions::builder()
+            .lossy(true)
+            .build()
+            .unwrap();
         assert_eq!(Err(ErrorCode::EmptyMantissa.into()), f32::from_lexical_with_options(b".", &options));
         assert_eq!(Err(ErrorCode::Empty.into()), f32::from_lexical_with_options(b"", &options));
         assert_eq!(Ok(0.0), f32::from_lexical_with_options(b"0.0", &options));
@@ -571,7 +592,10 @@ mod tests {
 
     #[test]
     fn f64_lossy_decimal_test() {
-        let options = parse_float_options!(lossy: true,);
+        let options = ParseFloatOptions::builder()
+            .lossy(true)
+            .build()
+            .unwrap();
         assert_eq!(Err(ErrorCode::EmptyMantissa.into()), f64::from_lexical_with_options(b".", &options));
         assert_eq!(Err(ErrorCode::Empty.into()), f64::from_lexical_with_options(b"", &options));
         assert_eq!(Ok(0.0), f64::from_lexical_with_options(b"0.0", &options));
@@ -592,11 +616,11 @@ mod tests {
         let f5 = f2 | NumberFormat::CASE_SENSITIVE_SPECIAL; // false, true, true
 
         // Create options from format.
-        let o1 = parse_float_options!(format: f1,);
-        let o2 = parse_float_options!(format: f2,);
-        let o3 = parse_float_options!(format: f3,);
-        let o4 = parse_float_options!(format: f4,);
-        let o5 = parse_float_options!(format: f5,);
+        let o1 = ParseFloatOptions::builder().format(f1).build().unwrap();
+        let o2 = ParseFloatOptions::builder().format(f2).build().unwrap();
+        let o3 = ParseFloatOptions::builder().format(f3).build().unwrap();
+        let o4 = ParseFloatOptions::builder().format(f4).build().unwrap();
+        let o5 = ParseFloatOptions::builder().format(f5).build().unwrap();
 
         // Easy NaN
         assert!(f64::from_lexical_with_options(b"NaN", &o1).unwrap().is_nan());
@@ -631,7 +655,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_required_integer_digits_test() {
         let format = NumberFormat::REQUIRED_INTEGER_DIGITS;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"+3.0", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"3.0", &options).is_ok());
         assert!(f64::from_lexical_with_options(b".0", &options).is_err());
@@ -641,7 +668,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_required_fraction_digits_test() {
         let format = NumberFormat::REQUIRED_FRACTION_DIGITS;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"+3.0", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"3.0", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"3.", &options).is_err());
@@ -652,7 +682,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_required_digits_test() {
         let format = NumberFormat::REQUIRED_DIGITS;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"+3.0", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"3.0", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"3.", &options).is_err());
@@ -664,7 +697,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_no_positive_mantissa_sign_test() {
         let format = NumberFormat::NO_POSITIVE_MANTISSA_SIGN;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"+3.0", &options).is_err());
         assert!(f64::from_lexical_with_options(b"-3.0", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"3.0", &options).is_ok());
@@ -674,7 +710,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_required_mantissa_sign_test() {
         let format = NumberFormat::REQUIRED_MANTISSA_SIGN;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"+3.0", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"-3.0", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"3.0", &options).is_err());
@@ -684,7 +723,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_no_exponent_notation_test() {
         let format = NumberFormat::NO_EXPONENT_NOTATION;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"+3.0e7", &options).is_err());
         assert!(f64::from_lexical_with_options(b"+3.0e-7", &options).is_err());
         assert!(f64::from_lexical_with_options(b"+3e", &options).is_err());
@@ -697,7 +739,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_optional_exponent_test() {
         let format = NumberFormat::permissive().unwrap();
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"+3.0e7", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"+3.0e-7", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"+3.0e", &options).is_ok());
@@ -709,7 +754,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_required_exponent_test() {
         let format = NumberFormat::REQUIRED_EXPONENT_DIGITS;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"+3.0e7", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"+3.0e-7", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"+3.0e", &options).is_err());
@@ -721,7 +769,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_no_positive_exponent_sign_test() {
         let format = NumberFormat::NO_POSITIVE_EXPONENT_SIGN;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"3.0e7", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"3.0e+7", &options).is_err());
         assert!(f64::from_lexical_with_options(b"3.0e-7", &options).is_ok());
@@ -731,7 +782,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_required_exponent_sign_test() {
         let format = NumberFormat::REQUIRED_EXPONENT_SIGN;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"3.0e7", &options).is_err());
         assert!(f64::from_lexical_with_options(b"3.0e+7", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"3.0e-7", &options).is_ok());
@@ -741,13 +795,19 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_no_exponent_without_fraction_test() {
         let format = NumberFormat::NO_EXPONENT_WITHOUT_FRACTION;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"3.0e7", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"3.e7", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"3e7", &options).is_err());
 
         let format = format | NumberFormat::REQUIRED_FRACTION_DIGITS;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"3.0e7", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"3.e7", &options).is_err());
         assert!(f64::from_lexical_with_options(b"3e7", &options).is_err());
@@ -757,7 +817,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_no_leading_zeros_test() {
         let format = NumberFormat::NO_FLOAT_LEADING_ZEROS;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"1.0", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"0.0", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"01.0", &options).is_err());
@@ -769,7 +832,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_integer_internal_digit_separator_test() {
         let format = NumberFormat::from_separator(b'_') | NumberFormat::INTEGER_INTERNAL_DIGIT_SEPARATOR;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"3_1.0e7", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"_31.0e7", &options).is_err());
         assert!(f64::from_lexical_with_options(b"31_.0e7", &options).is_err());
@@ -779,7 +845,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_fraction_internal_digit_separator_test() {
         let format = NumberFormat::from_separator(b'_') | NumberFormat::FRACTION_INTERNAL_DIGIT_SEPARATOR;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"31.0_1e7", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"31._01e7", &options).is_err());
         assert!(f64::from_lexical_with_options(b"31.01_e7", &options).is_err());
@@ -789,7 +858,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_exponent_internal_digit_separator_test() {
         let format = NumberFormat::from_separator(b'_') | NumberFormat::EXPONENT_INTERNAL_DIGIT_SEPARATOR;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"31.01e7_1", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"31.01e_71", &options).is_err());
         assert!(f64::from_lexical_with_options(b"31.01e71_", &options).is_err());
@@ -799,7 +871,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_integer_leading_digit_separator_test() {
         let format = NumberFormat::from_separator(b'_') | NumberFormat::INTEGER_LEADING_DIGIT_SEPARATOR;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"3_1.0e7", &options).is_err());
         assert!(f64::from_lexical_with_options(b"_31.0e7", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"31_.0e7", &options).is_err());
@@ -809,7 +884,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_fraction_leading_digit_separator_test() {
         let format = NumberFormat::from_separator(b'_') | NumberFormat::FRACTION_LEADING_DIGIT_SEPARATOR;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"31.0_1e7", &options).is_err());
         assert!(f64::from_lexical_with_options(b"31._01e7", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"31.01_e7", &options).is_err());
@@ -819,7 +897,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_exponent_leading_digit_separator_test() {
         let format = NumberFormat::from_separator(b'_') | NumberFormat::EXPONENT_LEADING_DIGIT_SEPARATOR;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"31.01e7_1", &options).is_err());
         assert!(f64::from_lexical_with_options(b"31.01e_71", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"31.01e71_", &options).is_err());
@@ -829,7 +910,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_integer_trailing_digit_separator_test() {
         let format = NumberFormat::from_separator(b'_') | NumberFormat::INTEGER_TRAILING_DIGIT_SEPARATOR;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"3_1.0e7", &options).is_err());
         assert!(f64::from_lexical_with_options(b"_31.0e7", &options).is_err());
         assert!(f64::from_lexical_with_options(b"31_.0e7", &options).is_ok());
@@ -839,7 +923,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_fraction_trailing_digit_separator_test() {
         let format = NumberFormat::from_separator(b'_') | NumberFormat::FRACTION_TRAILING_DIGIT_SEPARATOR;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"31.0_1e7", &options).is_err());
         assert!(f64::from_lexical_with_options(b"31._01e7", &options).is_err());
         assert!(f64::from_lexical_with_options(b"31.01_e7", &options).is_ok());
@@ -849,7 +936,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_exponent_trailing_digit_separator_test() {
         let format = NumberFormat::from_separator(b'_') | NumberFormat::EXPONENT_TRAILING_DIGIT_SEPARATOR;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"31.01e7_1", &options).is_err());
         assert!(f64::from_lexical_with_options(b"31.01e_71", &options).is_err());
         assert!(f64::from_lexical_with_options(b"31.01e71_", &options).is_ok());
@@ -861,7 +951,10 @@ mod tests {
         let format = NumberFormat::from_separator(b'_')
             | NumberFormat::INTEGER_INTERNAL_DIGIT_SEPARATOR
             | NumberFormat::INTEGER_CONSECUTIVE_DIGIT_SEPARATOR;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"3__1.0e7", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"_31.0e7", &options).is_err());
         assert!(f64::from_lexical_with_options(b"31_.0e7", &options).is_err());
@@ -873,7 +966,10 @@ mod tests {
         let format = NumberFormat::from_separator(b'_')
             | NumberFormat::FRACTION_INTERNAL_DIGIT_SEPARATOR
             | NumberFormat::FRACTION_CONSECUTIVE_DIGIT_SEPARATOR;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"31.0__1e7", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"31._01e7", &options).is_err());
         assert!(f64::from_lexical_with_options(b"31.01_e7", &options).is_err());
@@ -885,7 +981,10 @@ mod tests {
         let format = NumberFormat::from_separator(b'_')
             | NumberFormat::EXPONENT_INTERNAL_DIGIT_SEPARATOR
             | NumberFormat::EXPONENT_CONSECUTIVE_DIGIT_SEPARATOR;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"31.01e7__1", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"31.01e_71", &options).is_err());
         assert!(f64::from_lexical_with_options(b"31.01e71_", &options).is_err());
@@ -897,7 +996,10 @@ mod tests {
         // Tests courtesy of @ijl:
         //  https://github.com/Alexhuszagh/rust-lexical/issues/24#issuecomment-578153783
         let format = NumberFormat::JSON;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         // JSONTestSuite/test_parsing/y_number_0e1.json
         assert!(f64::from_lexical_with_options(b"0e1", &options).is_ok());
         // JSONTestSuite/test_parsing/y_number_int_with_exp.json
@@ -915,7 +1017,10 @@ mod tests {
         // Tests courtesy of @ijl:
         //  https://github.com/Alexhuszagh/rust-lexical/issues/24#issuecomment-578153783
         let format = NumberFormat::JSON;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"1e", &options).is_err());
         // JSONTestSuite/test_parsing/n_number_9.e+.json
         assert!(f64::from_lexical_with_options(b"9.e+", &options).is_err());
@@ -929,7 +1034,10 @@ mod tests {
     #[cfg(feature = "format")]
     fn f64_json_no_leading_zero() {
         let format = NumberFormat::JSON;
-        let options = parse_float_options!(format: format,);
+        let options = ParseFloatOptions::builder()
+            .format(format)
+            .build()
+            .unwrap();
         assert!(f64::from_lexical_with_options(b"12.0", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"-12.0", &options).is_ok());
         assert!(f64::from_lexical_with_options(b"012.0", &options).is_err());

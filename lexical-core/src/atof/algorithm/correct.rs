@@ -880,7 +880,10 @@ mod tests {
 
     #[test]
     fn atof_lossy_test() {
-        let opts10 = parse_float_options!(lossy: true,);
+        let opts10 = ParseFloatOptions::builder()
+            .lossy(true)
+            .build()
+            .unwrap();
         let atof10 = wrap_pointer_serializer!(atof, opts10);
 
         assert_eq!(Ok((1.2345, 6)), atof10(b"1.2345"));
@@ -891,7 +894,10 @@ mod tests {
 
     #[test]
     fn atod_lossy_test() {
-        let opts10 = parse_float_options!(lossy: true,);
+        let opts10 = ParseFloatOptions::builder()
+            .lossy(true)
+            .build()
+            .unwrap();
         let atod10 = wrap_pointer_serializer!(atod, opts10);
 
         assert_eq!(Ok((1.2345, 6)), atod10(b"1.2345"));

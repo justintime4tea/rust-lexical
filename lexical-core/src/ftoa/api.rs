@@ -206,7 +206,7 @@ perftools_inline!{
 fn write<F: FloatToString>(value: F, bytes: &mut [u8])
     -> usize
 {
-    let options = WriteFloatOptions::new();
+    let options = WriteFloatOptions::default();
     ftoa(value, bytes, &options)
 }}
 
@@ -261,7 +261,11 @@ mod tests {
         assert_eq!(as_slice(b"10.0"), 2.0f32.to_lexical_with_options(&mut buffer, &options));
 
         // Trim floats
-        let options = write_float_options!(radix: 2, trim_floats: true,);
+        let options = WriteFloatOptions::builder()
+            .radix(2)
+            .trim_floats(true)
+            .build()
+            .unwrap();
         assert_eq!(as_slice(b"0"), 0.0f32.to_lexical_with_options(&mut buffer, &options));
         assert_eq!(as_slice(b"0"), (-0.0f32).to_lexical_with_options(&mut buffer, &options));
         assert_eq!(as_slice(b"1"), 1.0f32.to_lexical_with_options(&mut buffer, &options));
@@ -298,7 +302,10 @@ mod tests {
         assert_eq!(as_slice(b"10.0"), 10.0f32.to_lexical(&mut buffer));
 
         // Trim floats
-        let options = write_float_options!(trim_floats: true,);
+        let options = WriteFloatOptions::builder()
+            .trim_floats(true)
+            .build()
+            .unwrap();
         assert_eq!(as_slice(b"0"), 0.0f32.to_lexical_with_options(&mut buffer, &options));
         assert_eq!(as_slice(b"0"), (-0.0f32).to_lexical_with_options(&mut buffer, &options));
         assert_eq!(as_slice(b"1"), 1.0f32.to_lexical_with_options(&mut buffer, &options));
@@ -339,8 +346,16 @@ mod tests {
                 10 => b'e',
                 _  => b'^'
             };
-            let write_options = write_float_options!(exponent_char: exponent_char, radix: radix,);
-            let parse_options = parse_float_options!(exponent_char: exponent_char, radix: radix,);
+            let write_options = WriteFloatOptions::builder()
+                .exponent_char(exponent_char)
+                .radix(radix)
+                .build()
+                .unwrap();
+            let parse_options = ParseFloatOptions::builder()
+                .exponent_char(exponent_char)
+                .radix(radix)
+                .build()
+                .unwrap();
             for &f in F32_DATA.iter() {
                 // The lower accuracy is due to slight rounding errors of
                 // ftoa for the Grisu method with non-10 bases.
@@ -361,7 +376,11 @@ mod tests {
         assert_eq!(as_slice(b"10.0"), 2.0f64.to_lexical_with_options(&mut buffer, &options));
 
         // Trim floats
-        let options = write_float_options!(radix: 2, trim_floats: true,);
+        let options = WriteFloatOptions::builder()
+            .radix(2)
+            .trim_floats(true)
+            .build()
+            .unwrap();
         assert_eq!(as_slice(b"0"), 0.0f64.to_lexical_with_options(&mut buffer, &options));
         assert_eq!(as_slice(b"0"), (-0.0f64).to_lexical_with_options(&mut buffer, &options));
         assert_eq!(as_slice(b"1"), 1.0f64.to_lexical_with_options(&mut buffer, &options));
@@ -393,7 +412,10 @@ mod tests {
         assert_eq!(as_slice(b"10.0"), 10.0.to_lexical(&mut buffer));
 
         // Trim floats
-        let options = write_float_options!(trim_floats: true,);
+        let options = WriteFloatOptions::builder()
+            .trim_floats(true)
+            .build()
+            .unwrap();
         assert_eq!(as_slice(b"0"), 0.0.to_lexical_with_options(&mut buffer, &options));
         assert_eq!(as_slice(b"0"), (-0.0).to_lexical_with_options(&mut buffer, &options));
         assert_eq!(as_slice(b"1"), 1.0.to_lexical_with_options(&mut buffer, &options));
@@ -434,8 +456,16 @@ mod tests {
                 10 => b'e',
                 _  => b'^'
             };
-            let write_options = write_float_options!(exponent_char: exponent_char, radix: radix,);
-            let parse_options = parse_float_options!(exponent_char: exponent_char, radix: radix,);
+            let write_options = WriteFloatOptions::builder()
+                .exponent_char(exponent_char)
+                .radix(radix)
+                .build()
+                .unwrap();
+            let parse_options = ParseFloatOptions::builder()
+                .exponent_char(exponent_char)
+                .radix(radix)
+                .build()
+                .unwrap();
             for &f in F64_DATA.iter() {
                 // The lower accuracy is due to slight rounding errors of
                 // ftoa for the Grisu method with non-10 bases.

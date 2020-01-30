@@ -11,15 +11,16 @@ use super::rounding::RoundingKind;
 //  Should also have predefined constants, like the NumberFormat.
 //  Should simplify things.
 
+// TODO(ahuszagh) Restore later.
 // Constants to dictate default values for options.
-pub(crate) const DEFAULT_EXPONENT_CHAR: u8 = b'e';
+//pub(crate) const DEFAULT_EXPONENT_CHAR: u8 = b'e';
 pub(crate) const DEFAULT_FORMAT: NumberFormat = NumberFormat::STANDARD;
-pub(crate) const DEFAULT_INF_STRING: &'static [u8] = b"inf";
-pub(crate) const DEFAULT_INFINITY_STRING: &'static [u8] = b"infinity";
+//pub(crate) const DEFAULT_INF_STRING: &'static [u8] = b"inf";
+//pub(crate) const DEFAULT_INFINITY_STRING: &'static [u8] = b"infinity";
 pub(crate) const DEFAULT_LOSSY: bool = false;
-pub(crate) const DEFAULT_NAN_STRING: &'static [u8] = b"NaN";
+//pub(crate) const DEFAULT_NAN_STRING: &'static [u8] = b"NaN";
 pub(crate) const DEFAULT_RADIX: u8 = 10;
-pub(crate) const DEFAULT_ROUNDING: RoundingKind = RoundingKind::NearestTieEven;
+//pub(crate) const DEFAULT_ROUNDING: RoundingKind = RoundingKind::NearestTieEven;
 pub(crate) const DEFAULT_TRIM_FLOATS: bool = false;
 
 // HELPERS
@@ -148,6 +149,42 @@ fn to_infinity_string(infinity_string: &'static [u8], inf_string: &'static [u8])
 // PARSE INTEGER
 // -------------
 
+/// Builder for `ParseIntegerOptions`.
+#[derive(Debug)]
+pub struct ParseIntegerOptionsBuilder {
+    radix: u8,
+    format: NumberFormat
+}
+
+impl ParseIntegerOptionsBuilder {
+    #[inline(always)]
+    fn new() -> ParseIntegerOptionsBuilder {
+        ParseIntegerOptionsBuilder {
+            radix: DEFAULT_RADIX,
+            format: DEFAULT_FORMAT
+        }
+    }
+
+    #[inline(always)]
+    pub fn radix(mut self, radix: u8) -> Self {
+        self.radix = radix;
+        self
+    }
+
+    #[inline(always)]
+    pub fn format(mut self, format: NumberFormat) -> Self {
+        self.format = format;
+        self
+    }
+
+    #[inline(always)]
+    pub fn build(self) -> Option<ParseIntegerOptions> {
+        let radix = to_radix(self.radix)?;
+        let format = to_format_integer(self.format, radix)?;
+        Some(ParseIntegerOptions { radix, format })
+    }
+}
+
 /// Options to customize parsing integers.
 #[derive(Clone, Debug)]
 pub struct ParseIntegerOptions {
@@ -161,57 +198,10 @@ pub struct ParseIntegerOptions {
 impl ParseIntegerOptions {
     // CONSTRUCTORS
 
-    /// Create new options using default values.
-    // TODO(ahuszagh) Make const fn when we deprecate the older methods.
+    /// Get access to the ParseIntegerOptions builder.
     #[inline(always)]
-    pub fn new() -> ParseIntegerOptions {
-        ParseIntegerOptions {
-            radix: DEFAULT_RADIX as u32,
-            format: DEFAULT_FORMAT
-        }
-    }
-
-    /// Create new options from radix and default values.
-    #[cfg(feature = "radix")]
-    #[inline(always)]
-    #[deprecated(since = "0.8.0", note = "Will be removed with 1.0.")]
-    pub(crate) fn from_radix(radix: u8) -> Option<ParseIntegerOptions> {
-        let radix = to_radix(radix)?;
-        Some(ParseIntegerOptions {
-            radix: radix,
-            format: DEFAULT_FORMAT
-        })
-    }
-
-    /// Create new options from format and default values.
-    #[cfg(feature = "format")]
-    #[inline(always)]
-    #[deprecated(since = "0.8.0", note = "Will be removed with 1.0.")]
-    pub(crate) fn from_format(format: NumberFormat) -> Option<ParseIntegerOptions> {
-        let radix = DEFAULT_RADIX as u32;
-        let format = to_format_integer(format, radix)?;
-        Some(ParseIntegerOptions {
-            radix: radix,
-            format: format
-        })
-    }
-
-    /// Create new options from format and radix.
-    #[cfg(all(feature = "format", feature = "radix"))]
-    #[inline(always)]
-    #[deprecated(since = "0.8.0", note = "Will be removed with 1.0.")]
-    pub(crate) fn from_format_and_radix(format: NumberFormat, radix: u8) -> Option<ParseIntegerOptions> {
-        Self::create(radix, format)
-    }
-
-    /// Create new options from fields.
-    ///
-    /// * `radix`   - Radix for the number parsing.
-    /// * `format`  - Numerical format.
-    pub fn create(radix: u8, format: NumberFormat) -> Option<ParseIntegerOptions> {
-        let radix = to_radix(radix)?;
-        let format = to_format_integer(format, radix)?;
-        Some(ParseIntegerOptions { radix, format })
+    pub fn builder() -> ParseIntegerOptionsBuilder {
+        ParseIntegerOptionsBuilder::new()
     }
 
     // PRE-DEFINED CONSTANTS
@@ -220,29 +210,28 @@ impl ParseIntegerOptions {
     #[inline(always)]
     #[cfg(feature = "radix")]
     pub fn binary() -> ParseIntegerOptions {
-        ParseIntegerOptions {
-            radix: 2,
-            format: DEFAULT_FORMAT
-        }
+        ParseIntegerOptions::builder()
+            .radix(2)
+            .build()
+            .unwrap()
     }
 
     /// Create new options to parse the default decimal format.
     #[inline(always)]
     pub fn decimal() -> ParseIntegerOptions {
-        ParseIntegerOptions {
-            radix: 10,
-            format: DEFAULT_FORMAT
-        }
+        ParseIntegerOptions::builder()
+            .build()
+            .unwrap()
     }
 
     /// Create new options to parse the default hexadecimal format.
     #[inline(always)]
     #[cfg(feature = "radix")]
     pub fn hexadecimal() -> ParseIntegerOptions {
-        ParseIntegerOptions {
-            radix: 16,
-            format: DEFAULT_FORMAT
-        }
+        ParseIntegerOptions::builder()
+            .radix(16)
+            .build()
+            .unwrap()
     }
 
     // GETTERS
@@ -261,13 +250,117 @@ impl ParseIntegerOptions {
 }
 
 impl Default for ParseIntegerOptions {
+    #[inline]
     fn default() -> ParseIntegerOptions {
-        ParseIntegerOptions::new()
+        ParseIntegerOptions::builder()
+            .build()
+            .unwrap()
     }
 }
 
 // PARSE FLOAT
 // -----------
+
+/// Builder for `ParseFloatOptions`.
+#[derive(Debug)]
+pub struct ParseFloatOptionsBuilder {
+    lossy: bool,
+    exponent_char: u8,
+    radix: u8,
+    format: NumberFormat,
+    rounding: RoundingKind,
+    nan_string: &'static [u8],
+    inf_string: &'static [u8],
+    infinity_string: &'static [u8]
+}
+
+#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0.
+impl ParseFloatOptionsBuilder {
+    #[inline(always)]
+    fn new() -> ParseFloatOptionsBuilder {
+        ParseFloatOptionsBuilder {
+            lossy: DEFAULT_LOSSY,
+            exponent_char: exponent_notation_char(DEFAULT_RADIX as u32),
+            radix: DEFAULT_RADIX,
+            format: DEFAULT_FORMAT,
+            rounding: get_float_rounding(),
+            nan_string: get_nan_string(),
+            inf_string: get_inf_string(),
+            infinity_string: get_infinity_string()
+        }
+    }
+
+    // TODO(ahuszagh) Add more...
+
+    #[inline(always)]
+    pub fn lossy(mut self, lossy: bool) -> Self {
+        self.lossy = lossy;
+        self
+    }
+
+    #[inline(always)]
+    pub fn exponent_char(mut self, exponent_char: u8) -> Self {
+        self.exponent_char = exponent_char;
+        self
+    }
+
+    #[inline(always)]
+    pub fn radix(mut self, radix: u8) -> Self {
+        self.radix = radix;
+        self
+    }
+
+    #[inline(always)]
+    pub fn format(mut self, format: NumberFormat) -> Self {
+        self.format = format;
+        self
+    }
+
+    #[inline(always)]
+    pub fn rounding(mut self, rounding: RoundingKind) -> Self {
+        self.rounding = rounding;
+        self
+    }
+
+    #[inline(always)]
+    pub fn nan_string(mut self, nan_string: &'static [u8]) -> Self {
+        self.nan_string = nan_string;
+        self
+    }
+
+    #[inline(always)]
+    pub fn inf_string(mut self, inf_string: &'static [u8]) -> Self {
+        self.inf_string = inf_string;
+        self
+    }
+
+    #[inline(always)]
+    pub fn infinity_string(mut self, infinity_string: &'static [u8]) -> Self {
+        self.infinity_string = infinity_string;
+        self
+    }
+
+    #[inline(always)]
+    pub fn build(self) -> Option<ParseFloatOptions> {
+        let radix = to_radix(self.radix)?;
+        let exponent_char = to_exponent_char(self.exponent_char, radix)?;
+        let format = to_format_float(self.format, radix, exponent_char)?;
+        let rounding = to_rounding(self.rounding)?;
+        let nan_string = to_nan_string(self.nan_string)?;
+        let inf_string = to_inf_string(self.inf_string)?;
+        let infinity_string = to_infinity_string(self.infinity_string, inf_string)?;
+        Some(ParseFloatOptions {
+            lossy: self.lossy,
+            exponent_char: exponent_char,
+            radix: radix,
+            format: format,
+            rounding: rounding,
+            nan_string: nan_string,
+            inf_string: inf_string,
+            infinity_string: infinity_string
+        })
+    }
+}
 
 /// Options to customize parsing floats.
 #[derive(Clone, Debug)]
@@ -294,203 +387,16 @@ pub struct ParseFloatOptions {
     inf_string: &'static [u8],
 
     /// String representation of long infinity.
-    infinity_string: &'static [u8],
+    infinity_string: &'static [u8]
 }
 
-#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0.
 impl ParseFloatOptions {
     // CONSTRUCTORS
 
-    /// Create new options using default values.
-    // TODO(ahuszagh) Make const fn when we deprecate the older methods.
+    /// Get access to the ParseIntegerOptions builder.
     #[inline(always)]
-    pub fn new() -> ParseFloatOptions {
-        let radix = DEFAULT_RADIX as u32;
-        ParseFloatOptions {
-            lossy: DEFAULT_LOSSY,
-            exponent_char: exponent_notation_char(radix),
-            radix: radix,
-            format: DEFAULT_FORMAT,
-            rounding: get_float_rounding(),
-            nan_string: get_nan_string(),
-            inf_string: get_inf_string(),
-            infinity_string: get_infinity_string()
-        }
-    }
-
-    /// Create new options from lossy and default values.
-    #[inline(always)]
-    #[deprecated(since = "0.8.0", note = "Will be removed with 1.0.")]
-    pub(crate) fn from_lossy(lossy: bool) -> Option<ParseFloatOptions> {
-        let radix = DEFAULT_RADIX as u32;
-        Some(ParseFloatOptions {
-            lossy: lossy,
-            exponent_char: exponent_notation_char(radix),
-            radix: radix,
-            format: DEFAULT_FORMAT,
-            rounding: get_float_rounding(),
-            nan_string: get_nan_string(),
-            inf_string: get_inf_string(),
-            infinity_string: get_infinity_string()
-        })
-    }
-
-    /// Create new options from radix and default values.
-    #[inline(always)]
-    #[cfg(feature = "radix")]
-    #[deprecated(since = "0.8.0", note = "Will be removed with 1.0.")]
-    pub(crate) fn from_radix(radix: u8) -> Option<ParseFloatOptions> {
-        let radix = to_radix(radix)?;
-        Some(ParseFloatOptions {
-            lossy: DEFAULT_LOSSY,
-            exponent_char: exponent_notation_char(radix),
-            radix: radix,
-            format: DEFAULT_FORMAT,
-            rounding: get_float_rounding(),
-            nan_string: get_nan_string(),
-            inf_string: get_inf_string(),
-            infinity_string: get_infinity_string()
-        })
-    }
-
-    /// Create new options from format and default values.
-    #[inline(always)]
-    #[cfg(feature = "format")]
-    #[deprecated(since = "0.8.0", note = "Will be removed with 1.0.")]
-    pub(crate) fn from_format(format: NumberFormat) -> Option<ParseFloatOptions> {
-        let radix = DEFAULT_RADIX as u32;
-        let exponent_char = exponent_notation_char(radix);
-        let format = to_format_float(format, radix, exponent_char)?;
-        Some(ParseFloatOptions {
-            lossy: DEFAULT_LOSSY,
-            exponent_char: exponent_notation_char(radix),
-            radix: radix,
-            format: format,
-            rounding: get_float_rounding(),
-            nan_string: get_nan_string(),
-            inf_string: get_inf_string(),
-            infinity_string: get_infinity_string()
-        })
-    }
-
-    /// Create new options from format and radix.
-    #[cfg(all(feature = "format", feature = "radix"))]
-    #[inline(always)]
-    #[deprecated(since = "0.8.0", note = "Will be removed with 1.0.")]
-    pub(crate) fn from_format_and_radix(format: NumberFormat, radix: u8) -> Option<ParseFloatOptions> {
-        let radix = to_radix(radix)?;
-        let exponent_char = exponent_notation_char(radix);
-        let format = to_format_float(format, radix, exponent_char)?;
-        Some(ParseFloatOptions {
-            lossy: DEFAULT_LOSSY,
-            exponent_char: exponent_char,
-            radix: radix,
-            format: format,
-            rounding: get_float_rounding(),
-            nan_string: get_nan_string(),
-            inf_string: get_inf_string(),
-            infinity_string: get_infinity_string()
-        })
-    }
-
-    /// Create new options from lossy, radix and default values.
-    #[inline(always)]
-    #[cfg(feature = "radix")]
-    #[deprecated(since = "0.8.0", note = "Will be removed with 1.0.")]
-    pub(crate) fn from_lossy_and_radix(lossy: bool, radix: u8) -> Option<ParseFloatOptions> {
-        let radix = to_radix(radix)?;
-        Some(ParseFloatOptions {
-            lossy: lossy,
-            exponent_char: exponent_notation_char(radix),
-            radix: radix,
-            format: DEFAULT_FORMAT,
-            rounding: get_float_rounding(),
-            nan_string: get_nan_string(),
-            inf_string: get_inf_string(),
-            infinity_string: get_infinity_string()
-        })
-    }
-
-    /// Create new options from lossy, format and default values.
-    #[inline(always)]
-    #[cfg(feature = "format")]
-    #[deprecated(since = "0.8.0", note = "Will be removed with 1.0.")]
-    pub(crate) fn from_lossy_and_format(lossy: bool, format: NumberFormat) -> Option<ParseFloatOptions> {
-        let radix = DEFAULT_RADIX as u32;
-        let exponent_char = exponent_notation_char(radix);
-        let format = to_format_float(format, radix, exponent_char)?;
-        Some(ParseFloatOptions {
-            lossy: lossy,
-            exponent_char: exponent_notation_char(radix),
-            radix: radix,
-            format: format,
-            rounding: get_float_rounding(),
-            nan_string: get_nan_string(),
-            inf_string: get_inf_string(),
-            infinity_string: get_infinity_string()
-        })
-    }
-
-    /// Create new options from lossy, format and radix.
-    #[cfg(all(feature = "format", feature = "radix"))]
-    #[inline(always)]
-    #[deprecated(since = "0.8.0", note = "Will be removed with 1.0.")]
-    pub(crate) fn from_lossy_and_format_and_radix(lossy: bool, format: NumberFormat, radix: u8)
-        -> Option<ParseFloatOptions>
-    {
-        let radix = to_radix(radix)?;
-        let exponent_char = exponent_notation_char(radix);
-        let format = to_format_float(format, radix, exponent_char)?;
-        Some(ParseFloatOptions {
-            lossy: lossy,
-            exponent_char: exponent_char,
-            radix: radix,
-            format: format,
-            rounding: get_float_rounding(),
-            nan_string: get_nan_string(),
-            inf_string: get_inf_string(),
-            infinity_string: get_infinity_string()
-        })
-    }
-
-    /// Create new options from fields.
-    ///
-    /// * `lossy`           - Use the lossy, fast parser.
-    /// * `exponent_char`   - Character to designate exponent component.
-    /// * `radix`           - Radix for the number parsing.
-    /// * `format`          - Numerical format.
-    /// * `rounding`        - IEEE754 Rounding kind for float.
-    /// * `nan_string`      - String representation of Not A Number.
-    /// * `inf_string`      - String representation of short infinity.
-    /// * `infinity_string` - String representation of long infinity.
-    #[inline(always)]
-    pub fn create(
-        lossy: bool,
-        exponent_char: u8,
-        radix: u8,
-        format: NumberFormat,
-        rounding: RoundingKind,
-        nan_string: &'static [u8],
-        inf_string: &'static [u8],
-        infinity_string: &'static [u8]
-    ) -> Option<ParseFloatOptions> {
-        let radix = to_radix(radix)?;
-        let exponent_char = to_exponent_char(exponent_char, radix)?;
-        let format = to_format_float(format, radix, exponent_char)?;
-        let rounding = to_rounding(rounding)?;
-        let nan_string = to_nan_string(nan_string)?;
-        let inf_string = to_inf_string(inf_string)?;
-        let infinity_string = to_infinity_string(infinity_string, inf_string)?;
-        Some(ParseFloatOptions {
-            lossy: lossy,
-            exponent_char: exponent_char,
-            radix: radix,
-            format: format,
-            rounding: rounding,
-            nan_string: nan_string,
-            inf_string: inf_string,
-            infinity_string: infinity_string
-        })
+    pub fn builder() -> ParseFloatOptionsBuilder {
+        ParseFloatOptionsBuilder::new()
     }
 
     // PRE-DEFINED CONSTANTS
@@ -499,47 +405,29 @@ impl ParseFloatOptions {
     #[inline(always)]
     #[cfg(feature = "radix")]
     pub fn binary() -> ParseFloatOptions {
-        ParseFloatOptions {
-            lossy: false,
-            exponent_char: DEFAULT_EXPONENT_CHAR,
-            radix: 2,
-            format: DEFAULT_FORMAT,
-            rounding: DEFAULT_ROUNDING,
-            nan_string: DEFAULT_NAN_STRING,
-            inf_string: DEFAULT_INF_STRING,
-            infinity_string: DEFAULT_INFINITY_STRING
-        }
+        ParseFloatOptions::builder()
+            .radix(2)
+            .build()
+            .unwrap()
     }
 
     /// Create new options to parse the default decimal format.
     #[inline(always)]
     pub fn decimal() -> ParseFloatOptions {
-        ParseFloatOptions {
-            lossy: false,
-            exponent_char: DEFAULT_EXPONENT_CHAR,
-            radix: 10,
-            format: DEFAULT_FORMAT,
-            rounding: DEFAULT_ROUNDING,
-            nan_string: DEFAULT_NAN_STRING,
-            inf_string: DEFAULT_INF_STRING,
-            infinity_string: DEFAULT_INFINITY_STRING
-        }
+        ParseFloatOptions::builder()
+            .build()
+            .unwrap()
     }
 
     /// Create new options to parse the default hexadecimal format.
     #[inline(always)]
     #[cfg(feature = "radix")]
     pub fn hexadecimal() -> ParseFloatOptions {
-        ParseFloatOptions {
-            lossy: false,
-            exponent_char: b'p',
-            radix: 16,
-            format: DEFAULT_FORMAT,
-            rounding: DEFAULT_ROUNDING,
-            nan_string: DEFAULT_NAN_STRING,
-            inf_string: DEFAULT_INF_STRING,
-            infinity_string: DEFAULT_INFINITY_STRING
-        }
+        ParseFloatOptions::builder()
+            .radix(2)
+            .exponent_char(b'p')
+            .build()
+            .unwrap()
     }
 
     // GETTERS
@@ -593,8 +481,43 @@ impl ParseFloatOptions {
     }
 }
 
+impl Default for ParseFloatOptions {
+    #[inline]
+    fn default() -> ParseFloatOptions {
+        ParseFloatOptions::builder()
+            .build()
+            .unwrap()
+    }
+}
+
 // WRITE INTEGER
 // -------------
+
+#[derive(Debug)]
+pub struct WriteIntegerOptionsBuilder {
+    radix: u8,
+}
+
+impl WriteIntegerOptionsBuilder {
+    #[inline(always)]
+    fn new() -> WriteIntegerOptionsBuilder {
+        WriteIntegerOptionsBuilder {
+            radix: DEFAULT_RADIX,
+        }
+    }
+
+    #[inline(always)]
+    pub fn radix(mut self, radix: u8) -> Self {
+        self.radix = radix;
+        self
+    }
+
+    #[inline(always)]
+    pub fn build(self) -> Option<WriteIntegerOptions> {
+        let radix = to_radix(self.radix)?;
+        Some(WriteIntegerOptions { radix })
+    }
+}
 
 /// Immutable options to customize writing integers.
 #[derive(Clone, Debug)]
@@ -606,30 +529,10 @@ pub struct WriteIntegerOptions {
 impl WriteIntegerOptions {
     // CONSTRUCTORS
 
-    /// Create new options using default values.
-    // TODO(ahuszagh) Make const fn when we deprecate the older methods.
+    /// Get access to the ParseIntegerOptions builder.
     #[inline(always)]
-    pub fn new() -> WriteIntegerOptions {
-        WriteIntegerOptions {
-            radix: DEFAULT_RADIX as u32
-        }
-    }
-
-    /// Create new options from radix and default values.
-    #[inline(always)]
-    #[cfg(feature = "radix")]
-    #[deprecated(since = "0.8.0", note = "Will be removed with 1.0.")]
-    pub(crate) fn from_radix(radix: u8) -> Option<WriteIntegerOptions> {
-        let radix = to_radix(radix)?;
-        Some(WriteIntegerOptions { radix })
-    }
-
-    /// Create new options from fields.
-    ///
-    /// * `radix`   - Radix for the number parsing.
-    pub fn create(radix: u8) -> Option<WriteIntegerOptions> {
-        let radix = to_radix(radix)?;
-        Some(WriteIntegerOptions { radix })
+    pub fn builder() -> WriteIntegerOptionsBuilder {
+        WriteIntegerOptionsBuilder::new()
     }
 
     // GETTERS
@@ -641,8 +544,85 @@ impl WriteIntegerOptions {
     }
 }
 
+impl Default for WriteIntegerOptions {
+    #[inline]
+    fn default() -> WriteIntegerOptions {
+        WriteIntegerOptions::builder()
+            .build()
+            .unwrap()
+    }
+}
+
 // WRITE FLOAT
 // -----------
+
+#[derive(Debug)]
+pub struct WriteFloatOptionsBuilder {
+    exponent_char: u8,
+    radix: u8,
+    trim_floats: bool,
+    nan_string: &'static [u8],
+    inf_string: &'static [u8],
+}
+
+#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0.
+impl WriteFloatOptionsBuilder {
+    #[inline(always)]
+    fn new() -> WriteFloatOptionsBuilder {
+        WriteFloatOptionsBuilder {
+            exponent_char: exponent_notation_char(DEFAULT_RADIX as u32),
+            radix: DEFAULT_RADIX,
+            trim_floats: DEFAULT_TRIM_FLOATS,
+            nan_string: get_nan_string(),
+            inf_string: get_inf_string()
+        }
+    }
+
+    #[inline(always)]
+    pub fn exponent_char(mut self, exponent_char: u8) -> Self {
+        self.exponent_char = exponent_char;
+        self
+    }
+
+    #[inline(always)]
+    pub fn radix(mut self, radix: u8) -> Self {
+        self.radix = radix;
+        self
+    }
+
+    #[inline(always)]
+    pub fn trim_floats(mut self, trim_floats: bool) -> Self {
+        self.trim_floats = trim_floats;
+        self
+    }
+
+    #[inline(always)]
+    pub fn nan_string(mut self, nan_string: &'static [u8]) -> Self {
+        self.nan_string = nan_string;
+        self
+    }
+
+    #[inline(always)]
+    pub fn inf_string(mut self, inf_string: &'static [u8]) -> Self {
+        self.inf_string = inf_string;
+        self
+    }
+
+    #[inline(always)]
+    pub fn build(self) -> Option<WriteFloatOptions> {
+        let radix = to_radix(self.radix)?;
+        let exponent_char = to_exponent_char(self.exponent_char, radix)?;
+        let nan_string = to_nan_string(self.nan_string)?;
+        let inf_string = to_inf_string(self.inf_string)?;
+        Some(WriteFloatOptions {
+            exponent_char: exponent_char,
+            radix: radix,
+            trim_floats: self.trim_floats,
+            nan_string: nan_string,
+            inf_string: inf_string
+        })
+    }
+}
 
 /// Options to customize writing floats.
 #[derive(Clone, Debug)]
@@ -664,65 +644,13 @@ pub struct WriteFloatOptions {
     inf_string: &'static [u8],
 }
 
-#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0.
 impl WriteFloatOptions {
     // CONSTRUCTORS
 
-    /// Create new options using default values.
-    // TODO(ahuszagh) Make const fn when we deprecate the older methods.
+    /// Get access to the ParseIntegerOptions builder.
     #[inline(always)]
-    pub fn new() -> WriteFloatOptions {
-        let radix = DEFAULT_RADIX as u32;
-        WriteFloatOptions {
-            exponent_char: exponent_notation_char(radix),
-            radix: radix,
-            trim_floats: DEFAULT_TRIM_FLOATS,
-            nan_string: get_nan_string(),
-            inf_string: get_inf_string()
-        }
-    }
-
-    /// Create new options from radix and default values.
-    #[inline(always)]
-    #[cfg(feature = "radix")]
-    #[deprecated(since = "0.8.0", note = "Will be removed with 1.0.")]
-    pub(crate) fn from_radix(radix: u8) -> Option<WriteFloatOptions> {
-        let radix = to_radix(radix)?;
-        Some(WriteFloatOptions {
-            exponent_char: exponent_notation_char(radix),
-            radix: radix,
-            trim_floats: DEFAULT_TRIM_FLOATS,
-            nan_string: get_nan_string(),
-            inf_string: get_inf_string()
-        })
-    }
-
-    /// Create new options from fields.
-    ///
-    /// * `exponent_char`   - Character to designate exponent component.
-    /// * `radix`           - Radix for the number parsing.
-    /// * `trim_floats`     - Trim the trailing ".0" from integral float strings.
-    /// * `nan_string`      - String representation of Not A Number.
-    /// * `inf_string`      - String representation of short infinity.
-    #[inline(always)]
-    pub fn create(
-        exponent_char: u8,
-        radix: u8,
-        trim_floats: bool,
-        nan_string: &'static [u8],
-        inf_string: &'static [u8],
-    ) -> Option<WriteFloatOptions> {
-        let radix = to_radix(radix)?;
-        let exponent_char = to_exponent_char(exponent_char, radix)?;
-        let nan_string = to_nan_string(nan_string)?;
-        let inf_string = to_inf_string(inf_string)?;
-        Some(WriteFloatOptions {
-            exponent_char: exponent_char,
-            radix: radix,
-            trim_floats: trim_floats,
-            nan_string: nan_string,
-            inf_string: inf_string
-        })
+    pub fn builder() -> WriteFloatOptionsBuilder {
+        WriteFloatOptionsBuilder::new()
     }
 
     // PRE-DEFINED CONSTANTS
@@ -731,38 +659,29 @@ impl WriteFloatOptions {
     #[inline(always)]
     #[cfg(feature = "radix")]
     pub fn binary() -> WriteFloatOptions {
-        WriteFloatOptions {
-            exponent_char: DEFAULT_EXPONENT_CHAR,
-            radix: 2,
-            trim_floats: false,
-            nan_string: DEFAULT_NAN_STRING,
-            inf_string: DEFAULT_INF_STRING
-        }
+        WriteFloatOptions::builder()
+            .radix(2)
+            .build()
+            .unwrap()
     }
 
     /// Create new options to parse the default decimal format.
     #[inline(always)]
     pub fn decimal() -> WriteFloatOptions {
-        WriteFloatOptions {
-            exponent_char: DEFAULT_EXPONENT_CHAR,
-            radix: 10,
-            trim_floats: false,
-            nan_string: DEFAULT_NAN_STRING,
-            inf_string: DEFAULT_INF_STRING
-        }
+        WriteFloatOptions::builder()
+            .build()
+            .unwrap()
     }
 
     /// Create new options to parse the default hexadecimal format.
     #[inline(always)]
     #[cfg(feature = "radix")]
     pub fn hexadecimal() -> WriteFloatOptions {
-        WriteFloatOptions {
-            exponent_char: b'p',
-            radix: 16,
-            trim_floats: false,
-            nan_string: DEFAULT_NAN_STRING,
-            inf_string: DEFAULT_INF_STRING
-        }
+        WriteFloatOptions::builder()
+            .radix(2)
+            .exponent_char(b'p')
+            .build()
+            .unwrap()
     }
 
     // GETTERS
@@ -795,6 +714,15 @@ impl WriteFloatOptions {
     #[inline(always)]
     pub const fn inf_string(&self) -> &'static [u8] {
         self.inf_string
+    }
+}
+
+impl Default for WriteFloatOptions {
+    #[inline]
+    fn default() -> WriteFloatOptions {
+        WriteFloatOptions::builder()
+            .build()
+            .unwrap()
     }
 }
 
@@ -924,15 +852,21 @@ mod tests {
     #[cfg(feature = "format")]
     fn parse_integer_options_invalid_digit_separator_test() {
         let format = NumberFormat::ignore(b'0').unwrap();
-        let options = ParseIntegerOptions::create(10, format);
+        let options = ParseIntegerOptions::builder()
+            .format(format)
+            .build();
         assert!(options.is_none());
 
         let format = NumberFormat::ignore(b'9').unwrap();
-        let options = ParseIntegerOptions::create(10, format);
+        let options = ParseIntegerOptions::builder()
+            .format(format)
+            .build();
         assert!(options.is_none());
 
         let format = NumberFormat::ignore(b'A').unwrap();
-        let options = ParseIntegerOptions::create(10, format);
+        let options = ParseIntegerOptions::builder()
+            .format(format)
+            .build();
         assert!(options.is_some());
     }
 }

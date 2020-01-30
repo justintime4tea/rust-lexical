@@ -84,7 +84,7 @@ use super::shared::*;
 // ------
 
 // Validate the extracted integer has no leading zeros.
-perftools_inline!{
+perftools_inline_always!{
 #[cfg(feature = "format")]
 fn validate_no_leading_zeros<'a>(digits: &[u8], digit_separator: u8, ptr: *const u8)
     -> ParseResult<()>
@@ -524,7 +524,7 @@ macro_rules! standalone_atoi_128_separator {
         sign => $sign:ident,
         consume => $consume:ident
     ) => (
-        perftools_inline!{
+        perftools_inline_always!{
         #[cfg(feature = "format")]
         fn $name<W, N>(
             bytes: &[u8],

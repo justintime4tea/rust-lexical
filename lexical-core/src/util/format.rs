@@ -2121,138 +2121,330 @@ if #[cfg(not(feature = "format"))] {
 
     /// Add flag to flags
     macro_rules! add_flag {
-        ($flags:ident, $bool:ident, $flag:ident) => {
+        ($flags:ident, $bool:expr, $flag:ident) => {
             if $bool {
                 $flags |= NumberFormat::$flag;
             }
         };
     }
 
-    impl NumberFormat {
-        /// Compile float format value from specifications.
-        ///
-        /// * `digit_separator`                         - Character to separate digits.
-        /// * `required_integer_digits`                 - If digits are required before the decimal point.
-        /// * `required_fraction_digits`                - If digits are required after the decimal point.
-        /// * `required_exponent_digits`                - If digits are required after the exponent character.
-        /// * `no_positive_mantissa_sign`               - If positive sign before the mantissa is not allowed.
-        /// * `required_mantissa_sign`                  - If positive sign before the mantissa is required.
-        /// * `no_exponent_notation`                    - If exponent notation is not allowed.
-        /// * `no_positive_exponent_sign`               - If positive sign before the exponent is not allowed.
-        /// * `required_exponent_sign`                  - If sign before the exponent is required.
-        /// * `no_exponent_without_fraction`            - If exponent without fraction is not allowed.
-        /// * `no_special`                              - If special (non-finite) values are not allowed.
-        /// * `case_sensitive_special`                  - If special (non-finite) values are case-sensitive.
-        /// * `no_integer_leading_zeros`                - If leading zeros before an integer are not allowed.
-        /// * `no_float_leading_zeros`                  - If leading zeros before a float are not allowed.
-        /// * `integer_internal_digit_separator`        - If digit separators are allowed between integer digits.
-        /// * `fraction_internal_digit_separator`       - If digit separators are allowed between fraction digits.
-        /// * `exponent_internal_digit_separator`       - If digit separators are allowed between exponent digits.
-        /// * `integer_leading_digit_separator`         - If a digit separator is allowed before any integer digits.
-        /// * `fraction_leading_digit_separator`        - If a digit separator is allowed before any fraction digits.
-        /// * `exponent_leading_digit_separator`        - If a digit separator is allowed before any exponent digits.
-        /// * `integer_trailing_digit_separator`        - If a digit separator is allowed after any integer digits.
-        /// * `fraction_trailing_digit_separator`       - If a digit separator is allowed after any fraction digits.
-        /// * `exponent_trailing_digit_separator`       - If a digit separator is allowed after any exponent digits.
-        /// * `integer_consecutive_digit_separator`     - If multiple consecutive integer digit separators are allowed.
-        /// * `fraction_consecutive_digit_separator`    - If multiple consecutive fraction digit separators are allowed.
-        /// * `special_digit_separator`                 - If any digit separators are allowed in special (non-finite) values.
-        ///
-        /// Returns the value if it was able to compile the format,
-        /// otherwise, returns None.
-        #[cfg_attr(feature = "radix", doc = " Digit separators must not be in the character group `[A-Za-z0-9+.-]`, nor be equal to")]
-        #[cfg_attr(feature = "radix", doc = " [`get_exponent_default_char`](fn.get_exponent_default_char.html) or")]
-        #[cfg_attr(feature = "radix", doc = " [`get_exponent_backup_char`](fn.get_exponent_backup_char.html).")]
-        #[cfg_attr(not(feature = "radix"), doc = " Digit separators must not be in the character group `[0-9+.-]`, nor be equal to")]
-        #[cfg_attr(not(feature = "radix"), doc = " [get_exponent_default_char](fn.get_exponent_default_char.html).")]
-        ///
-        /// # Versioning
-        ///
-        /// Due to the potential addition of bitflags required to parse a given
-        /// number, this function is not considered stable and will not
-        /// be stabilized until lexical-core version 1.0. Any changes will
-        /// ensure they introduce compile errors in existing code, and will
-        /// not the current major/minor version.
+    /// Build float format value from specifications.
+    ///
+    /// * `digit_separator`                         - Character to separate digits.
+    /// * `required_integer_digits`                 - If digits are required before the decimal point.
+    /// * `required_fraction_digits`                - If digits are required after the decimal point.
+    /// * `required_exponent_digits`                - If digits are required after the exponent character.
+    /// * `no_positive_mantissa_sign`               - If positive sign before the mantissa is not allowed.
+    /// * `required_mantissa_sign`                  - If positive sign before the mantissa is required.
+    /// * `no_exponent_notation`                    - If exponent notation is not allowed.
+    /// * `no_positive_exponent_sign`               - If positive sign before the exponent is not allowed.
+    /// * `required_exponent_sign`                  - If sign before the exponent is required.
+    /// * `no_exponent_without_fraction`            - If exponent without fraction is not allowed.
+    /// * `no_special`                              - If special (non-finite) values are not allowed.
+    /// * `case_sensitive_special`                  - If special (non-finite) values are case-sensitive.
+    /// * `no_integer_leading_zeros`                - If leading zeros before an integer are not allowed.
+    /// * `no_float_leading_zeros`                  - If leading zeros before a float are not allowed.
+    /// * `integer_internal_digit_separator`        - If digit separators are allowed between integer digits.
+    /// * `fraction_internal_digit_separator`       - If digit separators are allowed between fraction digits.
+    /// * `exponent_internal_digit_separator`       - If digit separators are allowed between exponent digits.
+    /// * `integer_leading_digit_separator`         - If a digit separator is allowed before any integer digits.
+    /// * `fraction_leading_digit_separator`        - If a digit separator is allowed before any fraction digits.
+    /// * `exponent_leading_digit_separator`        - If a digit separator is allowed before any exponent digits.
+    /// * `integer_trailing_digit_separator`        - If a digit separator is allowed after any integer digits.
+    /// * `fraction_trailing_digit_separator`       - If a digit separator is allowed after any fraction digits.
+    /// * `exponent_trailing_digit_separator`       - If a digit separator is allowed after any exponent digits.
+    /// * `integer_consecutive_digit_separator`     - If multiple consecutive integer digit separators are allowed.
+    /// * `fraction_consecutive_digit_separator`    - If multiple consecutive fraction digit separators are allowed.
+    /// * `special_digit_separator`                 - If any digit separators are allowed in special (non-finite) values.
+    ///
+    /// Returns the format on calling build if it was able to compile the format,
+    /// otherwise, returns None.
+    pub struct NumberFormatBuilder {
+        digit_separator: u8,
+        required_integer_digits: bool,
+        required_fraction_digits: bool,
+        required_exponent_digits: bool,
+        no_positive_mantissa_sign: bool,
+        required_mantissa_sign: bool,
+        no_exponent_notation: bool,
+        no_positive_exponent_sign: bool,
+        required_exponent_sign: bool,
+        no_exponent_without_fraction: bool,
+        no_special: bool,
+        case_sensitive_special: bool,
+        no_integer_leading_zeros: bool,
+        no_float_leading_zeros: bool,
+        integer_internal_digit_separator: bool,
+        fraction_internal_digit_separator: bool,
+        exponent_internal_digit_separator: bool,
+        integer_leading_digit_separator: bool,
+        fraction_leading_digit_separator: bool,
+        exponent_leading_digit_separator: bool,
+        integer_trailing_digit_separator: bool,
+        fraction_trailing_digit_separator: bool,
+        exponent_trailing_digit_separator: bool,
+        integer_consecutive_digit_separator: bool,
+        fraction_consecutive_digit_separator: bool,
+        exponent_consecutive_digit_separator: bool,
+        special_digit_separator: bool
+    }
+
+    impl NumberFormatBuilder {
+        #[inline(always)]
+        const fn new() -> NumberFormatBuilder {
+            NumberFormatBuilder {
+                digit_separator: b'\x00',
+                required_integer_digits: false,
+                required_fraction_digits: false,
+                required_exponent_digits: false,
+                no_positive_mantissa_sign: false,
+                required_mantissa_sign: false,
+                no_exponent_notation: false,
+                no_positive_exponent_sign: false,
+                required_exponent_sign: false,
+                no_exponent_without_fraction: false,
+                no_special: false,
+                case_sensitive_special: false,
+                no_integer_leading_zeros: false,
+                no_float_leading_zeros: false,
+                integer_internal_digit_separator: false,
+                fraction_internal_digit_separator: false,
+                exponent_internal_digit_separator: false,
+                integer_leading_digit_separator: false,
+                fraction_leading_digit_separator: false,
+                exponent_leading_digit_separator: false,
+                integer_trailing_digit_separator: false,
+                fraction_trailing_digit_separator: false,
+                exponent_trailing_digit_separator: false,
+                integer_consecutive_digit_separator: false,
+                fraction_consecutive_digit_separator: false,
+                exponent_consecutive_digit_separator: false,
+                special_digit_separator: false
+            }
+        }
+
+        #[inline(always)]
+        pub fn digit_separator(mut self, digit_separator: u8) -> Self {
+            self.digit_separator = digit_separator;
+            self
+        }
+
+        #[inline(always)]
+        pub fn required_integer_digits(mut self, required_integer_digits: bool) -> Self {
+            self.required_integer_digits = required_integer_digits;
+            self
+        }
+
+        #[inline(always)]
+        pub fn required_fraction_digits(mut self, required_fraction_digits: bool) -> Self {
+            self.required_fraction_digits = required_fraction_digits;
+            self
+        }
+
+        #[inline(always)]
+        pub fn required_exponent_digits(mut self, required_exponent_digits: bool) -> Self {
+            self.required_exponent_digits = required_exponent_digits;
+            self
+        }
+
+        #[inline(always)]
+        pub fn no_positive_mantissa_sign(mut self, no_positive_mantissa_sign: bool) -> Self {
+            self.no_positive_mantissa_sign = no_positive_mantissa_sign;
+            self
+        }
+
+        #[inline(always)]
+        pub fn required_mantissa_sign(mut self, required_mantissa_sign: bool) -> Self {
+            self.required_mantissa_sign = required_mantissa_sign;
+            self
+        }
+
+        #[inline(always)]
+        pub fn no_exponent_notation(mut self, no_exponent_notation: bool) -> Self {
+            self.no_exponent_notation = no_exponent_notation;
+            self
+        }
+
+        #[inline(always)]
+        pub fn no_positive_exponent_sign(mut self, no_positive_exponent_sign: bool) -> Self {
+            self.no_positive_exponent_sign = no_positive_exponent_sign;
+            self
+        }
+
+        #[inline(always)]
+        pub fn required_exponent_sign(mut self, required_exponent_sign: bool) -> Self {
+            self.required_exponent_sign = required_exponent_sign;
+            self
+        }
+
+        #[inline(always)]
+        pub fn no_exponent_without_fraction(mut self, no_exponent_without_fraction: bool) -> Self {
+            self.no_exponent_without_fraction = no_exponent_without_fraction;
+            self
+        }
+
+        #[inline(always)]
+        pub fn no_special(mut self, no_special: bool) -> Self {
+            self.no_special = no_special;
+            self
+        }
+
+        #[inline(always)]
+        pub fn case_sensitive_special(mut self, case_sensitive_special: bool) -> Self {
+            self.case_sensitive_special = case_sensitive_special;
+            self
+        }
+
+        #[inline(always)]
+        pub fn no_integer_leading_zeros(mut self, no_integer_leading_zeros: bool) -> Self {
+            self.no_integer_leading_zeros = no_integer_leading_zeros;
+            self
+        }
+
+        #[inline(always)]
+        pub fn no_float_leading_zeros(mut self, no_float_leading_zeros: bool) -> Self {
+            self.no_float_leading_zeros = no_float_leading_zeros;
+            self
+        }
+
+        #[inline(always)]
+        pub fn integer_internal_digit_separator(mut self, integer_internal_digit_separator: bool) -> Self {
+            self.integer_internal_digit_separator = integer_internal_digit_separator;
+            self
+        }
+
+        #[inline(always)]
+        pub fn fraction_internal_digit_separator(mut self, fraction_internal_digit_separator: bool) -> Self {
+            self.fraction_internal_digit_separator = fraction_internal_digit_separator;
+            self
+        }
+
+        #[inline(always)]
+        pub fn exponent_internal_digit_separator(mut self, exponent_internal_digit_separator: bool) -> Self {
+            self.exponent_internal_digit_separator = exponent_internal_digit_separator;
+            self
+        }
+
+        #[inline(always)]
+        pub fn integer_leading_digit_separator(mut self, integer_leading_digit_separator: bool) -> Self {
+            self.integer_leading_digit_separator = integer_leading_digit_separator;
+            self
+        }
+
+        #[inline(always)]
+        pub fn fraction_leading_digit_separator(mut self, fraction_leading_digit_separator: bool) -> Self {
+            self.fraction_leading_digit_separator = fraction_leading_digit_separator;
+            self
+        }
+
+        #[inline(always)]
+        pub fn exponent_leading_digit_separator(mut self, exponent_leading_digit_separator: bool) -> Self {
+            self.exponent_leading_digit_separator = exponent_leading_digit_separator;
+            self
+        }
+
+        #[inline(always)]
+        pub fn integer_trailing_digit_separator(mut self, integer_trailing_digit_separator: bool) -> Self {
+            self.integer_trailing_digit_separator = integer_trailing_digit_separator;
+            self
+        }
+
+        #[inline(always)]
+        pub fn fraction_trailing_digit_separator(mut self, fraction_trailing_digit_separator: bool) -> Self {
+            self.fraction_trailing_digit_separator = fraction_trailing_digit_separator;
+            self
+        }
+
+        #[inline(always)]
+        pub fn exponent_trailing_digit_separator(mut self, exponent_trailing_digit_separator: bool) -> Self {
+            self.exponent_trailing_digit_separator = exponent_trailing_digit_separator;
+            self
+        }
+
+        #[inline(always)]
+        pub fn integer_consecutive_digit_separator(mut self, integer_consecutive_digit_separator: bool) -> Self {
+            self.integer_consecutive_digit_separator = integer_consecutive_digit_separator;
+            self
+        }
+
+        #[inline(always)]
+        pub fn fraction_consecutive_digit_separator(mut self, fraction_consecutive_digit_separator: bool) -> Self {
+            self.fraction_consecutive_digit_separator = fraction_consecutive_digit_separator;
+            self
+        }
+
+        #[inline(always)]
+        pub fn exponent_consecutive_digit_separator(mut self, exponent_consecutive_digit_separator: bool) -> Self {
+            self.exponent_consecutive_digit_separator = exponent_consecutive_digit_separator;
+            self
+        }
+
+        #[inline(always)]
+        pub fn special_digit_separator(mut self, special_digit_separator: bool) -> Self {
+            self.special_digit_separator = special_digit_separator;
+            self
+        }
+
         #[inline]
-        pub fn compile(
-            digit_separator: u8,
-            required_integer_digits: bool,
-            required_fraction_digits: bool,
-            required_exponent_digits: bool,
-            no_positive_mantissa_sign: bool,
-            required_mantissa_sign: bool,
-            no_exponent_notation: bool,
-            no_positive_exponent_sign: bool,
-            required_exponent_sign: bool,
-            no_exponent_without_fraction: bool,
-            no_special: bool,
-            case_sensitive_special: bool,
-            no_integer_leading_zeros: bool,
-            no_float_leading_zeros: bool,
-            integer_internal_digit_separator: bool,
-            fraction_internal_digit_separator: bool,
-            exponent_internal_digit_separator: bool,
-            integer_leading_digit_separator: bool,
-            fraction_leading_digit_separator: bool,
-            exponent_leading_digit_separator: bool,
-            integer_trailing_digit_separator: bool,
-            fraction_trailing_digit_separator: bool,
-            exponent_trailing_digit_separator: bool,
-            integer_consecutive_digit_separator: bool,
-            fraction_consecutive_digit_separator: bool,
-            exponent_consecutive_digit_separator: bool,
-            special_digit_separator: bool
-        ) -> Option<NumberFormat> {
+        pub fn build(self) -> Option<NumberFormat> {
             let mut format = NumberFormat::default();
             // Generic flags.
-            add_flag!(format, required_integer_digits, REQUIRED_INTEGER_DIGITS);
-            add_flag!(format, required_fraction_digits, REQUIRED_FRACTION_DIGITS);
-            add_flag!(format, required_exponent_digits, REQUIRED_EXPONENT_DIGITS);
-            add_flag!(format, no_positive_mantissa_sign, NO_POSITIVE_MANTISSA_SIGN);
-            add_flag!(format, required_mantissa_sign, REQUIRED_MANTISSA_SIGN);
-            add_flag!(format, no_exponent_notation, NO_EXPONENT_NOTATION);
-            add_flag!(format, no_positive_exponent_sign, NO_POSITIVE_EXPONENT_SIGN);
-            add_flag!(format, required_exponent_sign, REQUIRED_EXPONENT_SIGN);
-            add_flag!(format, no_exponent_without_fraction, NO_EXPONENT_WITHOUT_FRACTION);
-            add_flag!(format, no_special, NO_SPECIAL);
-            add_flag!(format, case_sensitive_special, CASE_SENSITIVE_SPECIAL);
-            add_flag!(format, no_integer_leading_zeros, NO_INTEGER_LEADING_ZEROS);
-            add_flag!(format, no_float_leading_zeros, NO_FLOAT_LEADING_ZEROS);
+            add_flag!(format, self.required_integer_digits, REQUIRED_INTEGER_DIGITS);
+            add_flag!(format, self.required_fraction_digits, REQUIRED_FRACTION_DIGITS);
+            add_flag!(format, self.required_exponent_digits, REQUIRED_EXPONENT_DIGITS);
+            add_flag!(format, self.no_positive_mantissa_sign, NO_POSITIVE_MANTISSA_SIGN);
+            add_flag!(format, self.required_mantissa_sign, REQUIRED_MANTISSA_SIGN);
+            add_flag!(format, self.no_exponent_notation, NO_EXPONENT_NOTATION);
+            add_flag!(format, self.no_positive_exponent_sign, NO_POSITIVE_EXPONENT_SIGN);
+            add_flag!(format, self.required_exponent_sign, REQUIRED_EXPONENT_SIGN);
+            add_flag!(format, self.no_exponent_without_fraction, NO_EXPONENT_WITHOUT_FRACTION);
+            add_flag!(format, self.no_special, NO_SPECIAL);
+            add_flag!(format, self.case_sensitive_special, CASE_SENSITIVE_SPECIAL);
+            add_flag!(format, self.no_integer_leading_zeros, NO_INTEGER_LEADING_ZEROS);
+            add_flag!(format, self.no_float_leading_zeros, NO_FLOAT_LEADING_ZEROS);
 
             // Digit separator flags.
-            add_flag!(format, integer_internal_digit_separator, INTEGER_INTERNAL_DIGIT_SEPARATOR);
-            add_flag!(format, fraction_internal_digit_separator, FRACTION_INTERNAL_DIGIT_SEPARATOR);
-            add_flag!(format, exponent_internal_digit_separator, EXPONENT_INTERNAL_DIGIT_SEPARATOR);
-            add_flag!(format, integer_leading_digit_separator, INTEGER_LEADING_DIGIT_SEPARATOR);
-            add_flag!(format, fraction_leading_digit_separator, FRACTION_LEADING_DIGIT_SEPARATOR);
-            add_flag!(format, exponent_leading_digit_separator, EXPONENT_LEADING_DIGIT_SEPARATOR);
-            add_flag!(format, integer_trailing_digit_separator, INTEGER_TRAILING_DIGIT_SEPARATOR);
-            add_flag!(format, fraction_trailing_digit_separator, FRACTION_TRAILING_DIGIT_SEPARATOR);
-            add_flag!(format, exponent_trailing_digit_separator, EXPONENT_TRAILING_DIGIT_SEPARATOR);
-            add_flag!(format, integer_consecutive_digit_separator, INTEGER_CONSECUTIVE_DIGIT_SEPARATOR);
-            add_flag!(format, fraction_consecutive_digit_separator, FRACTION_CONSECUTIVE_DIGIT_SEPARATOR);
-            add_flag!(format, exponent_consecutive_digit_separator, EXPONENT_CONSECUTIVE_DIGIT_SEPARATOR);
-            add_flag!(format, special_digit_separator, SPECIAL_DIGIT_SEPARATOR);
+            add_flag!(format, self.integer_internal_digit_separator, INTEGER_INTERNAL_DIGIT_SEPARATOR);
+            add_flag!(format, self.fraction_internal_digit_separator, FRACTION_INTERNAL_DIGIT_SEPARATOR);
+            add_flag!(format, self.exponent_internal_digit_separator, EXPONENT_INTERNAL_DIGIT_SEPARATOR);
+            add_flag!(format, self.integer_leading_digit_separator, INTEGER_LEADING_DIGIT_SEPARATOR);
+            add_flag!(format, self.fraction_leading_digit_separator, FRACTION_LEADING_DIGIT_SEPARATOR);
+            add_flag!(format, self.exponent_leading_digit_separator, EXPONENT_LEADING_DIGIT_SEPARATOR);
+            add_flag!(format, self.integer_trailing_digit_separator, INTEGER_TRAILING_DIGIT_SEPARATOR);
+            add_flag!(format, self.fraction_trailing_digit_separator, FRACTION_TRAILING_DIGIT_SEPARATOR);
+            add_flag!(format, self.exponent_trailing_digit_separator, EXPONENT_TRAILING_DIGIT_SEPARATOR);
+            add_flag!(format, self.integer_consecutive_digit_separator, INTEGER_CONSECUTIVE_DIGIT_SEPARATOR);
+            add_flag!(format, self.fraction_consecutive_digit_separator, FRACTION_CONSECUTIVE_DIGIT_SEPARATOR);
+            add_flag!(format, self.exponent_consecutive_digit_separator, EXPONENT_CONSECUTIVE_DIGIT_SEPARATOR);
+            add_flag!(format, self.special_digit_separator, SPECIAL_DIGIT_SEPARATOR);
 
             // Digit separator.
             if format.intersects(NumberFormat::DIGIT_SEPARATOR_FLAG_MASK) {
-                format.bits |= digit_separator_to_flags(digit_separator);
+                format.bits |= digit_separator_to_flags(self.digit_separator);
             }
 
             // Validation.
             let is_invalid =
-                !is_valid_separator(digit_separator)
+                !is_valid_separator(self.digit_separator)
                 || format.intersects(NumberFormat::NO_EXPONENT_NOTATION) && format.intersects(NumberFormat::EXPONENT_FLAG_MASK)
-                || no_positive_mantissa_sign && required_mantissa_sign
-                || no_positive_exponent_sign && required_exponent_sign
-                || no_special && (case_sensitive_special || special_digit_separator)
+                || self.no_positive_mantissa_sign && self.required_mantissa_sign
+                || self.no_positive_exponent_sign && self.required_exponent_sign
+                || self.no_special && (self.case_sensitive_special || self.special_digit_separator)
                 || format & NumberFormat::INTEGER_DIGIT_SEPARATOR_FLAG_MASK == NumberFormat::INTEGER_CONSECUTIVE_DIGIT_SEPARATOR
                 || format & NumberFormat::FRACTION_DIGIT_SEPARATOR_FLAG_MASK == NumberFormat::FRACTION_CONSECUTIVE_DIGIT_SEPARATOR
                 || format & NumberFormat::EXPONENT_DIGIT_SEPARATOR_FLAG_MASK == NumberFormat::EXPONENT_CONSECUTIVE_DIGIT_SEPARATOR;
+
             match is_invalid {
                 true  => None,
                 false => Some(format)
             }
+        }
+    }
+
+    impl NumberFormat {
+        /// Get access to the NumberFormat builder.
+        pub fn builder() -> NumberFormatBuilder {
+            NumberFormatBuilder::new()
         }
 
         /// Compile permissive number format.
@@ -2530,9 +2722,12 @@ if #[cfg(not(feature = "format"))] {
         }
 
         #[test]
-        fn test_compile() {
+        fn test_builder() {
             // Test all false
-            let flags = NumberFormat::compile(b'_', false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false).unwrap();
+            let flags = NumberFormat::builder()
+                .digit_separator(b'_')
+                .build()
+                .unwrap();
             assert_eq!(flags.flags(), NumberFormat::default());
             assert_eq!(flags.digit_separator(), 0);
         }
