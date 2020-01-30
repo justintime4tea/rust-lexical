@@ -101,6 +101,7 @@ macro_rules! from_lexical {
             condition =>
         );
 
+        // TODO(ahuszagh) Remove this.
         // Radix.
         lexical_from_range!(
             fn $radix_name,

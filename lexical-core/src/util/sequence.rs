@@ -11,7 +11,6 @@ use crate::lib::Vec;
 // ARRVEC
 
 /// Macro to automate simplify the creation of an ArrayVec.
-#[macro_export]
 macro_rules! arrvec {
     // This only works if the ArrayVec is the same size as the input array.
     ($elem:expr; $n:expr) => ({

@@ -7,10 +7,6 @@ use super::rounding::RoundingKind;
 // CONSTANTS
 // ---------
 
-// TODO(ahuszagh)
-//  Should also have predefined constants, like the NumberFormat.
-//  Should simplify things.
-
 // TODO(ahuszagh) Restore later.
 // Constants to dictate default values for options.
 //pub(crate) const DEFAULT_EXPONENT_CHAR: u8 = b'e';
@@ -166,12 +162,14 @@ impl ParseIntegerOptionsBuilder {
     }
 
     #[inline(always)]
+    #[cfg(feature = "radix")]
     pub fn radix(mut self, radix: u8) -> Self {
         self.radix = radix;
         self
     }
 
     #[inline(always)]
+    #[cfg(feature = "format")]
     pub fn format(mut self, format: NumberFormat) -> Self {
         self.format = format;
         self
@@ -186,6 +184,17 @@ impl ParseIntegerOptionsBuilder {
 }
 
 /// Options to customize parsing integers.
+///
+/// # Examples
+///
+/// ```rust
+/// # extern crate lexical_core;
+/// # pub fn main() {
+/// let options = lexical_core::ParseIntegerOptions::builder()
+///     .build()
+///     .unwrap();
+/// # }
+/// ```
 #[derive(Clone, Debug)]
 pub struct ParseIntegerOptions {
     /// Radix for integer string.
@@ -290,8 +299,6 @@ impl ParseFloatOptionsBuilder {
         }
     }
 
-    // TODO(ahuszagh) Add more...
-
     #[inline(always)]
     pub fn lossy(mut self, lossy: bool) -> Self {
         self.lossy = lossy;
@@ -305,18 +312,21 @@ impl ParseFloatOptionsBuilder {
     }
 
     #[inline(always)]
+    #[cfg(feature = "radix")]
     pub fn radix(mut self, radix: u8) -> Self {
         self.radix = radix;
         self
     }
 
     #[inline(always)]
+    #[cfg(feature = "format")]
     pub fn format(mut self, format: NumberFormat) -> Self {
         self.format = format;
         self
     }
 
     #[inline(always)]
+    #[cfg(feature = "rounding")]
     pub fn rounding(mut self, rounding: RoundingKind) -> Self {
         self.rounding = rounding;
         self
@@ -363,6 +373,22 @@ impl ParseFloatOptionsBuilder {
 }
 
 /// Options to customize parsing floats.
+///
+/// # Examples
+///
+/// ```rust
+/// # extern crate lexical_core;
+/// # pub fn main() {
+/// let options = lexical_core::ParseFloatOptions::builder()
+///     .lossy(true)
+///     .exponent_char(b'e')
+///     .nan_string(b"NaN")
+///     .inf_string(b"Inf")
+///     .infinity_string(b"Infinity")
+///     .build()
+///     .unwrap();
+/// # }
+/// ```
 #[derive(Clone, Debug)]
 pub struct ParseFloatOptions {
     /// Use the lossy, fast parser.
@@ -424,7 +450,7 @@ impl ParseFloatOptions {
     #[cfg(feature = "radix")]
     pub fn hexadecimal() -> ParseFloatOptions {
         ParseFloatOptions::builder()
-            .radix(2)
+            .radix(16)
             .exponent_char(b'p')
             .build()
             .unwrap()
@@ -507,6 +533,7 @@ impl WriteIntegerOptionsBuilder {
     }
 
     #[inline(always)]
+    #[cfg(feature = "radix")]
     pub fn radix(mut self, radix: u8) -> Self {
         self.radix = radix;
         self
@@ -520,6 +547,17 @@ impl WriteIntegerOptionsBuilder {
 }
 
 /// Immutable options to customize writing integers.
+///
+/// # Examples
+///
+/// ```rust
+/// # extern crate lexical_core;
+/// # pub fn main() {
+/// let options = lexical_core::WriteIntegerOptions::builder()
+///     .build()
+///     .unwrap();
+/// # }
+/// ```
 #[derive(Clone, Debug)]
 pub struct WriteIntegerOptions {
     /// Radix for integer string.
@@ -533,6 +571,36 @@ impl WriteIntegerOptions {
     #[inline(always)]
     pub fn builder() -> WriteIntegerOptionsBuilder {
         WriteIntegerOptionsBuilder::new()
+    }
+
+    // PRE-DEFINED CONSTANTS
+
+    /// Create new options to parse the default binary format.
+    #[inline(always)]
+    #[cfg(feature = "radix")]
+    pub fn binary() -> WriteIntegerOptions {
+        WriteIntegerOptions::builder()
+            .radix(2)
+            .build()
+            .unwrap()
+    }
+
+    /// Create new options to parse the default decimal format.
+    #[inline(always)]
+    pub fn decimal() -> WriteIntegerOptions {
+        WriteIntegerOptions::builder()
+            .build()
+            .unwrap()
+    }
+
+    /// Create new options to parse the default hexadecimal format.
+    #[inline(always)]
+    #[cfg(feature = "radix")]
+    pub fn hexadecimal() -> WriteIntegerOptions {
+        WriteIntegerOptions::builder()
+            .radix(16)
+            .build()
+            .unwrap()
     }
 
     // GETTERS
@@ -585,6 +653,7 @@ impl WriteFloatOptionsBuilder {
     }
 
     #[inline(always)]
+    #[cfg(feature = "radix")]
     pub fn radix(mut self, radix: u8) -> Self {
         self.radix = radix;
         self
@@ -625,6 +694,21 @@ impl WriteFloatOptionsBuilder {
 }
 
 /// Options to customize writing floats.
+///
+/// # Examples
+///
+/// ```rust
+/// # extern crate lexical_core;
+/// # pub fn main() {
+/// let options = lexical_core::WriteFloatOptions::builder()
+///     .exponent_char(b'e')
+///     .trim_floats(true)
+///     .nan_string(b"NaN")
+///     .inf_string(b"Inf")
+///     .build()
+///     .unwrap();
+/// # }
+/// ```
 #[derive(Clone, Debug)]
 pub struct WriteFloatOptions {
     /// Character to designate exponent component.
