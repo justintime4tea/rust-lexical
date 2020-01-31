@@ -30,6 +30,9 @@ pub(crate) use core::*;
 // but should not be used from Rust.
 mod api;
 mod config;
+mod format;
+mod option;
+mod options;
 mod result;
 
 // We need to export them to the root crate for them to generate symbols.

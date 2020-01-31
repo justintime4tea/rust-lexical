@@ -21,6 +21,7 @@ pub(crate) mod test;
 
 // Hide implementation details.
 mod algorithm;
+mod builder;
 mod cast;
 mod config;
 mod consume;
@@ -73,6 +74,7 @@ if #[cfg(feature = "correct")] {
 }}  // cfg_if
 
 // Publicly export config globally.
+pub use self::builder::*;
 pub use self::config::*;
 pub use self::error::*;
 pub use self::format::*;

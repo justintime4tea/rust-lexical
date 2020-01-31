@@ -119,6 +119,7 @@ pub use lexical_core::NumberFormat;
 pub use lexical_core::{Error, ErrorCode, Result};
 
 // Re-export the format options.
+pub use lexical_core::{Builder, Buildable};
 pub use lexical_core::{ParseIntegerOptions, ParseFloatOptions};
 pub use lexical_core::{WriteIntegerOptions, WriteFloatOptions};
 

@@ -1,5 +1,6 @@
 //! Configuration options for parsing and formatting numbers.
 
+use super::builder::*;
 use super::config::*;
 use super::format::NumberFormat;
 use super::rounding::RoundingKind;
@@ -146,6 +147,7 @@ fn to_infinity_string(infinity_string: &'static [u8], inf_string: &'static [u8])
 // -------------
 
 /// Builder for `ParseIntegerOptions`.
+#[repr(C)]
 #[derive(Debug)]
 pub struct ParseIntegerOptionsBuilder {
     radix: u8,
@@ -174,12 +176,16 @@ impl ParseIntegerOptionsBuilder {
         self.format = format;
         self
     }
+}
+
+impl Builder for ParseIntegerOptionsBuilder {
+    type Buildable = ParseIntegerOptions;
 
     #[inline(always)]
-    pub fn build(self) -> Option<ParseIntegerOptions> {
+    fn build(self) -> Option<Self::Buildable> {
         let radix = to_radix(self.radix)?;
         let format = to_format_integer(self.format, radix)?;
-        Some(ParseIntegerOptions { radix, format })
+        Some(Self::Buildable { radix, format })
     }
 }
 
@@ -189,12 +195,15 @@ impl ParseIntegerOptionsBuilder {
 ///
 /// ```rust
 /// # extern crate lexical_core;
+/// use lexical_core::{ParseIntegerOptions, Builder, Buildable};
+///
 /// # pub fn main() {
-/// let options = lexical_core::ParseIntegerOptions::builder()
+/// let options = ParseIntegerOptions::builder()
 ///     .build()
 ///     .unwrap();
 /// # }
 /// ```
+#[repr(C)]
 #[derive(Clone, Debug)]
 pub struct ParseIntegerOptions {
     /// Radix for integer string.
@@ -205,14 +214,6 @@ pub struct ParseIntegerOptions {
 }
 
 impl ParseIntegerOptions {
-    // CONSTRUCTORS
-
-    /// Get access to the ParseIntegerOptions builder.
-    #[inline(always)]
-    pub fn builder() -> ParseIntegerOptionsBuilder {
-        ParseIntegerOptionsBuilder::new()
-    }
-
     // PRE-DEFINED CONSTANTS
 
     /// Create new options to parse the default binary format.
@@ -258,12 +259,19 @@ impl ParseIntegerOptions {
     }
 }
 
+impl Buildable for ParseIntegerOptions {
+    type Builder = ParseIntegerOptionsBuilder;
+
+    #[inline(always)]
+    fn builder() -> Self::Builder {
+        Self::Builder::new()
+    }
+}
+
 impl Default for ParseIntegerOptions {
     #[inline]
-    fn default() -> ParseIntegerOptions {
-        ParseIntegerOptions::builder()
-            .build()
-            .unwrap()
+    fn default() -> Self {
+        Self::builder().build().unwrap()
     }
 }
 
@@ -271,6 +279,7 @@ impl Default for ParseIntegerOptions {
 // -----------
 
 /// Builder for `ParseFloatOptions`.
+#[repr(C)]
 #[derive(Debug)]
 pub struct ParseFloatOptionsBuilder {
     lossy: bool,
@@ -349,9 +358,13 @@ impl ParseFloatOptionsBuilder {
         self.infinity_string = infinity_string;
         self
     }
+}
+
+impl Builder for ParseFloatOptionsBuilder {
+    type Buildable = ParseFloatOptions;
 
     #[inline(always)]
-    pub fn build(self) -> Option<ParseFloatOptions> {
+    fn build(self) -> Option<Self::Buildable> {
         let radix = to_radix(self.radix)?;
         let exponent_char = to_exponent_char(self.exponent_char, radix)?;
         let format = to_format_float(self.format, radix, exponent_char)?;
@@ -359,7 +372,7 @@ impl ParseFloatOptionsBuilder {
         let nan_string = to_nan_string(self.nan_string)?;
         let inf_string = to_inf_string(self.inf_string)?;
         let infinity_string = to_infinity_string(self.infinity_string, inf_string)?;
-        Some(ParseFloatOptions {
+        Some(Self::Buildable {
             lossy: self.lossy,
             exponent_char: exponent_char,
             radix: radix,
@@ -378,8 +391,10 @@ impl ParseFloatOptionsBuilder {
 ///
 /// ```rust
 /// # extern crate lexical_core;
+/// use lexical_core::{ParseFloatOptions, Builder, Buildable};
+///
 /// # pub fn main() {
-/// let options = lexical_core::ParseFloatOptions::builder()
+/// let options = ParseFloatOptions::builder()
 ///     .lossy(true)
 ///     .exponent_char(b'e')
 ///     .nan_string(b"NaN")
@@ -389,6 +404,7 @@ impl ParseFloatOptionsBuilder {
 ///     .unwrap();
 /// # }
 /// ```
+#[repr(C)]
 #[derive(Clone, Debug)]
 pub struct ParseFloatOptions {
     /// Use the lossy, fast parser.
@@ -417,14 +433,6 @@ pub struct ParseFloatOptions {
 }
 
 impl ParseFloatOptions {
-    // CONSTRUCTORS
-
-    /// Get access to the ParseIntegerOptions builder.
-    #[inline(always)]
-    pub fn builder() -> ParseFloatOptionsBuilder {
-        ParseFloatOptionsBuilder::new()
-    }
-
     // PRE-DEFINED CONSTANTS
 
     /// Create new options to parse the default binary format.
@@ -507,18 +515,26 @@ impl ParseFloatOptions {
     }
 }
 
+impl Buildable for ParseFloatOptions {
+    type Builder = ParseFloatOptionsBuilder;
+
+    #[inline(always)]
+    fn builder() -> Self::Builder {
+        Self::Builder::new()
+    }
+}
+
 impl Default for ParseFloatOptions {
     #[inline]
-    fn default() -> ParseFloatOptions {
-        ParseFloatOptions::builder()
-            .build()
-            .unwrap()
+    fn default() -> Self {
+        Self::builder().build().unwrap()
     }
 }
 
 // WRITE INTEGER
 // -------------
 
+#[repr(C)]
 #[derive(Debug)]
 pub struct WriteIntegerOptionsBuilder {
     radix: u8,
@@ -538,11 +554,15 @@ impl WriteIntegerOptionsBuilder {
         self.radix = radix;
         self
     }
+}
+
+impl Builder for WriteIntegerOptionsBuilder {
+    type Buildable = WriteIntegerOptions;
 
     #[inline(always)]
-    pub fn build(self) -> Option<WriteIntegerOptions> {
+    fn build(self) -> Option<Self::Buildable> {
         let radix = to_radix(self.radix)?;
-        Some(WriteIntegerOptions { radix })
+        Some(Self::Buildable { radix })
     }
 }
 
@@ -552,12 +572,15 @@ impl WriteIntegerOptionsBuilder {
 ///
 /// ```rust
 /// # extern crate lexical_core;
+/// use lexical_core::{WriteIntegerOptions, Builder, Buildable};
+///
 /// # pub fn main() {
-/// let options = lexical_core::WriteIntegerOptions::builder()
+/// let options = WriteIntegerOptions::builder()
 ///     .build()
 ///     .unwrap();
 /// # }
 /// ```
+#[repr(C)]
 #[derive(Clone, Debug)]
 pub struct WriteIntegerOptions {
     /// Radix for integer string.
@@ -565,14 +588,6 @@ pub struct WriteIntegerOptions {
 }
 
 impl WriteIntegerOptions {
-    // CONSTRUCTORS
-
-    /// Get access to the ParseIntegerOptions builder.
-    #[inline(always)]
-    pub fn builder() -> WriteIntegerOptionsBuilder {
-        WriteIntegerOptionsBuilder::new()
-    }
-
     // PRE-DEFINED CONSTANTS
 
     /// Create new options to parse the default binary format.
@@ -612,18 +627,26 @@ impl WriteIntegerOptions {
     }
 }
 
+impl Buildable for WriteIntegerOptions {
+    type Builder = WriteIntegerOptionsBuilder;
+
+    #[inline(always)]
+    fn builder() -> Self::Builder {
+        Self::Builder::new()
+    }
+}
+
 impl Default for WriteIntegerOptions {
     #[inline]
-    fn default() -> WriteIntegerOptions {
-        WriteIntegerOptions::builder()
-            .build()
-            .unwrap()
+    fn default() -> Self {
+        Self::builder().build().unwrap()
     }
 }
 
 // WRITE FLOAT
 // -----------
 
+#[repr(C)]
 #[derive(Debug)]
 pub struct WriteFloatOptionsBuilder {
     exponent_char: u8,
@@ -676,14 +699,18 @@ impl WriteFloatOptionsBuilder {
         self.inf_string = inf_string;
         self
     }
+}
+
+impl Builder for WriteFloatOptionsBuilder {
+    type Buildable = WriteFloatOptions;
 
     #[inline(always)]
-    pub fn build(self) -> Option<WriteFloatOptions> {
+    fn build(self) -> Option<Self::Buildable> {
         let radix = to_radix(self.radix)?;
         let exponent_char = to_exponent_char(self.exponent_char, radix)?;
         let nan_string = to_nan_string(self.nan_string)?;
         let inf_string = to_inf_string(self.inf_string)?;
-        Some(WriteFloatOptions {
+        Some(Self::Buildable {
             exponent_char: exponent_char,
             radix: radix,
             trim_floats: self.trim_floats,
@@ -699,8 +726,10 @@ impl WriteFloatOptionsBuilder {
 ///
 /// ```rust
 /// # extern crate lexical_core;
+/// use lexical_core::{WriteFloatOptions, Builder, Buildable};
+///
 /// # pub fn main() {
-/// let options = lexical_core::WriteFloatOptions::builder()
+/// let options = WriteFloatOptions::builder()
 ///     .exponent_char(b'e')
 ///     .trim_floats(true)
 ///     .nan_string(b"NaN")
@@ -709,6 +738,7 @@ impl WriteFloatOptionsBuilder {
 ///     .unwrap();
 /// # }
 /// ```
+#[repr(C)]
 #[derive(Clone, Debug)]
 pub struct WriteFloatOptions {
     /// Character to designate exponent component.
@@ -729,14 +759,6 @@ pub struct WriteFloatOptions {
 }
 
 impl WriteFloatOptions {
-    // CONSTRUCTORS
-
-    /// Get access to the ParseIntegerOptions builder.
-    #[inline(always)]
-    pub fn builder() -> WriteFloatOptionsBuilder {
-        WriteFloatOptionsBuilder::new()
-    }
-
     // PRE-DEFINED CONSTANTS
 
     /// Create new options to parse the default binary format.
@@ -801,12 +823,19 @@ impl WriteFloatOptions {
     }
 }
 
+impl Buildable for WriteFloatOptions {
+    type Builder = WriteFloatOptionsBuilder;
+
+    #[inline(always)]
+    fn builder() -> Self::Builder {
+        Self::Builder::new()
+    }
+}
+
 impl Default for WriteFloatOptions {
     #[inline]
-    fn default() -> WriteFloatOptions {
-        WriteFloatOptions::builder()
-            .build()
-            .unwrap()
+    fn default() -> Self {
+        Self::builder().build().unwrap()
     }
 }
 

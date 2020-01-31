@@ -40,10 +40,10 @@ union ResultUnion<T: Copy> {
     error: Error,
 }
 
-/// C-compatible result type from parsing strings-to-numbers for FFI.
+/// C-compatible result type.
 ///
-/// This is an FFI-safe result type that is returned by the from range
-/// APIs, for example, `atou8_range`.
+/// This is an FFI-safe result type that we can use to create a stable
+/// interchange format for the parsing API, for example, `atou8_range`.
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct Result<T: Copy> {
