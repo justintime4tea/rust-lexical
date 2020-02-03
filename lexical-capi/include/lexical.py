@@ -349,6 +349,11 @@ class NumberFormat(Structure):
         ("_value", c_uint64)
     ]
 
+    @staticmethod
+    def builder():
+        '''Get NumberFormat builder.'''
+        return NumberFormatBuilder(LIB.lexical_number_format_builder())
+
     if HAVE_FORMAT:
 
         @property
@@ -360,11 +365,6 @@ class NumberFormat(Structure):
             return NumberFormatFlags(self._value & NumberFormatFlags.FlagMask.value)
 
         # FUNCTIONS
-
-        @staticmethod
-        def builder():
-            '''Get NumberFormat builder.'''
-            return NumberFormatBuilder(LIB.lexical_number_format_builder())
 
         @staticmethod
         def permissive():
@@ -687,6 +687,7 @@ if HAVE_FORMAT:
 else:
     class _NumberFormatBuilder(Structure):
         _fields_ = [
+            ('_dummy', c_bool),
         ]
 
         def build(self):

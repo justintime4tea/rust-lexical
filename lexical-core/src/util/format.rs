@@ -690,12 +690,15 @@ if #[cfg(not(feature = "format"))] {
         }
     }
 
-    pub struct NumberFormatBuilder;
+    pub struct NumberFormatBuilder {
+        // Have dummy data to avoid zero-sized types in the API.
+        _phantom: bool
+    }
 
     impl NumberFormatBuilder {
         #[inline(always)]
         const fn new() -> NumberFormatBuilder {
-            NumberFormatBuilder {}
+            NumberFormatBuilder { _phantom: true }
         }
     }
 
