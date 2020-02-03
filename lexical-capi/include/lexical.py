@@ -413,6 +413,7 @@ if HAVE_FORMAT:
             The permissive number format does not require any control
             grammar, besides the presence of mantissa digits.
             '''
+            # TODO(ahuszagh) Change to use the C-API.
             return NumberFormat(NumberFormatFlags.Permissive.value)
 
         @staticmethod
@@ -423,6 +424,7 @@ if HAVE_FORMAT:
             The standard number format is guaranteed to be identical
             to the format expected by Rust's string to number parsers.
             '''
+            # TODO(ahuszagh) Change to use the C-API.
             return NumberFormat(NumberFormatFlags.Standard.value)
 
         @staticmethod
@@ -436,6 +438,7 @@ if HAVE_FORMAT:
 
             * `digit_separator`                         - Character to separate digits.
             '''
+            # TODO(ahuszagh) Change to use the C-API.
 
             if not is_valid_separator(digit_separator):
                 raise ValueError('invalid digit separator {}'.format(digit_separator))
@@ -1574,6 +1577,51 @@ def _option(cls, name):
     Option.__name__ = name
     return Option
 
+# OPTIONS
+
+def _set_exponent_char(builder, exponent_char, callback):
+    if isinstance(exponent_char, str):
+        exponent_char = exponent_char.encode('ascii')
+    if isinstance(exponent_char, (bytes, bytearray)):
+        if len(exponent_char) > 1:
+            raise ValueError("Exponent char must be a single ASCII character.")
+        exponent_char = exponent_char[0]
+    if not isinstance(exponent_char, c_uint8):
+        exponent_char = c_uint8(exponent_char)
+    return callback(builder, exponent_char)
+
+def _set_format(builder, format, callback):
+    if not isinstance(format, NumberFormat):
+        format = NumberFormat(format)
+    return callback(builder, format)
+
+def _set_lossy(builder, lossy, callback):
+    if not isinstance(lossy, c_bool):
+        lossy = c_uint8(lossy)
+    return callback(builder, lossy)
+
+def _set_radix(builder, radix, callback):
+    if not isinstance(radix, c_uint8):
+        radix = c_uint8(radix)
+    return callback(builder, radix)
+
+def _set_rounding(builder, rounding, callback):
+    if not isinstance(rounding, RoundingKind):
+        rounding = RoundingKind(rounding)
+    return callback(builder, rounding)
+
+def _set_string(builder, string, callback):
+    if not isinstance(string, (bytes, bytearray)):
+        raise TypeError('String must be a bytes type.')
+    ptr = _to_u8_ptr(string)
+    length = len(string)
+    return callback(builder, ptr, length)
+
+def _set_trim_floats(builder, trim_floats, callback):
+    if not isinstance(trim_floats, c_bool):
+        trim_floats = c_uint8(trim_floats)
+    return callback(builder, trim_floats)
+
 # PARSE INTEGER OPTIONS
 
 class _ParseIntegerOptionsBuilder(Structure):
@@ -1583,15 +1631,15 @@ class _ParseIntegerOptionsBuilder(Structure):
     ]
 
     def build(self):
-        return LIB.parse_integer_options_build(self)
+        return LIB.lexical_parse_integer_options_build(self)
 
     if HAVE_RADIX:
         def radix(self, radix):
-            return LIB.parse_integer_options_builder_radix(self, radix)
+            return _set_radix(self, radix, LIB.lexical_parse_integer_options_builder_radix)
 
     if HAVE_FORMAT:
         def format(self, format):
-            return LIB.parse_integer_options_builder_format(self, format)
+            return _set_format(self, format, LIB.lexical_parse_integer_options_builder_format)
 
 
 class ParseIntegerOptionsBuilder:
@@ -1606,10 +1654,12 @@ class ParseIntegerOptionsBuilder:
     if HAVE_RADIX:
         def radix(self, radix):
             self.builder = self.builder.radix(radix)
+            return self
 
     if HAVE_FORMAT:
         def format(self, format):
             self.builder = self.builder.format(format)
+            return self
 
 
 class ParseIntegerOptions(Structure):
@@ -1622,7 +1672,7 @@ class ParseIntegerOptions(Structure):
 
     @staticmethod
     def builder():
-        return ParseIntegerOptionsBuilder(LIB.parse_integer_options_builder())
+        return ParseIntegerOptionsBuilder(LIB.lexical_parse_integer_options_builder())
 
     @property
     def radix(self):
@@ -1634,12 +1684,12 @@ class ParseIntegerOptions(Structure):
 
 
 _OptionParseIntegerOptions = _option(ParseIntegerOptions, '_OptionParseIntegerOptions')
-LIB.parse_integer_options_builder.restype = _ParseIntegerOptionsBuilder
-LIB.parse_integer_options_build.restype = _OptionParseIntegerOptions
+LIB.lexical_parse_integer_options_builder.restype = _ParseIntegerOptionsBuilder
+LIB.lexical_parse_integer_options_build.restype = _OptionParseIntegerOptions
 if HAVE_RADIX:
-    LIB.parse_integer_options_builder_radix.restype = _ParseIntegerOptionsBuilder
+    LIB.lexical_parse_integer_options_builder_radix.restype = _ParseIntegerOptionsBuilder
 if HAVE_FORMAT:
-    LIB.parse_integer_options_builder_format.restype = _ParseIntegerOptionsBuilder
+    LIB.lexical_parse_integer_options_builder_format.restype = _ParseIntegerOptionsBuilder
 
 # PARSE FLOAT OPTIONS
 
@@ -1649,7 +1699,7 @@ class _ParseFloatOptionsBuilder(Structure):
         ('_exponent_char', c_uint8),
         ('_radix', c_uint8),
         ('_format', NumberFormat),
-        ('_rounding', c_int32),
+        ('_rounding', RoundingKind),
         ('_nan_string_ptr', POINTER(c_ubyte)),
         ('_nan_string_length', c_size_t),
         ('_inf_string_ptr', POINTER(c_ubyte)),
@@ -1659,40 +1709,34 @@ class _ParseFloatOptionsBuilder(Structure):
     ]
 
     def build(self):
-        return LIB.parse_float_options_build(self)
+        return LIB.lexical_parse_float_options_build(self)
 
     def lossy(self, lossy):
-        return LIB.parse_float_options_builder_lossy(self, lossy)
+        return _set_lossy(self, lossy, LIB.lexical_parse_float_options_builder_lossy)
 
     def exponent_char(self, exponent_char):
-        return LIB.parse_float_options_builder_exponent_char(self, exponent_char)
+        return _set_exponent_char(self, exponent_char, LIB.lexical_parse_float_options_builder_exponent_char)
 
     def nan_string(self, nan_string):
-        ptr = _to_u8_ptr(nan_string)
-        length = len(nan_string)
-        return LIB.parse_float_options_builder_nan_string(self, ptr, length)
+        return _set_string(self, nan_string, LIB.lexical_parse_float_options_builder_nan_string)
 
     def inf_string(self, inf_string):
-        ptr = _to_u8_ptr(inf_string)
-        length = len(inf_string)
-        return LIB.parse_float_options_builder_inf_string(self, ptr, length)
+        return _set_string(self, inf_string, LIB.lexical_parse_float_options_builder_inf_string)
 
     def infinity_string(self, infinity_string):
-        ptr = _to_u8_ptr(infinity_string)
-        length = len(infinity_string)
-        return LIB.parse_float_options_builder_infinity_string(self, ptr, length)
+        return _set_string(self, infinity_string, LIB.lexical_parse_float_options_builder_infinity_string)
 
     if HAVE_RADIX:
         def radix(self, radix):
-            return LIB.parse_float_options_builder_radix(self, radix)
+            return _set_radix(self, radix, LIB.lexical_parse_float_options_builder_radix)
 
     if HAVE_FORMAT:
         def format(self, format):
-            return LIB.parse_float_options_builder_format(self, format)
+            return _set_format(self, format, LIB.lexical_parse_float_options_builder_format)
 
     if HAVE_ROUNDING:
         def rounding(self, rounding):
-            return LIB.parse_float_options_builder_rounding(self, rounding)
+            return _set_rounding(self, rounding, LIB.lexical_parse_float_options_builder_rounding)
 
 class ParseFloatOptionsBuilder:
     '''Wrapper around _ParseFloatOptionsBuilder.'''
@@ -1714,33 +1758,47 @@ class ParseFloatOptionsBuilder:
 
     def lossy(self, lossy):
         self.builder = self.builder.lossy(lossy)
+        return self
 
     def exponent_char(self, exponent_char):
         self.builder = self.builder.exponent_char(exponent_char)
+        return self
 
     def nan_string(self, nan_string):
+        if isinstance(nan_string, str):
+            nan_string = nan_string.encode('ascii')
         self._nan_string = nan_string
         self.builder = self.builder.nan_string(nan_string)
+        return self
 
     def inf_string(self, inf_string):
+        if isinstance(inf_string, str):
+            inf_string = inf_string.encode('ascii')
         self._inf_string = inf_string
         self.builder = self.builder.inf_string(inf_string)
+        return self
 
     def infinity_string(self, infinity_string):
+        if isinstance(infinity_string, str):
+            infinity_string = infinity_string.encode('ascii')
         self._infinity_string = infinity_string
         self.builder = self.builder.infinity_string(infinity_string)
+        return self
 
     if HAVE_RADIX:
         def radix(self, radix):
             self.builder = self.builder.radix(radix)
+            return self
 
     if HAVE_FORMAT:
         def format(self, format):
             self.builder = self.builder.format(format)
+            return self
 
     if HAVE_ROUNDING:
         def rounding(self, rounding):
             self.builder = self.builder.rounding(rounding)
+            return self
 
 class _ParseFloatOptions(Structure):
     _fields_ = [
@@ -1769,7 +1827,7 @@ class ParseFloatOptions:
 
     @staticmethod
     def builder():
-        return ParseFloatOptionsBuilder(LIB.parse_float_options_builder())
+        return ParseFloatOptionsBuilder(LIB.lexical_parse_float_options_builder())
 
     @property
     def lossy(self):
@@ -1777,7 +1835,7 @@ class ParseFloatOptions:
 
     @property
     def exponent_char(self):
-        return self._options._exponent_char
+        return chr(self._options._exponent_char)
 
     @property
     def radix(self):
@@ -1810,19 +1868,19 @@ class ParseFloatOptions:
         return string_at(ptr, length).decode('ascii')
 
 _OptionParseFloatOptions = _option(_ParseFloatOptions, '_OptionParseFloatOptions')
-LIB.parse_float_options_builder.restype = _ParseFloatOptionsBuilder
-LIB.parse_float_options_build.restype = _OptionParseFloatOptions
-LIB.parse_float_options_builder_lossy.restype = _ParseFloatOptionsBuilder
-LIB.parse_float_options_builder_exponent_char.restype = _ParseFloatOptionsBuilder
-LIB.parse_float_options_builder_nan_string.restype = _ParseFloatOptionsBuilder
-LIB.parse_float_options_builder_inf_string.restype = _ParseFloatOptionsBuilder
-LIB.parse_float_options_builder_infinity_string.restype = _ParseFloatOptionsBuilder
+LIB.lexical_parse_float_options_builder.restype = _ParseFloatOptionsBuilder
+LIB.lexical_parse_float_options_build.restype = _OptionParseFloatOptions
+LIB.lexical_parse_float_options_builder_lossy.restype = _ParseFloatOptionsBuilder
+LIB.lexical_parse_float_options_builder_exponent_char.restype = _ParseFloatOptionsBuilder
+LIB.lexical_parse_float_options_builder_nan_string.restype = _ParseFloatOptionsBuilder
+LIB.lexical_parse_float_options_builder_inf_string.restype = _ParseFloatOptionsBuilder
+LIB.lexical_parse_float_options_builder_infinity_string.restype = _ParseFloatOptionsBuilder
 if HAVE_RADIX:
-    LIB.parse_float_options_builder_radix.restype = _ParseFloatOptionsBuilder
+    LIB.lexical_parse_float_options_builder_radix.restype = _ParseFloatOptionsBuilder
 if HAVE_FORMAT:
-    LIB.parse_float_options_builder_format.restype = _ParseFloatOptionsBuilder
+    LIB.lexical_parse_float_options_builder_format.restype = _ParseFloatOptionsBuilder
 if HAVE_ROUNDING:
-    LIB.parse_float_options_builder_rounding.restype = _ParseFloatOptionsBuilder
+    LIB.lexical_parse_float_options_builder_rounding.restype = _ParseFloatOptionsBuilder
 
 # WRITE INTEGER OPTIONS
 
@@ -1832,11 +1890,11 @@ class _WriteIntegerOptionsBuilder(Structure):
     ]
 
     def build(self):
-        return LIB.write_integer_options_build(self)
+        return LIB.lexical_write_integer_options_build(self)
 
     if HAVE_RADIX:
         def radix(self, radix):
-            return LIB.write_integer_options_builder_radix(self, radix)
+            return _set_radix(self, radix, LIB.lexical_write_integer_options_builder_radix)
 
 
 class WriteIntegerOptionsBuilder:
@@ -1851,6 +1909,7 @@ class WriteIntegerOptionsBuilder:
     if HAVE_RADIX:
         def radix(self, radix):
             self.builder = self.builder.radix(radix)
+            return self
 
 class WriteIntegerOptions(Structure):
     '''Options to customize writing integers.'''
@@ -1861,17 +1920,17 @@ class WriteIntegerOptions(Structure):
 
     @staticmethod
     def builder():
-        return WriteIntegerOptionsBuilder(LIB.write_integer_options_builder())
+        return WriteIntegerOptionsBuilder(LIB.lexical_write_integer_options_builder())
 
     @property
     def radix(self):
         return self._radix
 
 _OptionWriteIntegerOptions = _option(WriteIntegerOptions, '_OptionWriteIntegerOptions')
-LIB.write_integer_options_builder.restype = _WriteIntegerOptionsBuilder
-LIB.write_integer_options_build.restype = _OptionWriteIntegerOptions
+LIB.lexical_write_integer_options_builder.restype = _WriteIntegerOptionsBuilder
+LIB.lexical_write_integer_options_build.restype = _OptionWriteIntegerOptions
 if HAVE_RADIX:
-    LIB.write_integer_options_builder_radix.restype = _WriteIntegerOptionsBuilder
+    LIB.lexical_write_integer_options_builder_radix.restype = _WriteIntegerOptionsBuilder
 
 # WRITE FLOAT OPTIONS
 
@@ -1887,27 +1946,23 @@ class _WriteFloatOptionsBuilder(Structure):
     ]
 
     def build(self):
-        return LIB.write_float_options_build(self)
+        return LIB.lexical_write_float_options_build(self)
 
     def exponent_char(self, exponent_char):
-        return LIB.write_float_options_builder_exponent_char(self, exponent_char)
+        return _set_exponent_char(self, exponent_char, LIB.lexical_write_float_options_builder_exponent_char)
 
     def trim_floats(self, trim_floats):
-        return LIB.write_float_options_builder_trim_floats(self, trim_floats)
+        return _set_trim_floats(self, trim_floats, LIB.lexical_write_float_options_builder_trim_floats)
 
     def nan_string(self, nan_string):
-        ptr = _to_u8_ptr(nan_string)
-        length = len(nan_string)
-        return LIB.write_float_options_builder_nan_string(self, ptr, length)
+        return _set_string(self, nan_string, LIB.lexical_write_float_options_builder_nan_string)
 
     def inf_string(self, inf_string):
-        ptr = _to_u8_ptr(inf_string)
-        length = len(inf_string)
-        return LIB.write_float_options_builder_inf_string(self, ptr, length)
+        return _set_string(self, inf_string, LIB.lexical_write_float_options_builder_inf_string)
 
     if HAVE_RADIX:
         def radix(self, radix):
-            return LIB.write_float_options_builder_radix(self, radix)
+            return _set_radix(self, radix, LIB.lexical_write_float_options_builder_radix)
 
 class WriteFloatOptionsBuilder:
     '''Wrapper around _WriteFloatOptionsBuilder.'''
@@ -1927,21 +1982,30 @@ class WriteFloatOptionsBuilder:
 
     def exponent_char(self, exponent_char):
         self.builder = self.builder.exponent_char(exponent_char)
+        return self
 
     def trim_floats(self, trim_floats):
         self.builder = self.builder.trim_floats(trim_floats)
+        return self
 
     def nan_string(self, nan_string):
+        if isinstance(nan_string, str):
+            nan_string = nan_string.encode('ascii')
         self._nan_string = nan_string
         self.builder = self.builder.nan_string(nan_string)
+        return self
 
     def inf_string(self, inf_string):
+        if isinstance(inf_string, str):
+            inf_string = inf_string.encode('ascii')
         self._inf_string = inf_string
         self.builder = self.builder.inf_string(inf_string)
+        return self
 
     if HAVE_RADIX:
         def radix(self, radix):
             self.builder = self.builder.radix(radix)
+            return self
 
 class _WriteFloatOptions(Structure):
     _fields_ = [
@@ -1965,11 +2029,11 @@ class WriteFloatOptions:
 
     @staticmethod
     def builder():
-        return WriteFloatOptionsBuilder(LIB.write_float_options_builder())
+        return WriteFloatOptionsBuilder(LIB.lexical_write_float_options_builder())
 
     @property
     def exponent_char(self):
-        return self._options._exponent_char
+        return chr(self._options._exponent_char)
 
     @property
     def radix(self):
@@ -1992,14 +2056,14 @@ class WriteFloatOptions:
         return string_at(ptr, length).decode('ascii')
 
 _OptionWriteFloatOptions = _option(_WriteFloatOptions, '_OptionWriteFloatOptions')
-LIB.write_float_options_builder.restype = _WriteFloatOptionsBuilder
-LIB.write_float_options_build.restype = _OptionWriteFloatOptions
-LIB.write_float_options_builder_exponent_char.restype = _WriteFloatOptionsBuilder
-LIB.write_float_options_builder_trim_floats.restype = _WriteFloatOptionsBuilder
-LIB.write_float_options_builder_nan_string.restype = _WriteFloatOptionsBuilder
-LIB.write_float_options_builder_inf_string.restype = _WriteFloatOptionsBuilder
+LIB.lexical_write_float_options_builder.restype = _WriteFloatOptionsBuilder
+LIB.lexical_write_float_options_build.restype = _OptionWriteFloatOptions
+LIB.lexical_write_float_options_builder_exponent_char.restype = _WriteFloatOptionsBuilder
+LIB.lexical_write_float_options_builder_trim_floats.restype = _WriteFloatOptionsBuilder
+LIB.lexical_write_float_options_builder_nan_string.restype = _WriteFloatOptionsBuilder
+LIB.lexical_write_float_options_builder_inf_string.restype = _WriteFloatOptionsBuilder
 if HAVE_RADIX:
-    LIB.write_float_options_builder_radix.restype = _WriteFloatOptionsBuilder
+    LIB.lexical_write_float_options_builder_radix.restype = _WriteFloatOptionsBuilder
 
 # RESULT TAG
 
@@ -2263,6 +2327,7 @@ def _to_string_with_options(name, max_size, type, value, options):
     if not isinstance(value, type):
         value = type(value)
     cb = getattr(LIB, name)
+    options = getattr(options, '_options', options)
     first = _to_u8_ptr(buffer)
     last = _to_u8_ptr(_to_address(first) + len(buffer))
     ptr = cb(value, pointer(options), first, last)
@@ -2477,6 +2542,7 @@ def _parse_with_options(name, data, options):
     if not isinstance(data, (bytes, bytearray)):
         raise TypeError("Must parse from bytes.")
     cb = getattr(LIB, name)
+    options = getattr(options, '_options', options)
     first = _to_u8_ptr(data)
     last = _to_u8_ptr(_to_address(first) + len(data))
     result = cb(first, last, pointer(options))

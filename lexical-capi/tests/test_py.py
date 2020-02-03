@@ -48,83 +48,6 @@ os.chdir(RELEASE_DIR)
 import lexical
 
 
-# TODO(ahuszagh) Need to move to option tests.
-#class ConfigTests(unittest.TestCase):
-#    '''Test the config functions for string literals.'''
-#
-#    def test_get_nan_string(self):
-#        self.assertEqual(lexical.get_nan_string(), 'NaN')
-#
-#    def test_set_nan_string(self):
-#        lexical.set_nan_string('NaN')
-#
-#    def test_get_inf_string(self):
-#        self.assertEqual(lexical.get_inf_string(), 'inf')
-#
-#    def test_set_inf_string(self):
-#        lexical.set_inf_string('inf')
-#
-#    def test_get_infinity_string(self):
-#        self.assertEqual(lexical.get_infinity_string(), 'infinity')
-#
-#    def test_set_infinity_string(self):
-#        lexical.set_infinity_string('infinity')
-#
-#    def test_get_exponent_default_char(self):
-#        self.assertEqual(lexical.get_exponent_default_char(), 'e')
-#
-#    def test_set_exponent_default_char(self):
-#        lexical.set_exponent_default_char('e')
-#
-#    def test_get_exponent_backup_char(self):
-#        if lexical.HAVE_RADIX:
-#            self.assertEqual(lexical.get_exponent_backup_char(), '^')
-#
-#    def test_set_exponent_backup_char(self):
-#        if lexical.HAVE_RADIX:
-#            lexical.set_exponent_backup_char('^')
-#
-#    def test_get_float_rounding(self):
-#        if lexical.HAVE_ROUNDING:
-            #self.assertEqual(lexical.get_float_rounding(), lexical.RoundingKind.NearestTieEven)
-#
-#    def test_set_float_rounding(self):
-#        if lexical.HAVE_ROUNDING:
-#            lexical.set_float_rounding(lexical.RoundingKind.NearestTieEven)
-#
-#    def test_number_format(self):
-#        if lexical.HAVE_FORMAT:
-#            format = lexical.NumberFormat.ignore(b'_')
-#            self.assertEqual(format.digit_separator, b'_')
-            #self.assertEqual(format.flags, lexical.NumberFormatFlags.DigitSeparatorFlagMask)
-#            self.assertFalse(format.required_integer_digits)
-#            self.assertTrue(format.integer_internal_digit_separator)
-#
-#            format = lexical.NumberFormat.permissive()
-#            self.assertEqual(format.digit_separator, b'\x00')
-#            self.assertEqual(format.flags, lexical.NumberFormatFlags.Permissive)
-#
-#            format = lexical.NumberFormat.standard()
-#            self.assertEqual(format.digit_separator, b'\x00')
-#            self.assertEqual(format.flags, lexical.NumberFormatFlags.Standard)
-#
-#            format = lexical.NumberFormat.compile(
-#                digit_separator=b'_',
-#                no_special=True,
-#                integer_internal_digit_separator=True
-#            )
-#            self.assertEqual(format.digit_separator, b'_')
-#            self.assertTrue(format.no_special)
-#            self.assertTrue(format.integer_internal_digit_separator)
-#            self.assertTrue(format.internal_digit_separator)
-#            self.assertFalse(format.integer_leading_digit_separator)
-#
-#            format = lexical.NumberFormat.Json
-#            self.assertEqual(format.digit_separator, b'\x00')
-#            self.assertTrue(format.required_digits)
-#            self.assertTrue(format.no_special)
-
-
 class GlobalTests(unittest.TestCase):
     '''Test the global config variables.'''
 
@@ -240,6 +163,77 @@ class ErrorTests(unittest.TestCase):
         self.assertTrue(self.invalid_leading_zeros.is_invalid_leading_zeros())
 
 
+class ParseIntegerOptionsTests(unittest.TestCase):
+    '''Test ParseIntegerOptions and related structures.'''
+
+    def test_builder(self):
+        builder = lexical.ParseIntegerOptions.builder()
+        if lexical.HAVE_RADIX:
+            builder = builder.radix(2)
+        if lexical.HAVE_FORMAT:
+            builder = builder.format(lexical.NumberFormat.Json)
+        options = builder.build()
+        self.assertIsInstance(options.radix, int)
+        self.assertIsInstance(options.format, lexical.NumberFormat)
+
+
+class ParseFloatOptionsTests(unittest.TestCase):
+    '''Test ParseFloatOptions and related structures.'''
+
+    def test_builder(self):
+        builder = lexical.ParseFloatOptions.builder()
+        builder = builder.lossy(True)
+        builder = builder.exponent_char('e')
+        builder = builder.nan_string('NAN')
+        builder = builder.inf_string('INF')
+        builder = builder.infinity_string('INFINITY')
+        if lexical.HAVE_RADIX:
+            builder = builder.radix(2)
+        if lexical.HAVE_FORMAT:
+            builder = builder.format(lexical.NumberFormat.Json)
+        if lexical.HAVE_ROUNDING:
+            builder = builder.format(lexical.RoundingKind.TowardZero)
+        options = builder.build()
+        self.assertEqual(options.lossy, True)
+        self.assertEqual(options.exponent_char, 'e')
+        self.assertEqual(options.nan_string, 'NAN')
+        self.assertEqual(options.inf_string, 'INF')
+        self.assertEqual(options.infinity_string, 'INFINITY')
+        self.assertIsInstance(options.radix, int)
+        self.assertIsInstance(options.format, lexical.NumberFormat)
+        self.assertIsInstance(options.rounding, lexical.RoundingKind)
+
+
+class WriteIntegerOptionsTests(unittest.TestCase):
+    '''Test WriteIntegerOptions and related structures.'''
+
+    def test_builder(self):
+        builder = lexical.WriteIntegerOptions.builder()
+        if lexical.HAVE_RADIX:
+            builder = builder.radix(2)
+        options = builder.build()
+        self.assertIsInstance(options.radix, int)
+
+
+class WriteFloatOptionsTests(unittest.TestCase):
+    '''Test WriteFloatOptions and related structures.'''
+
+    def test_builder(self):
+        builder = lexical.WriteFloatOptions.builder()
+        builder = builder.exponent_char('e')
+        builder = builder.trim_floats(True)
+        builder = builder.nan_string('NAN')
+        builder = builder.inf_string('INF')
+        if lexical.HAVE_RADIX:
+            builder = builder.radix(2)
+        options = builder.build()
+        self.assertEqual(options.exponent_char, 'e')
+        self.assertEqual(options.trim_floats, True)
+        self.assertEqual(options.nan_string, 'NAN')
+        self.assertEqual(options.inf_string, 'INF')
+        self.assertIsInstance(options.radix, int)
+
+
 class ResultTests(unittest.TestCase):
     '''Test complete and partial result types.'''
 
@@ -344,18 +338,41 @@ class ToStringTests(unittest.TestCase):
     def _test_integer(self, cb):
         self.assertEqual(cb(10), '10')
 
-    def _test_integer_radix(self, cb):
-        self.assertEqual(cb(10, 2), '1010')
-        self.assertEqual(cb(10, 16), 'A')
-        self.assertEqual(cb(10, 10), '10')
+    def _test_integer_options(self, cb):
+        options = lexical.WriteIntegerOptions.builder().build()
+        self.assertEqual(cb(10, options), '10')
+
+        if lexical.HAVE_RADIX:
+            options = lexical.WriteIntegerOptions.builder().radix(2).build()
+            self.assertEqual(cb(10, options), '1010')
+
+            options = lexical.WriteIntegerOptions.builder().radix(10).build()
+            self.assertEqual(cb(10, options), '10')
+
+            options = lexical.WriteIntegerOptions.builder().radix(16).build()
+            self.assertEqual(cb(10, options), 'A')
 
     def _test_float(self, cb):
         self.assertEqual(cb(10.5), '10.5')
 
-    def _test_float_radix(self, cb):
-        self.assertEqual(cb(10.5, 2), '1010.1')
-        self.assertEqual(cb(10.5, 16), 'A.8')
-        self.assertEqual(cb(10.5, 10), '10.5')
+    def _test_float_options(self, cb):
+        options = lexical.WriteFloatOptions.builder().build()
+        self.assertEqual(cb(10.0, options), '10.0')
+        self.assertEqual(cb(10.5, options), '10.5')
+
+        options = lexical.WriteFloatOptions.builder().trim_floats(True).build()
+        self.assertEqual(cb(10.0, options), '10')
+        self.assertEqual(cb(10.5, options), '10.5')
+
+        if lexical.HAVE_RADIX:
+            options = lexical.WriteFloatOptions.builder().radix(2).build()
+            self.assertEqual(cb(10.5, options), '1010.1')
+
+            options = lexical.WriteFloatOptions.builder().radix(10).build()
+            self.assertEqual(cb(10.5, options), '10.5')
+
+            options = lexical.WriteFloatOptions.builder().radix(16).build()
+            self.assertEqual(cb(10.5, options), 'A.8')
 
     def test_i8toa(self):
         self._test_integer(lexical.i8toa)
@@ -393,54 +410,41 @@ class ToStringTests(unittest.TestCase):
     def test_f64toa(self):
         self._test_float(lexical.f64toa)
 
-# TODO(ahuszagh) Need to be option tests.
-#    def test_i8toa_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._test_integer_radix(lexical.i8toa_radix)
-#
-#    def test_i16toa_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._test_integer_radix(lexical.i16toa_radix)
-#
-#    def test_i32toa_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._test_integer_radix(lexical.i32toa_radix)
-#
-#    def test_i64toa_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._test_integer_radix(lexical.i64toa_radix)
-#
-#    def test_isizetoa_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._test_integer_radix(lexical.isizetoa_radix)
-#
-#    def test_u8toa_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._test_integer_radix(lexical.u8toa_radix)
-#
-#    def test_u16toa_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._test_integer_radix(lexical.u16toa_radix)
-#
-#    def test_u32toa_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._test_integer_radix(lexical.u32toa_radix)
-#
-#    def test_u64toa_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._test_integer_radix(lexical.u64toa_radix)
-#
-#    def test_usizetoa_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._test_integer_radix(lexical.usizetoa_radix)
-#
-#    def test_f32toa_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._test_float_radix(lexical.f32toa_radix)
-#
-#    def test_f64toa_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._test_float_radix(lexical.f64toa_radix)
+    def test_i8toa_with_options(self):
+        self._test_integer_options(lexical.i8toa_with_options)
+
+    def test_i16toa_with_options(self):
+        self._test_integer_options(lexical.i16toa_with_options)
+
+    def test_i32toa_with_options(self):
+        self._test_integer_options(lexical.i32toa_with_options)
+
+    def test_i64toa_with_options(self):
+        self._test_integer_options(lexical.i64toa_with_options)
+
+    def test_isizetoa_with_options(self):
+        self._test_integer_options(lexical.isizetoa_with_options)
+
+    def test_u8toa_with_options(self):
+        self._test_integer_options(lexical.u8toa_with_options)
+
+    def test_u16toa_with_options(self):
+        self._test_integer_options(lexical.u16toa_with_options)
+
+    def test_u32toa_with_options(self):
+        self._test_integer_options(lexical.u32toa_with_options)
+
+    def test_u64toa_with_options(self):
+        self._test_integer_options(lexical.u64toa_with_options)
+
+    def test_usizetoa_with_options(self):
+        self._test_integer_options(lexical.usizetoa_with_options)
+
+    def test_f32toa_with_options(self):
+        self._test_float_options(lexical.f32toa_with_options)
+
+    def test_f64toa_with_options(self):
+        self._test_float_options(lexical.f64toa_with_options)
 
 
 class ParseTests(unittest.TestCase):
@@ -464,32 +468,65 @@ class ParseTests(unittest.TestCase):
             with self.assertRaises(lexical.LexicalError):
                 callback('10e+', *args)
 
-#    def _complete_radix_test(self, callback, value_type, *args):
-#        # TODO(ahuszagh) Need to be option tests.
-#        self.assertEqual(callback('1010', 2, *args), value_type(10))
-#        self.assertEqual(callback('10', 10, *args), value_type(10))
-#        self.assertEqual(callback('A', 16, *args), value_type(10))
-#        with self.assertRaises(lexical.LexicalError):
-#            callback('10102', 2, *args)
-#        with self.assertRaises(lexical.LexicalError):
-#            callback('10a', 10, *args)
-#        with self.assertRaises(lexical.LexicalError):
-#            callback('AG', 16, *args)
-#        with self.assertRaises(lexical.LexicalError):
-#            callback('', 10, *args)
-#
-#        if issubclass(value_type, float):
-#            # Specialized tests for floats.
-#            self.assertEqual(callback('1010.1', 2, *args), value_type(10.5))
-#            self.assertEqual(callback('10.5', 10, *args), value_type(10.5))
-#            self.assertEqual(callback('A.8', 16, *args), value_type(10.5))
-#            self.assertEqual(callback('10e5', 10, *args), value_type(10e5))
-#            with self.assertRaises(lexical.LexicalError):
-#                callback('.', 10, *args)
-#            with self.assertRaises(lexical.LexicalError):
-#                callback('e5', 10, *args)
-#            with self.assertRaises(lexical.LexicalError):
-#                callback('10e+', 10, *args)
+    def _complete_with_options_test(self, callback, value_type, options_type):
+        options = options_type.builder().build()
+        with self.assertRaises(lexical.LexicalError):
+            callback('', options)
+
+        self.assertEqual(callback('10', options), value_type(10))
+        with self.assertRaises(lexical.LexicalError):
+            callback('10a', options)
+
+        if lexical.HAVE_RADIX:
+            options = options_type.builder().radix(2).build()
+            self.assertEqual(callback('1010', options), value_type(10))
+            with self.assertRaises(lexical.LexicalError):
+                callback('10102', options)
+
+            options = options_type.builder().radix(10).build()
+            self.assertEqual(callback('10', options), value_type(10))
+            with self.assertRaises(lexical.LexicalError):
+                callback('10a', options)
+
+            options = options_type.builder().radix(16).build()
+            self.assertEqual(callback('A', options), value_type(10))
+            with self.assertRaises(lexical.LexicalError):
+                callback('AG', options)
+
+        if lexical.HAVE_FORMAT:
+            options = options_type.builder().format(lexical.NumberFormat.FsharpString).build()
+            self.assertEqual(callback('1_0', options), value_type(10))
+            with self.assertRaises(lexical.LexicalError):
+                callback('1_0a', options)
+
+        if issubclass(value_type, float):
+            # Specialized tests for floats.
+            options = options_type.builder().build()
+            with self.assertRaises(lexical.LexicalError):
+                callback('.', options)
+
+            with self.assertRaises(lexical.LexicalError):
+                callback('e5', options)
+
+            with self.assertRaises(lexical.LexicalError):
+                callback('10e+', options)
+
+            self.assertEqual(callback('10.5', options), value_type(10.5))
+            self.assertEqual(callback('10e5', options), value_type(10e5))
+
+            if lexical.HAVE_RADIX:
+                options = options_type.builder().radix(2).build()
+                self.assertEqual(callback('1010.1', options), value_type(10.5))
+
+                options = options_type.builder().radix(10).build()
+                self.assertEqual(callback('10.5', options), value_type(10.5))
+
+                options = options_type.builder().radix(16).build()
+                self.assertEqual(callback('A.8', options), value_type(10.5))
+
+            if lexical.HAVE_FORMAT:
+                options = options_type.builder().format(lexical.NumberFormat.FsharpString).build()
+                self.assertEqual(callback('1_0.5_1', options), value_type(10.51))
 
     def _partial_test(self, callback, value_type, *args):
         self.assertEqual(callback('10', *args), (value_type(10), 2))
@@ -508,28 +545,60 @@ class ParseTests(unittest.TestCase):
             with self.assertRaises(lexical.LexicalError):
                 callback('10e+', *args)
 
-#    def _partial_radix_test(self, callback, value_type, *args):
-#        self.assertEqual(callback('1010', 2, *args), (value_type(10), 4))
-#        self.assertEqual(callback('10', 10, *args), (value_type(10), 2))
-#        self.assertEqual(callback('A', 16, *args), (value_type(10), 1))
-#        self.assertEqual(callback('10102', 2, *args), (value_type(10), 4))
-#        self.assertEqual(callback('10a', 10, *args), (value_type(10), 2))
-#        self.assertEqual(callback('AG', 16, *args), (value_type(10), 1))
-#        with self.assertRaises(lexical.LexicalError):
-#            callback('', 10, *args)
-#
-#        if issubclass(value_type, float):
-#            # Specialized tests for floats.
-#            self.assertEqual(callback('1010.1', 2, *args), (value_type(10.5), 6))
-#            self.assertEqual(callback('10.5', 10, *args), (value_type(10.5), 4))
-#            self.assertEqual(callback('A.8', 16, *args), (value_type(10.5), 3))
-#            self.assertEqual(callback('10e5', 10, *args), (value_type(10e5), 4))
-#            with self.assertRaises(lexical.LexicalError):
-#                callback('.', 10, *args)
-#            with self.assertRaises(lexical.LexicalError):
-#                callback('e5', 10, *args)
-#            with self.assertRaises(lexical.LexicalError):
-#                callback('10e+', 10, *args)
+    def _partial_with_options_test(self, callback, value_type, options_type):
+        options = options_type.builder().build()
+        with self.assertRaises(lexical.LexicalError):
+            callback('', options)
+
+        self.assertEqual(callback('10', options), (value_type(10), 2))
+        self.assertEqual(callback('10a', options), (value_type(10), 2))
+
+        if lexical.HAVE_RADIX:
+            options = options_type.builder().radix(2).build()
+            self.assertEqual(callback('1010', options), (value_type(10), 4))
+            self.assertEqual(callback('10102', options), (value_type(10), 4))
+
+            options = options_type.builder().radix(10).build()
+            self.assertEqual(callback('10', options), (value_type(10), 2))
+            self.assertEqual(callback('10a', options), (value_type(10), 2))
+
+            options = options_type.builder().radix(16).build()
+            self.assertEqual(callback('A', options), (value_type(10), 1))
+            self.assertEqual(callback('AG', options), (value_type(10), 1))
+
+        if lexical.HAVE_FORMAT:
+            options = options_type.builder().format(lexical.NumberFormat.FsharpString).build()
+            self.assertEqual(callback('1_0', options), (value_type(10), 3))
+            self.assertEqual(callback('1_0a', options), (value_type(10), 3))
+
+        if issubclass(value_type, float):
+            # Specialized tests for floats.
+            options = options_type.builder().build()
+            with self.assertRaises(lexical.LexicalError):
+                callback('.', options)
+
+            with self.assertRaises(lexical.LexicalError):
+                callback('e5', options)
+
+            with self.assertRaises(lexical.LexicalError):
+                callback('10e+', options)
+
+            self.assertEqual(callback('10.5', options), (value_type(10.5), 4))
+            self.assertEqual(callback('10e5', options), (value_type(10e5), 4))
+
+            if lexical.HAVE_RADIX:
+                options = options_type.builder().radix(2).build()
+                self.assertEqual(callback('1010.1', options), (value_type(10.5), 6))
+
+                options = options_type.builder().radix(10).build()
+                self.assertEqual(callback('10.5', options), (value_type(10.5), 4))
+
+                options = options_type.builder().radix(16).build()
+                self.assertEqual(callback('A.8', options), (value_type(10.5), 3))
+
+            if lexical.HAVE_FORMAT:
+                options = options_type.builder().format(lexical.NumberFormat.FsharpString).build()
+                self.assertEqual(callback('1_0.5_1', options), (value_type(10.51), 7))
 
     def test_atoi8(self):
         self._complete_test(lexical.atoi8, int)
@@ -567,13 +636,6 @@ class ParseTests(unittest.TestCase):
     def test_atof64(self):
         self._complete_test(lexical.atof64, float)
 
-# TODO(ahuszagh) Make it use option.
-#    def test_atof32_lossy(self):
-#        self._complete_test(lexical.atof32_lossy, float)
-#
-#    def test_atof64_lossy(self):
-#        self._complete_test(lexical.atof64_lossy, float)
-
     def test_atoi8_partial(self):
         self._partial_test(lexical.atoi8_partial, int)
 
@@ -610,348 +672,77 @@ class ParseTests(unittest.TestCase):
     def test_atof64_partial(self):
         self._partial_test(lexical.atof64_partial, float)
 
-# TODO(ahuszagh) Make it use option.
-#    def test_atof32_partial_lossy(self):
-#        self._partial_test(lexical.atof32_partial_lossy, float)
-#
-#    def test_atof64_partial_lossy(self):
-#        self._partial_test(lexical.atof64_partial_lossy, float)
-#
-#    def test_atoi8_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._complete_radix_test(lexical.atoi8_radix, int)
-#
-#    def test_atoi16_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._complete_radix_test(lexical.atoi16_radix, int)
-#
-#    def test_atoi32_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._complete_radix_test(lexical.atoi32_radix, int)
-#
-#    def test_atoi64_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._complete_radix_test(lexical.atoi64_radix, int)
-#
-#    def test_atoisize_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._complete_radix_test(lexical.atoisize_radix, int)
-#
-#    def test_atou8_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._complete_radix_test(lexical.atou8_radix, int)
-#
-#    def test_atou16_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._complete_radix_test(lexical.atou16_radix, int)
-#
-#    def test_atou32_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._complete_radix_test(lexical.atou32_radix, int)
-#
-#    def test_atou64_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._complete_radix_test(lexical.atou64_radix, int)
-#
-#    def test_atousize_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._complete_radix_test(lexical.atousize_radix, int)
-#
-#    def test_atof32_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._complete_radix_test(lexical.atof32_radix, float)
-#
-#    def test_atof64_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._complete_radix_test(lexical.atof64_radix, float)
-#
-#    def test_atof32_lossy_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._complete_radix_test(lexical.atof32_lossy_radix, float)
-#
-#    def test_atof64_lossy_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._complete_radix_test(lexical.atof64_lossy_radix, float)
-#
-#    def test_atoi8_partial_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._partial_radix_test(lexical.atoi8_partial_radix, int)
-#
-#    def test_atoi16_partial_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._partial_radix_test(lexical.atoi16_partial_radix, int)
-#
-#    def test_atoi32_partial_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._partial_radix_test(lexical.atoi32_partial_radix, int)
-#
-#    def test_atoi64_partial_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._partial_radix_test(lexical.atoi64_partial_radix, int)
-#
-#    def test_atoisize_partial_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._partial_radix_test(lexical.atoisize_partial_radix, int)
-#
-#    def test_atou8_partial_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._partial_radix_test(lexical.atou8_partial_radix, int)
-#
-#    def test_atou16_partial_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._partial_radix_test(lexical.atou16_partial_radix, int)
-#
-#    def test_atou32_partial_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._partial_radix_test(lexical.atou32_partial_radix, int)
-#
-#    def test_atou64_partial_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._partial_radix_test(lexical.atou64_partial_radix, int)
-#
-#    def test_atousize_partial_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._partial_radix_test(lexical.atousize_partial_radix, int)
-#
-#    def test_atof32_partial_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._partial_radix_test(lexical.atof32_partial_radix, float)
-#
-#    def test_atof64_partial_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._partial_radix_test(lexical.atof64_partial_radix, float)
-#
-#    def test_atof32_partial_lossy_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._partial_radix_test(lexical.atof32_partial_lossy_radix, float)
-#
-#    def test_atof64_partial_lossy_radix(self):
-#        if lexical.HAVE_RADIX:
-#            self._partial_radix_test(lexical.atof64_partial_lossy_radix, float)
-#
-#    def test_atoi8_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._complete_test(lexical.atoi8_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atoi16_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._complete_test(lexical.atoi16_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atoi32_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._complete_test(lexical.atoi32_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atoi64_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._complete_test(lexical.atoi64_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atoisize_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._complete_test(lexical.atoisize_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atou8_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._complete_test(lexical.atou8_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atou16_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._complete_test(lexical.atou16_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atou32_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._complete_test(lexical.atou32_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atou64_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._complete_test(lexical.atou64_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atousize_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._complete_test(lexical.atousize_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atof32_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._complete_test(lexical.atof32_format, float, lexical.NumberFormat.RustString)
-#
-#    def test_atof64_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._complete_test(lexical.atof64_format, float, lexical.NumberFormat.RustString)
-#
-#    def test_atof32_lossy_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._complete_test(lexical.atof32_lossy_format, float, lexical.NumberFormat.RustString)
-#
-#    def test_atof64_lossy_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._complete_test(lexical.atof64_lossy_format, float, lexical.NumberFormat.RustString)
-#
-#    def test_atoi8_partial_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._partial_test(lexical.atoi8_partial_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atoi16_partial_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._partial_test(lexical.atoi16_partial_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atoi32_partial_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._partial_test(lexical.atoi32_partial_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atoi64_partial_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._partial_test(lexical.atoi64_partial_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atoisize_partial_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._partial_test(lexical.atoisize_partial_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atou8_partial_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._partial_test(lexical.atou8_partial_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atou16_partial_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._partial_test(lexical.atou16_partial_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atou32_partial_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._partial_test(lexical.atou32_partial_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atou64_partial_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._partial_test(lexical.atou64_partial_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atousize_partial_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._partial_test(lexical.atousize_partial_format, int, lexical.NumberFormat.RustString)
-#
-#    def test_atof32_partial_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._partial_test(lexical.atof32_partial_format, float, lexical.NumberFormat.RustString)
-#
-#    def test_atof64_partial_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._partial_test(lexical.atof64_partial_format, float, lexical.NumberFormat.RustString)
-#
-#    def test_atof32_partial_lossy_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._partial_test(lexical.atof32_partial_lossy_format, float, lexical.NumberFormat.RustString)
-#
-#    def test_atof64_partial_lossy_format(self):
-#        if lexical.HAVE_FORMAT:
-#            self._partial_test(lexical.atof64_partial_lossy_format, float, lexical.NumberFormat.RustString)
-#
-#    def test_atoi8_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._complete_radix_test(lexical.atoi8_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atoi16_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._complete_radix_test(lexical.atoi16_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atoi32_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._complete_radix_test(lexical.atoi32_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atoi64_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._complete_radix_test(lexical.atoi64_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atoisize_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._complete_radix_test(lexical.atoisize_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atou8_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._complete_radix_test(lexical.atou8_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atou16_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._complete_radix_test(lexical.atou16_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atou32_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._complete_radix_test(lexical.atou32_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atou64_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._complete_radix_test(lexical.atou64_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atousize_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._complete_radix_test(lexical.atousize_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atof32_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._complete_radix_test(lexical.atof32_format_radix, float, lexical.NumberFormat.RustString)
-#
-#    def test_atof64_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._complete_radix_test(lexical.atof64_format_radix, float, lexical.NumberFormat.RustString)
-#
-#    def test_atof32_lossy_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._complete_radix_test(lexical.atof32_lossy_format_radix, float, lexical.NumberFormat.RustString)
-#
-#    def test_atof64_lossy_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._complete_radix_test(lexical.atof64_lossy_format_radix, float, lexical.NumberFormat.RustString)
-#
-#    def test_atoi8_partial_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._partial_radix_test(lexical.atoi8_partial_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atoi16_partial_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._partial_radix_test(lexical.atoi16_partial_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atoi32_partial_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._partial_radix_test(lexical.atoi32_partial_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atoi64_partial_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._partial_radix_test(lexical.atoi64_partial_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atoisize_partial_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._partial_radix_test(lexical.atoisize_partial_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atou8_partial_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._partial_radix_test(lexical.atou8_partial_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atou16_partial_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._partial_radix_test(lexical.atou16_partial_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atou32_partial_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._partial_radix_test(lexical.atou32_partial_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atou64_partial_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._partial_radix_test(lexical.atou64_partial_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atousize_partial_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._partial_radix_test(lexical.atousize_partial_format_radix, int, lexical.NumberFormat.RustString)
-#
-#    def test_atof32_partial_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._partial_radix_test(lexical.atof32_partial_format_radix, float, lexical.NumberFormat.RustString)
-#
-#    def test_atof64_partial_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._partial_radix_test(lexical.atof64_partial_format_radix, float, lexical.NumberFormat.RustString)
-#
-#    def test_atof32_partial_lossy_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._partial_radix_test(lexical.atof32_partial_lossy_format_radix, float, lexical.NumberFormat.RustString)
-#
-#    def test_atof64_partial_lossy_format_radix(self):
-#        if lexical.HAVE_RADIX and lexical.HAVE_FORMAT:
-#            self._partial_radix_test(lexical.atof64_partial_lossy_format_radix, float, lexical.NumberFormat.RustString)
+    def test_atoi8_with_options(self):
+        self._complete_with_options_test(lexical.atoi8_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atoi16_with_options(self):
+        self._complete_with_options_test(lexical.atoi16_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atoi32_with_options(self):
+        self._complete_with_options_test(lexical.atoi32_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atoi64_with_options(self):
+        self._complete_with_options_test(lexical.atoi64_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atoisize_with_options(self):
+        self._complete_with_options_test(lexical.atoisize_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atou8_with_options(self):
+        self._complete_with_options_test(lexical.atou8_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atou16_with_options(self):
+        self._complete_with_options_test(lexical.atou16_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atou32_with_options(self):
+        self._complete_with_options_test(lexical.atou32_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atou64_with_options(self):
+        self._complete_with_options_test(lexical.atou64_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atousize_with_options(self):
+        self._complete_with_options_test(lexical.atousize_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atof32_with_options(self):
+        self._complete_with_options_test(lexical.atof32_with_options, float, lexical.ParseFloatOptions)
+
+    def test_atof64_with_options(self):
+        self._complete_with_options_test(lexical.atof64_with_options, float, lexical.ParseFloatOptions)
+
+    def test_atoi8_partial_with_options(self):
+        self._partial_with_options_test(lexical.atoi8_partial_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atoi16_partial_with_options(self):
+        self._partial_with_options_test(lexical.atoi16_partial_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atoi32_partial_with_options(self):
+        self._partial_with_options_test(lexical.atoi32_partial_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atoi64_partial_with_options(self):
+        self._partial_with_options_test(lexical.atoi64_partial_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atoisize_partial_with_options(self):
+        self._partial_with_options_test(lexical.atoisize_partial_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atou8_partial_with_options(self):
+        self._partial_with_options_test(lexical.atou8_partial_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atou16_partial_with_options(self):
+        self._partial_with_options_test(lexical.atou16_partial_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atou32_partial_with_options(self):
+        self._partial_with_options_test(lexical.atou32_partial_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atou64_partial_with_options(self):
+        self._partial_with_options_test(lexical.atou64_partial_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atousize_partial_with_options(self):
+        self._partial_with_options_test(lexical.atousize_partial_with_options, int, lexical.ParseIntegerOptions)
+
+    def test_atof32_partial_with_options(self):
+        self._partial_with_options_test(lexical.atof32_partial_with_options, float, lexical.ParseFloatOptions)
+
+    def test_atof64_partial_with_options(self):
+        self._partial_with_options_test(lexical.atof64_partial_with_options, float, lexical.ParseFloatOptions)
 
 
 if __name__ == '__main__':
