@@ -72,12 +72,110 @@ else:
 if LIB is None:
     raise OSError("Unavailable to find path to the liblexical_capi shared library.")
 
+# HELPERS
+# -------
+
+# OPTION TAG
+
+class OptionTag(enum.Enum):
+    '''Tag for the option tagged enum.'''
+
+    Some = 0
+    NotAny = 1
+
+# OPTION
+
+def _option(cls, name):
+    class Option(Structure):
+        _fields_ = [
+            ("_tag", c_uint),
+            ("data", cls)
+        ]
+
+        @property
+        def tag(self):
+            return OptionTag(self._tag)
+
+        @tag.setter
+        def tag(self, value):
+            if not isinstance(value, OptionTag):
+                raise TypeError('Expected OptionTag')
+            self._tag = value.value
+
+        def into(self):
+            '''Extract value from structure.'''
+
+            if self.tag == OptionTag.NotAny:
+                raise RuntimeError('Option was None.')
+            return self.data
+
+    Option.__name__ = name
+    return Option
+
+# CONVERSIONS
+
+def _to_address(ptr):
+    return cast(ptr, c_voidp).value
+
+def _to_u8_ptr(address):
+    return cast(address, POINTER(c_ubyte))
+
+def _distance(first, last):
+    return _to_address(last) - _to_address(first)
+
+def _to_c_ubyte(char):
+    '''Convert single character to c_uint8.'''
+
+    if isinstance(char, str):
+        char = char.encode('ascii')
+    if isinstance(char, (bytes, bytearray)):
+        if len(char) > 1:
+            raise ValueError("Must be a single ASCII character.")
+        char = char[0]
+    if not isinstance(char, c_uint8):
+        char = c_uint8(char)
+    return char
+
+def _to_bytes(string):
+    '''Encode string to bytes when parsing.'''
+
+    if isinstance(string, str):
+        string = string.encode('UTF-8')
+    return string
+
+def _to_string(string):
+    '''Convert string to (ptr, length).'''
+
+    if not isinstance(string, (bytes, bytearray)):
+        raise TypeError('String must be a bytes type.')
+    return (_to_u8_ptr(string), len(string))
+
+def _to_range(string):
+    '''Convert byte string to (first, last) pointer range.'''
+
+    if not isinstance(string, (bytes, bytearray)):
+        raise TypeError("Must parse from bytes.")
+    first = _to_u8_ptr(string)
+    last = _to_u8_ptr(_to_address(first) + len(string))
+    return (first, last)
+
+def _to_type(value, type):
+    '''Convert generic value to type.'''
+
+    if not isinstance(value, type):
+        value = type(value)
+    return value
+
+def _from_range(ptr, length):
+    '''Convert buffer range to string.'''
+    return string_at(ptr, length)
+
 # FEATURES
 # --------
 
-HAVE_FORMAT = hasattr(LIB, 'parse_float_options_builder_format')
-HAVE_RADIX = hasattr(LIB, 'parse_float_options_builder_radix')
-HAVE_ROUNDING = hasattr(LIB, 'parse_float_options_builder_rounding')
+HAVE_FORMAT = hasattr(LIB, 'lexical_parse_float_options_builder_format')
+HAVE_RADIX = hasattr(LIB, 'lexical_parse_float_options_builder_radix')
+HAVE_ROUNDING = hasattr(LIB, 'lexical_parse_float_options_builder_rounding')
 
 class RoundingKind(Structure):
     '''Immutable wrapper around enumerations for float rounding type.'''
@@ -97,11 +195,11 @@ if HAVE_ROUNDING:
         TowardZero = 4
 
     # PRE-DEFINED CONSTANTS
-    RoundingKind.NearestTieEven = RoundingKind(RoundingKindEnum.NearestTieEven)
-    RoundingKind.NearestTieAwayZero = RoundingKind(RoundingKindEnum.NearestTieAwayZero)
-    RoundingKind.TowardPositiveInfinity = RoundingKind(RoundingKindEnum.TowardPositiveInfinity)
-    RoundingKind.TowardNegativeInfinity = RoundingKind(RoundingKindEnum.TowardNegativeInfinity)
-    RoundingKind.TowardZero = RoundingKind(RoundingKindEnum.TowardZero)
+    RoundingKind.NearestTieEven = RoundingKind(RoundingKindEnum.NearestTieEven.value)
+    RoundingKind.NearestTieAwayZero = RoundingKind(RoundingKindEnum.NearestTieAwayZero.value)
+    RoundingKind.TowardPositiveInfinity = RoundingKind(RoundingKindEnum.TowardPositiveInfinity.value)
+    RoundingKind.TowardNegativeInfinity = RoundingKind(RoundingKindEnum.TowardNegativeInfinity.value)
+    RoundingKind.TowardZero = RoundingKind(RoundingKindEnum.TowardZero.value)
 
 if HAVE_FORMAT:
 
@@ -111,9 +209,7 @@ if HAVE_FORMAT:
 
     def digit_separator_from_flags(flags):
         '''Extract digit separator byte from 32-bit flags.'''
-        return chr(flags >> 56).encode('ascii')
-
-    # TODO(ahuszagh) Should have ignore on the Rust side.
+        return chr(flags >> 56)
 
 
     class NumberFormatFlags(enum.Flag):
@@ -246,12 +342,14 @@ if HAVE_FORMAT:
         Standard = RequiredExponentDigits
         Ignore = DigitSeparatorFlagMask
 
-    class NumberFormat(Structure):
-        '''Immutable wrapper around bitflags for a serialized number format.'''
+class NumberFormat(Structure):
+    '''Immutable wrapper around bitflags for a serialized number format.'''
 
-        _fields_ = [
-            ("_value", c_uint64)
-        ]
+    _fields_ = [
+        ("_value", c_uint64)
+    ]
+
+    if HAVE_FORMAT:
 
         @property
         def _digit_separator(self):
@@ -263,147 +361,10 @@ if HAVE_FORMAT:
 
         # FUNCTIONS
 
-# TODO(ahuszagh) Change to use the builder API.
-#        def compile(
-#            digit_separator=b'_',
-#            required_integer_digits=False,
-#            required_fraction_digits=False,
-#            required_exponent_digits=False,
-#            no_positive_mantissa_sign=False,
-#            required_mantissa_sign=False,
-#            no_exponent_notation=False,
-#            no_positive_exponent_sign=False,
-#            required_exponent_sign=False,
-#            no_exponent_without_fraction=False,
-#            no_special=False,
-#            case_sensitive_special=False,
-#            no_integer_leading_zeros=False,
-#            no_float_leading_zeros=False,
-#            integer_internal_digit_separator=False,
-#            fraction_internal_digit_separator=False,
-#            exponent_internal_digit_separator=False,
-#            integer_leading_digit_separator=False,
-#            fraction_leading_digit_separator=False,
-#            exponent_leading_digit_separator=False,
-#            integer_trailing_digit_separator=False,
-#            fraction_trailing_digit_separator=False,
-#            exponent_trailing_digit_separator=False,
-#            integer_consecutive_digit_separator=False,
-#            fraction_consecutive_digit_separator=False,
-#            exponent_consecutive_digit_separator=False,
-#            special_digit_separator=False
-#        ):
-#            '''
-#            Compile float format value from specifications.
-#
-#            * `digit_separator`                         - Character to separate digits.
-#            * `required_integer_digits`                 - If digits are required before the decimal point.
-#            * `required_fraction_digits`                - If digits are required after the decimal point.
-#            * `required_exponent_digits`                - If digits are required after the exponent character.
-#            * `no_positive_mantissa_sign`               - If positive sign before the mantissa is not allowed.
-#            * `required_mantissa_sign`                  - If positive sign before the mantissa is required.
-#            * `no_exponent_notation`                    - If exponent notation is not allowed.
-#            * `no_positive_exponent_sign`               - If positive sign before the exponent is not allowed.
-#            * `required_exponent_sign`                  - If sign before the exponent is required.
-#            * `no_exponent_without_fraction`            - If exponent without fraction is not allowed.
-#            * `no_special`                              - If special (non-finite) values are not allowed.
-#            * `case_sensitive_special`                  - If special (non-finite) values are case-sensitive.
-#            * `integer_internal_digit_separator`        - If digit separators are allowed between integer digits.
-#            * `fraction_internal_digit_separator`       - If digit separators are allowed between fraction digits.
-#            * `exponent_internal_digit_separator`       - If digit separators are allowed between exponent digits.
-#            * `integer_leading_digit_separator`         - If a digit separator is allowed before any integer digits.
-#            * `fraction_leading_digit_separator`        - If a digit separator is allowed before any fraction digits.
-#            * `exponent_leading_digit_separator`        - If a digit separator is allowed before any exponent digits.
-#            * `integer_trailing_digit_separator`        - If a digit separator is allowed after any integer digits.
-#            * `fraction_trailing_digit_separator`       - If a digit separator is allowed after any fraction digits.
-#            * `exponent_trailing_digit_separator`       - If a digit separator is allowed after any exponent digits.
-#            * `integer_consecutive_digit_separator`     - If multiple consecutive integer digit separators are allowed.
-#            * `fraction_consecutive_digit_separator`    - If multiple consecutive fraction digit separators are allowed.
-#            * `special_digit_separator`                 - If any digit separators are allowed in special (non-finite) values.
-#
-#            Returns the value if it was able to compile the format,
-#            otherwise, returns None. Digit separators must not be
-#            in the character group `[A-Za-z0-9+.-]`, nor be equal to
-#            `get_exponent_default_char` or `get_exponent_backup_char`.
-#            '''
-#
-#            flags = 0
-#            # Generic flags.
-#            if required_integer_digits:
-#                flags |= NumberFormatFlags.RequiredIntegerDigits.value
-#            if required_fraction_digits:
-#                flags |= NumberFormatFlags.RequiredFractionDigits.value
-#            if required_exponent_digits:
-#                flags |= NumberFormatFlags.RequiredExponentDigits.value
-#            if no_positive_mantissa_sign:
-#                flags |= NumberFormatFlags.NoPositiveMantissaSign.value
-#            if required_mantissa_sign:
-#                flags |= NumberFormatFlags.RequiredMantissaSign.value
-#            if no_exponent_notation:
-#                flags |= NumberFormatFlags.NoExponentNotation.value
-#            if no_positive_exponent_sign:
-#                flags |= NumberFormatFlags.NoPositiveExponentSign.value
-#            if required_exponent_sign:
-#                flags |= NumberFormatFlags.RequiredExponentSign.value
-#            if no_exponent_without_fraction:
-#                flags |= NumberFormatFlags.NoExponentWithoutFraction.value
-#            if no_special:
-#                flags |= NumberFormatFlags.NoSpecial.value
-#            if case_sensitive_special:
-#                flags |= NumberFormatFlags.CaseSensitiveSpecial.value
-#            if no_integer_leading_zeros:
-#                flags |= NumberFormatFlags.NoIntegerLeadingZeros.value
-#            if no_float_leading_zeros:
-#                flags |= NumberFormatFlags.NoFloatLeadingZeros.value
-#
-#            # Digit separator flags.
-#            if integer_internal_digit_separator:
-#                flags |= NumberFormatFlags.IntegerInternalDigitSeparator.value
-#            if fraction_internal_digit_separator:
-#                flags |= NumberFormatFlags.FractionInternalDigitSeparator.value
-#            if exponent_internal_digit_separator:
-#                flags |= NumberFormatFlags.ExponentInternalDigitSeparator.value
-#            if integer_leading_digit_separator:
-#                flags |= NumberFormatFlags.IntegerLeadingDigitSeparator.value
-#            if fraction_leading_digit_separator:
-#                flags |= NumberFormatFlags.FractionLeadingDigitSeparator.value
-#            if exponent_leading_digit_separator:
-#                flags |= NumberFormatFlags.ExponentLeadingDigitSeparator.value
-#            if integer_trailing_digit_separator:
-#                flags |= NumberFormatFlags.IntegerTrailingDigitSeparator.value
-#            if fraction_trailing_digit_separator:
-#                flags |= NumberFormatFlags.FractionTrailingDigitSeparator.value
-#            if exponent_trailing_digit_separator:
-#                flags |= NumberFormatFlags.ExponentTrailingDigitSeparator.value
-#            if integer_consecutive_digit_separator:
-#                flags |= NumberFormatFlags.IntegerConsecutiveDigitSeparator.value
-#            if fraction_consecutive_digit_separator:
-#                flags |= NumberFormatFlags.FractionConsecutiveDigitSeparator.value
-#            if exponent_consecutive_digit_separator:
-#                flags |= NumberFormatFlags.ExponentConsecutiveDigitSeparator.value
-#            if special_digit_separator:
-#                flags |= NumberFormatFlags.SpecialDigitSeparator.value
-#
-#            # Digit separator.
-#            format = NumberFormat(flags)
-#            if format.intersects(NumberFormatFlags.DigitSeparatorFlagMask):
-#                format._value |= digit_separator_to_flags(digit_separator)
-#
-#            # Validation.
-#            is_invalid = (
-#                not is_valid_separator(digit_separator)
-#                or (format.intersects(NumberFormatFlags.NoExponentNotation) and format.intersects(NumberFormatFlags.ExponentFlagMask))
-#                or (no_positive_mantissa_sign and required_mantissa_sign)
-#                or (no_positive_exponent_sign and required_exponent_sign)
-#                or (no_special and (case_sensitive_special or special_digit_separator))
-#                or (format.flags & NumberFormatFlags.IntegerDigitSeparatorFlagMask == NumberFormatFlags.IntegerConsecutiveDigitSeparator)
-#                or (format.flags & NumberFormatFlags.FractionDigitSeparatorFlagMask == NumberFormatFlags.FractionConsecutiveDigitSeparator)
-#                or (format.flags & NumberFormatFlags.ExponentDigitSeparatorFlagMask == NumberFormatFlags.ExponentConsecutiveDigitSeparator)
-#            )
-#            if is_invalid:
-#                raise ValueError('invalid number format with value {}'.format(format))
-#
-#            return format
+        @staticmethod
+        def builder():
+            '''Get NumberFormat builder.'''
+            return NumberFormatBuilder(LIB.lexical_number_format_builder())
 
         @staticmethod
         def permissive():
@@ -413,8 +374,7 @@ if HAVE_FORMAT:
             The permissive number format does not require any control
             grammar, besides the presence of mantissa digits.
             '''
-            # TODO(ahuszagh) Change to use the C-API.
-            return NumberFormat(NumberFormatFlags.Permissive.value)
+            return LIB.lexical_number_format_permissive().into()
 
         @staticmethod
         def standard():
@@ -424,8 +384,7 @@ if HAVE_FORMAT:
             The standard number format is guaranteed to be identical
             to the format expected by Rust's string to number parsers.
             '''
-            # TODO(ahuszagh) Change to use the C-API.
-            return NumberFormat(NumberFormatFlags.Standard.value)
+            return LIB.lexical_number_format_standard().into()
 
         @staticmethod
         def ignore(digit_separator):
@@ -438,13 +397,7 @@ if HAVE_FORMAT:
 
             * `digit_separator`                         - Character to separate digits.
             '''
-            # TODO(ahuszagh) Change to use the C-API.
-
-            if not is_valid_separator(digit_separator):
-                raise ValueError('invalid digit separator {}'.format(digit_separator))
-
-            flags = NumberFormatFlags.Ignore.value | digit_separator_to_flags(digit_separator)
-            return NumberFormat(flags)
+            return LIB.lexical_number_format_ignore(_to_c_ubyte(digit_separator)).into()
 
         def intersects(self, flags):
             '''Determine if a flag'''
@@ -614,6 +567,286 @@ if HAVE_FORMAT:
         def special_digit_separator(self):
             '''Get if any digit separators are allowed in special (non-finite) values.'''
             return self.intersects(NumberFormatFlags.SpecialDigitSeparator)
+
+if HAVE_FORMAT:
+    class _NumberFormatBuilder(Structure):
+        _fields_ = [
+            ('_digit_separator', c_uint8),
+            ('_required_integer_digits', c_bool),
+            ('_required_fraction_digits', c_bool),
+            ('_required_exponent_digits', c_bool),
+            ('_no_positive_mantissa_sign', c_bool),
+            ('_required_mantissa_sign', c_bool),
+            ('_no_exponent_notation', c_bool),
+            ('_no_positive_exponent_sign', c_bool),
+            ('_required_exponent_sign', c_bool),
+            ('_no_exponent_without_fraction', c_bool),
+            ('_no_special', c_bool),
+            ('_case_sensitive_special', c_bool),
+            ('_no_integer_leading_zeros', c_bool),
+            ('_no_float_leading_zeros', c_bool),
+            ('_integer_internal_digit_separator', c_bool),
+            ('_fraction_internal_digit_separator', c_bool),
+            ('_exponent_internal_digit_separator', c_bool),
+            ('_integer_leading_digit_separator', c_bool),
+            ('_fraction_leading_digit_separator', c_bool),
+            ('_exponent_leading_digit_separator', c_bool),
+            ('_integer_trailing_digit_separator', c_bool),
+            ('_fraction_trailing_digit_separator', c_bool),
+            ('_exponent_trailing_digit_separator', c_bool),
+            ('_integer_consecutive_digit_separator', c_bool),
+            ('_fraction_consecutive_digit_separator', c_bool),
+            ('_exponent_consecutive_digit_separator', c_bool),
+            ('_special_digit_separator', c_bool),
+        ]
+
+        def build(self):
+            return LIB.lexical_number_format_build(self)
+
+        def digit_separator(self, digit_separator):
+            return LIB.lexical_number_format_builder_digit_separator(self, _to_c_ubyte(digit_separator))
+
+        def required_integer_digits(self, required_integer_digits):
+            return LIB.lexical_number_format_builder_required_integer_digits(self, _to_type(required_integer_digits, c_bool))
+
+        def required_fraction_digits(self, required_fraction_digits):
+            return LIB.lexical_number_format_builder_required_fraction_digits(self, _to_type(required_fraction_digits, c_bool))
+
+        def required_exponent_digits(self, required_exponent_digits):
+            return LIB.lexical_number_format_builder_required_exponent_digits(self, _to_type(required_exponent_digits, c_bool))
+
+        def no_positive_mantissa_sign(self, no_positive_mantissa_sign):
+            return LIB.lexical_number_format_builder_no_positive_mantissa_sign(self, _to_type(no_positive_mantissa_sign, c_bool))
+
+        def required_mantissa_sign(self, required_mantissa_sign):
+            return LIB.lexical_number_format_builder_required_mantissa_sign(self, _to_type(required_mantissa_sign, c_bool))
+
+        def no_exponent_notation(self, no_exponent_notation):
+            return LIB.lexical_number_format_builder_no_exponent_notation(self, _to_type(no_exponent_notation, c_bool))
+
+        def no_positive_exponent_sign(self, no_positive_exponent_sign):
+            return LIB.lexical_number_format_builder_no_positive_exponent_sign(self, _to_type(no_positive_exponent_sign, c_bool))
+
+        def required_exponent_sign(self, required_exponent_sign):
+            return LIB.lexical_number_format_builder_required_exponent_sign(self, _to_type(required_exponent_sign, c_bool))
+
+        def no_exponent_without_fraction(self, no_exponent_without_fraction):
+            return LIB.lexical_number_format_builder_no_exponent_without_fraction(self, _to_type(no_exponent_without_fraction, c_bool))
+
+        def no_special(self, no_special):
+            return LIB.lexical_number_format_builder_no_special(self, _to_type(no_special, c_bool))
+
+        def case_sensitive_special(self, case_sensitive_special):
+            return LIB.lexical_number_format_builder_case_sensitive_special(self, _to_type(case_sensitive_special, c_bool))
+
+        def no_integer_leading_zeros(self, no_integer_leading_zeros):
+            return LIB.lexical_number_format_builder_no_integer_leading_zeros(self, _to_type(no_integer_leading_zeros, c_bool))
+
+        def no_float_leading_zeros(self, no_float_leading_zeros):
+            return LIB.lexical_number_format_builder_no_float_leading_zeros(self, _to_type(no_float_leading_zeros, c_bool))
+
+        def integer_internal_digit_separator(self, integer_internal_digit_separator):
+            return LIB.lexical_number_format_builder_integer_internal_digit_separator(self, _to_type(integer_internal_digit_separator, c_bool))
+
+        def fraction_internal_digit_separator(self, fraction_internal_digit_separator):
+            return LIB.lexical_number_format_builder_fraction_internal_digit_separator(self, _to_type(fraction_internal_digit_separator, c_bool))
+
+        def exponent_internal_digit_separator(self, exponent_internal_digit_separator):
+            return LIB.lexical_number_format_builder_exponent_internal_digit_separator(self, _to_type(exponent_internal_digit_separator, c_bool))
+
+        def integer_leading_digit_separator(self, integer_leading_digit_separator):
+            return LIB.lexical_number_format_builder_integer_leading_digit_separator(self, _to_type(integer_leading_digit_separator, c_bool))
+
+        def fraction_leading_digit_separator(self, fraction_leading_digit_separator):
+            return LIB.lexical_number_format_builder_fraction_leading_digit_separator(self, _to_type(fraction_leading_digit_separator, c_bool))
+
+        def exponent_leading_digit_separator(self, exponent_leading_digit_separator):
+            return LIB.lexical_number_format_builder_exponent_leading_digit_separator(self, _to_type(exponent_leading_digit_separator, c_bool))
+
+        def integer_trailing_digit_separator(self, integer_trailing_digit_separator):
+            return LIB.lexical_number_format_builder_integer_trailing_digit_separator(self, _to_type(integer_trailing_digit_separator, c_bool))
+
+        def fraction_trailing_digit_separator(self, fraction_trailing_digit_separator):
+            return LIB.lexical_number_format_builder_fraction_trailing_digit_separator(self, _to_type(fraction_trailing_digit_separator, c_bool))
+
+        def exponent_trailing_digit_separator(self, exponent_trailing_digit_separator):
+            return LIB.lexical_number_format_builder_exponent_trailing_digit_separator(self, _to_type(exponent_trailing_digit_separator, c_bool))
+
+        def integer_consecutive_digit_separator(self, integer_consecutive_digit_separator):
+            return LIB.lexical_number_format_builder_integer_consecutive_digit_separator(self, _to_type(integer_consecutive_digit_separator, c_bool))
+
+        def fraction_consecutive_digit_separator(self, fraction_consecutive_digit_separator):
+            return LIB.lexical_number_format_builder_fraction_consecutive_digit_separator(self, _to_type(fraction_consecutive_digit_separator, c_bool))
+
+        def exponent_consecutive_digit_separator(self, exponent_consecutive_digit_separator):
+            return LIB.lexical_number_format_builder_exponent_consecutive_digit_separator(self, _to_type(exponent_consecutive_digit_separator, c_bool))
+
+        def special_digit_separator(self, special_digit_separator):
+            return LIB.lexical_number_format_builder_special_digit_separator(self, _to_type(special_digit_separator, c_bool))
+
+else:
+    class _NumberFormatBuilder(Structure):
+        _fields_ = [
+        ]
+
+        def build(self):
+            return LIB.lexical_number_format_build(self)
+
+
+class NumberFormatBuilder:
+    '''Wrapper around _NumberFormatBuilder'''
+
+    def __init__(self, builder):
+        self.builder = builder
+
+    def build(self):
+        return self.builder.build().into()
+
+    if HAVE_FORMAT:
+        def digit_separator(self, digit_separator):
+            self.builder = self.builder.digit_separator(digit_separator)
+            return self
+
+        def required_integer_digits(self, required_integer_digits):
+            self.builder = self.builder.required_integer_digits(required_integer_digits)
+            return self
+
+        def required_fraction_digits(self, required_fraction_digits):
+            self.builder = self.builder.required_fraction_digits(required_fraction_digits)
+            return self
+
+        def required_exponent_digits(self, required_exponent_digits):
+            self.builder = self.builder.required_exponent_digits(required_exponent_digits)
+            return self
+
+        def no_positive_mantissa_sign(self, no_positive_mantissa_sign):
+            self.builder = self.builder.no_positive_mantissa_sign(no_positive_mantissa_sign)
+            return self
+
+        def required_mantissa_sign(self, required_mantissa_sign):
+            self.builder = self.builder.required_mantissa_sign(required_mantissa_sign)
+            return self
+
+        def no_exponent_notation(self, no_exponent_notation):
+            self.builder = self.builder.no_exponent_notation(no_exponent_notation)
+            return self
+
+        def no_positive_exponent_sign(self, no_positive_exponent_sign):
+            self.builder = self.builder.no_positive_exponent_sign(no_positive_exponent_sign)
+            return self
+
+        def required_exponent_sign(self, required_exponent_sign):
+            self.builder = self.builder.required_exponent_sign(required_exponent_sign)
+            return self
+
+        def no_exponent_without_fraction(self, no_exponent_without_fraction):
+            self.builder = self.builder.no_exponent_without_fraction(no_exponent_without_fraction)
+            return self
+
+        def no_special(self, no_special):
+            self.builder = self.builder.no_special(no_special)
+            return self
+
+        def case_sensitive_special(self, case_sensitive_special):
+            self.builder = self.builder.case_sensitive_special(case_sensitive_special)
+            return self
+
+        def no_integer_leading_zeros(self, no_integer_leading_zeros):
+            self.builder = self.builder.no_integer_leading_zeros(no_integer_leading_zeros)
+            return self
+
+        def no_float_leading_zeros(self, no_float_leading_zeros):
+            self.builder = self.builder.no_float_leading_zeros(no_float_leading_zeros)
+            return self
+
+        def integer_internal_digit_separator(self, integer_internal_digit_separator):
+            self.builder = self.builder.integer_internal_digit_separator(integer_internal_digit_separator)
+            return self
+
+        def fraction_internal_digit_separator(self, fraction_internal_digit_separator):
+            self.builder = self.builder.fraction_internal_digit_separator(fraction_internal_digit_separator)
+            return self
+
+        def exponent_internal_digit_separator(self, exponent_internal_digit_separator):
+            self.builder = self.builder.exponent_internal_digit_separator(exponent_internal_digit_separator)
+            return self
+
+        def integer_leading_digit_separator(self, integer_leading_digit_separator):
+            self.builder = self.builder.integer_leading_digit_separator(integer_leading_digit_separator)
+            return self
+
+        def fraction_leading_digit_separator(self, fraction_leading_digit_separator):
+            self.builder = self.builder.fraction_leading_digit_separator(fraction_leading_digit_separator)
+            return self
+
+        def exponent_leading_digit_separator(self, exponent_leading_digit_separator):
+            self.builder = self.builder.exponent_leading_digit_separator(exponent_leading_digit_separator)
+            return self
+
+        def integer_trailing_digit_separator(self, integer_trailing_digit_separator):
+            self.builder = self.builder.integer_trailing_digit_separator(integer_trailing_digit_separator)
+            return self
+
+        def fraction_trailing_digit_separator(self, fraction_trailing_digit_separator):
+            self.builder = self.builder.fraction_trailing_digit_separator(fraction_trailing_digit_separator)
+            return self
+
+        def exponent_trailing_digit_separator(self, exponent_trailing_digit_separator):
+            self.builder = self.builder.exponent_trailing_digit_separator(exponent_trailing_digit_separator)
+            return self
+
+        def integer_consecutive_digit_separator(self, integer_consecutive_digit_separator):
+            self.builder = self.builder.integer_consecutive_digit_separator(integer_consecutive_digit_separator)
+            return self
+
+        def fraction_consecutive_digit_separator(self, fraction_consecutive_digit_separator):
+            self.builder = self.builder.fraction_consecutive_digit_separator(fraction_consecutive_digit_separator)
+            return self
+
+        def exponent_consecutive_digit_separator(self, exponent_consecutive_digit_separator):
+            self.builder = self.builder.exponent_consecutive_digit_separator(exponent_consecutive_digit_separator)
+            return self
+
+        def special_digit_separator(self, special_digit_separator):
+            self.builder = self.builder.special_digit_separator(special_digit_separator)
+            return self
+
+_OptionNumberFormat = _option(NumberFormat, "_OptionNumberFormat")
+LIB.lexical_number_format_builder.restype = _NumberFormatBuilder
+LIB.lexical_number_format_build.restype = _OptionNumberFormat
+if HAVE_FORMAT:
+    LIB.lexical_number_format_builder_digit_separator.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_required_integer_digits.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_required_fraction_digits.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_required_exponent_digits.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_no_positive_mantissa_sign.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_required_mantissa_sign.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_no_exponent_notation.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_no_positive_exponent_sign.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_required_exponent_sign.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_no_exponent_without_fraction.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_no_special.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_case_sensitive_special.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_no_integer_leading_zeros.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_no_float_leading_zeros.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_integer_internal_digit_separator.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_fraction_internal_digit_separator.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_exponent_internal_digit_separator.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_integer_leading_digit_separator.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_fraction_leading_digit_separator.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_exponent_leading_digit_separator.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_integer_trailing_digit_separator.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_fraction_trailing_digit_separator.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_exponent_trailing_digit_separator.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_integer_consecutive_digit_separator.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_fraction_consecutive_digit_separator.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_exponent_consecutive_digit_separator.restype = _NumberFormatBuilder
+    LIB.lexical_number_format_builder_special_digit_separator.restype = _NumberFormatBuilder
+
+if HAVE_FORMAT:
+    LIB.lexical_number_format_permissive.restype = _OptionNumberFormat
+    LIB.lexical_number_format_standard.restype = _OptionNumberFormat
+    LIB.lexical_number_format_ignore.restype = _OptionNumberFormat
 
     # PRE-DEFINED CONSTANTS
 
@@ -1366,16 +1599,6 @@ if HAVE_FORMAT:
         | NumberFormatFlags.CaseSensitiveSpecial.value
     )
 
-else:
-    # not HAVE_FORMAT, need a dummy NumberFormat.
-
-    class NumberFormat(Structure):
-        '''Immutable wrapper around bitflags for a serialized number format.'''
-
-        _fields_ = [
-            ("_value", c_uint64)
-        ]
-
 # GLOBALS
 # -------
 
@@ -1540,87 +1763,28 @@ class LexicalError(Exception):
         else:
             raise ValueError('Invalid ErrorCode for lexical error.')
 
-# OPTION TAG
-
-class OptionTag(enum.Enum):
-    '''Tag for the option tagged enum.'''
-
-    Some = 0
-    NotAny = 1
-
-# OPTION
-
-def _option(cls, name):
-    class Option(Structure):
-        _fields_ = [
-            ("_tag", c_uint),
-            ("data", cls)
-        ]
-
-        @property
-        def tag(self):
-            return OptionTag(self._tag)
-
-        @tag.setter
-        def tag(self, value):
-            if not isinstance(value, OptionTag):
-                raise TypeError('Expected OptionTag')
-            self._tag = value.value
-
-        def into(self):
-            '''Extract value from structure.'''
-
-            if self.tag == OptionTag.NotAny:
-                raise RuntimeError('Option was None.')
-            return self.data
-
-    Option.__name__ = name
-    return Option
-
 # OPTIONS
 
 def _set_exponent_char(builder, exponent_char, callback):
-    if isinstance(exponent_char, str):
-        exponent_char = exponent_char.encode('ascii')
-    if isinstance(exponent_char, (bytes, bytearray)):
-        if len(exponent_char) > 1:
-            raise ValueError("Exponent char must be a single ASCII character.")
-        exponent_char = exponent_char[0]
-    if not isinstance(exponent_char, c_uint8):
-        exponent_char = c_uint8(exponent_char)
-    return callback(builder, exponent_char)
+    return callback(builder, _to_c_ubyte(exponent_char))
 
 def _set_format(builder, format, callback):
-    if not isinstance(format, NumberFormat):
-        format = NumberFormat(format)
-    return callback(builder, format)
+    return callback(builder, _to_type(format, NumberFormat))
 
 def _set_lossy(builder, lossy, callback):
-    if not isinstance(lossy, c_bool):
-        lossy = c_uint8(lossy)
-    return callback(builder, lossy)
+    return callback(builder, _to_type(lossy, c_bool))
 
 def _set_radix(builder, radix, callback):
-    if not isinstance(radix, c_uint8):
-        radix = c_uint8(radix)
-    return callback(builder, radix)
+    return callback(builder, _to_type(radix, c_uint8))
 
 def _set_rounding(builder, rounding, callback):
-    if not isinstance(rounding, RoundingKind):
-        rounding = RoundingKind(rounding)
-    return callback(builder, rounding)
+    return callback(builder, _to_type(rounding, RoundingKind))
 
 def _set_string(builder, string, callback):
-    if not isinstance(string, (bytes, bytearray)):
-        raise TypeError('String must be a bytes type.')
-    ptr = _to_u8_ptr(string)
-    length = len(string)
-    return callback(builder, ptr, length)
+    return callback(builder, *_to_string(string))
 
 def _set_trim_floats(builder, trim_floats, callback):
-    if not isinstance(trim_floats, c_bool):
-        trim_floats = c_uint8(trim_floats)
-    return callback(builder, trim_floats)
+    return callback(builder, _to_type(trim_floats, c_bool))
 
 # PARSE INTEGER OPTIONS
 
@@ -1673,6 +1837,19 @@ class ParseIntegerOptions(Structure):
     @staticmethod
     def builder():
         return ParseIntegerOptionsBuilder(LIB.lexical_parse_integer_options_builder())
+
+    if HAVE_RADIX:
+        @staticmethod
+        def binary():
+            return ParseIntegerOptions.builder().radix(2).build()
+
+        @staticmethod
+        def decimal():
+            return ParseIntegerOptions.builder().build()
+
+        @staticmethod
+        def hexadecimal():
+            return ParseIntegerOptions.builder().radix(16).build()
 
     @property
     def radix(self):
@@ -1829,6 +2006,19 @@ class ParseFloatOptions:
     def builder():
         return ParseFloatOptionsBuilder(LIB.lexical_parse_float_options_builder())
 
+    if HAVE_RADIX:
+        @staticmethod
+        def binary():
+            return ParseFloatOptions.builder().radix(2).build()
+
+        @staticmethod
+        def decimal():
+            return ParseFloatOptions.builder().build()
+
+        @staticmethod
+        def hexadecimal():
+            return ParseFloatOptions.builder().radix(16).exponent_char('p').build()
+
     @property
     def lossy(self):
         return self._options._lossy
@@ -1921,6 +2111,19 @@ class WriteIntegerOptions(Structure):
     @staticmethod
     def builder():
         return WriteIntegerOptionsBuilder(LIB.lexical_write_integer_options_builder())
+
+    if HAVE_RADIX:
+        @staticmethod
+        def binary():
+            return WriteIntegerOptions.builder().radix(2).build()
+
+        @staticmethod
+        def decimal():
+            return WriteIntegerOptions.builder().build()
+
+        @staticmethod
+        def hexadecimal():
+            return WriteIntegerOptions.builder().radix(16).build()
 
     @property
     def radix(self):
@@ -2030,6 +2233,19 @@ class WriteFloatOptions:
     @staticmethod
     def builder():
         return WriteFloatOptionsBuilder(LIB.lexical_write_float_options_builder())
+
+    if HAVE_RADIX:
+        @staticmethod
+        def binary():
+            return WriteFloatOptions.builder().radix(2).build()
+
+        @staticmethod
+        def decimal():
+            return WriteFloatOptions.builder().build()
+
+        @staticmethod
+        def hexadecimal():
+            return WriteFloatOptions.builder().radix(16).exponent_char('p').build()
 
     @property
     def exponent_char(self):
@@ -2235,30 +2451,23 @@ PartialResultF64 = _partial_result(PartialUnionF64, 'f64', 'PartialResultF64')
 # API
 # ---
 
-# HELPERS
+# WRITE
 
-def _to_address(ptr):
-    return cast(ptr, c_voidp).value
-
-def _to_u8_ptr(address):
-    return cast(address, POINTER(c_ubyte))
-
-def _distance(first, last):
-    return _to_address(last) - _to_address(first)
-
-# TO_STRING
-
-def _to_string(name, max_size, type, value):
+def _write(name, max_size, type, value):
+    # Create buffer to write to.
     buffer_type = c_ubyte * max_size
     buffer = buffer_type()
-    if not isinstance(value, type):
-        value = type(value)
+
+    # Call C-API.
     cb = getattr(LIB, name)
+    value = _to_type(value, type)
     first = _to_u8_ptr(buffer)
     last = _to_u8_ptr(_to_address(first) + len(buffer))
     ptr = cb(value, first, last)
+
+    # Calculate length and decode.
     length = _distance(first, ptr)
-    return string_at(buffer, length).decode('ascii')
+    return _from_range(buffer, length).decode('ascii')
 
 LIB.lexical_i8toa.restype = POINTER(c_ubyte)
 LIB.lexical_i16toa.restype = POINTER(c_ubyte)
@@ -2275,64 +2484,70 @@ LIB.lexical_f64toa.restype = POINTER(c_ubyte)
 
 def i8toa(value):
     '''Format 8-bit signed integer to bytes'''
-    return _to_string('lexical_i8toa', I8_FORMATTED_SIZE_DECIMAL, c_int8, value)
+    return _write('lexical_i8toa', I8_FORMATTED_SIZE_DECIMAL, c_int8, value)
 
 def i16toa(value):
     '''Format 16-bit signed integer to bytes'''
-    return _to_string('lexical_i16toa', I16_FORMATTED_SIZE_DECIMAL, c_int16, value)
+    return _write('lexical_i16toa', I16_FORMATTED_SIZE_DECIMAL, c_int16, value)
 
 def i32toa(value):
     '''Format 32-bit signed integer to bytes'''
-    return _to_string('lexical_i32toa', I32_FORMATTED_SIZE_DECIMAL, c_int32, value)
+    return _write('lexical_i32toa', I32_FORMATTED_SIZE_DECIMAL, c_int32, value)
 
 def i64toa(value):
     '''Format 64-bit signed integer to bytes'''
-    return _to_string('lexical_i64toa', I64_FORMATTED_SIZE_DECIMAL, c_int64, value)
+    return _write('lexical_i64toa', I64_FORMATTED_SIZE_DECIMAL, c_int64, value)
 
 def isizetoa(value):
     '''Format ssize_t to bytes'''
-    return _to_string('lexical_isizetoa', ISIZE_FORMATTED_SIZE_DECIMAL, c_ssize_t, value)
+    return _write('lexical_isizetoa', ISIZE_FORMATTED_SIZE_DECIMAL, c_ssize_t, value)
 
 def u8toa(value):
     '''Format 8-bit unsigned integer to bytes'''
-    return _to_string('lexical_u8toa', U8_FORMATTED_SIZE_DECIMAL, c_uint8, value)
+    return _write('lexical_u8toa', U8_FORMATTED_SIZE_DECIMAL, c_uint8, value)
 
 def u16toa(value):
     '''Format 16-bit unsigned integer to bytes'''
-    return _to_string('lexical_u16toa', U16_FORMATTED_SIZE_DECIMAL, c_uint16, value)
+    return _write('lexical_u16toa', U16_FORMATTED_SIZE_DECIMAL, c_uint16, value)
 
 def u32toa(value):
     '''Format 32-bit unsigned integer to bytes'''
-    return _to_string('lexical_u32toa', U32_FORMATTED_SIZE_DECIMAL, c_uint32, value)
+    return _write('lexical_u32toa', U32_FORMATTED_SIZE_DECIMAL, c_uint32, value)
 
 def u64toa(value):
     '''Format 64-bit unsigned integer to bytes'''
-    return _to_string('lexical_u64toa', U64_FORMATTED_SIZE_DECIMAL, c_uint64, value)
+    return _write('lexical_u64toa', U64_FORMATTED_SIZE_DECIMAL, c_uint64, value)
 
 def usizetoa(value):
     '''Format size_t to bytes'''
-    return _to_string('lexical_usizetoa', USIZE_FORMATTED_SIZE_DECIMAL, c_size_t, value)
+    return _write('lexical_usizetoa', USIZE_FORMATTED_SIZE_DECIMAL, c_size_t, value)
 
 def f32toa(value):
     '''Format 32-bit float to bytes'''
-    return _to_string('lexical_f32toa', F32_FORMATTED_SIZE_DECIMAL, c_float, value)
+    return _write('lexical_f32toa', F32_FORMATTED_SIZE_DECIMAL, c_float, value)
 
 def f64toa(value):
     '''Format 64-bit float to bytes'''
-    return _to_string('lexical_f64toa', F64_FORMATTED_SIZE_DECIMAL, c_double, value)
+    return _write('lexical_f64toa', F64_FORMATTED_SIZE_DECIMAL, c_double, value)
 
-def _to_string_with_options(name, max_size, type, value, options):
+# WRITE WITH OPTIONS
+
+def _write_with_options(name, max_size, type, value, options):
+    # Create buffer to write to.
     buffer_type = c_ubyte * max_size
     buffer = buffer_type()
-    if not isinstance(value, type):
-        value = type(value)
+
+    # Call C-API.
     cb = getattr(LIB, name)
+    value = _to_type(value, type)
     options = getattr(options, '_options', options)
     first = _to_u8_ptr(buffer)
     last = _to_u8_ptr(_to_address(first) + len(buffer))
     ptr = cb(value, pointer(options), first, last)
+
+    # Calculate length and decode.
     length = _distance(first, ptr)
-    return string_at(buffer, length).decode('ascii')
+    return _from_range(buffer, length).decode('ascii')
 
 LIB.lexical_i8toa_with_options.restype = POINTER(c_ubyte)
 LIB.lexical_i16toa_with_options.restype = POINTER(c_ubyte)
@@ -2349,62 +2564,58 @@ LIB.lexical_f64toa_with_options.restype = POINTER(c_ubyte)
 
 def i8toa_with_options(value, options):
     '''Format 8-bit signed integer to bytes with options.'''
-    return _to_string_with_options('lexical_i8toa_with_options', I8_FORMATTED_SIZE, c_int8, value, options)
+    return _write_with_options('lexical_i8toa_with_options', I8_FORMATTED_SIZE, c_int8, value, options)
 
 def i16toa_with_options(value, options):
     '''Format 16-bit signed integer to bytes with options.'''
-    return _to_string_with_options('lexical_i16toa_with_options', I16_FORMATTED_SIZE, c_int16, value, options)
+    return _write_with_options('lexical_i16toa_with_options', I16_FORMATTED_SIZE, c_int16, value, options)
 
 def i32toa_with_options(value, options):
     '''Format 32-bit signed integer to bytes with options.'''
-    return _to_string_with_options('lexical_i32toa_with_options', I32_FORMATTED_SIZE, c_int32, value, options)
+    return _write_with_options('lexical_i32toa_with_options', I32_FORMATTED_SIZE, c_int32, value, options)
 
 def i64toa_with_options(value, options):
     '''Format 64-bit signed integer to bytes with options.'''
-    return _to_string_with_options('lexical_i64toa_with_options', I64_FORMATTED_SIZE, c_int64, value, options)
+    return _write_with_options('lexical_i64toa_with_options', I64_FORMATTED_SIZE, c_int64, value, options)
 
 def isizetoa_with_options(value, options):
     '''Format ssize_t to bytes with options.'''
-    return _to_string_with_options('lexical_isizetoa_with_options', ISIZE_FORMATTED_SIZE, c_ssize_t, value, options)
+    return _write_with_options('lexical_isizetoa_with_options', ISIZE_FORMATTED_SIZE, c_ssize_t, value, options)
 
 def u8toa_with_options(value, options):
     '''Format 8-bit unsigned integer to bytes with options.'''
-    return _to_string_with_options('lexical_u8toa_with_options', U8_FORMATTED_SIZE, c_uint8, value, options)
+    return _write_with_options('lexical_u8toa_with_options', U8_FORMATTED_SIZE, c_uint8, value, options)
 
 def u16toa_with_options(value, options):
     '''Format 16-bit unsigned integer to bytes with options.'''
-    return _to_string_with_options('lexical_u16toa_with_options', U16_FORMATTED_SIZE, c_uint16, value, options)
+    return _write_with_options('lexical_u16toa_with_options', U16_FORMATTED_SIZE, c_uint16, value, options)
 
 def u32toa_with_options(value, options):
     '''Format 32-bit unsigned integer to bytes with options.'''
-    return _to_string_with_options('lexical_u32toa_with_options', U32_FORMATTED_SIZE, c_uint32, value, options)
+    return _write_with_options('lexical_u32toa_with_options', U32_FORMATTED_SIZE, c_uint32, value, options)
 
 def u64toa_with_options(value, options):
     '''Format 64-bit unsigned integer to bytes with options.'''
-    return _to_string_with_options('lexical_u64toa_with_options', U64_FORMATTED_SIZE, c_uint64, value, options)
+    return _write_with_options('lexical_u64toa_with_options', U64_FORMATTED_SIZE, c_uint64, value, options)
 
 def usizetoa_with_options(value, options):
     '''Format size_t to bytes with options.'''
-    return _to_string_with_options('lexical_usizetoa_with_options', USIZE_FORMATTED_SIZE, c_size_t, value, options)
+    return _write_with_options('lexical_usizetoa_with_options', USIZE_FORMATTED_SIZE, c_size_t, value, options)
 
 def f32toa_with_options(value, options):
     '''Format 32-bit float to bytes with options.'''
-    return _to_string_with_options('lexical_f32toa_with_options', F32_FORMATTED_SIZE, c_float, value, options)
+    return _write_with_options('lexical_f32toa_with_options', F32_FORMATTED_SIZE, c_float, value, options)
 
 def f64toa_with_options(value, options):
     '''Format 64-bit float to bytes with options.'''
-    return _to_string_with_options('lexical_f64toa_with_options', F64_FORMATTED_SIZE, c_double, value, options)
+    return _write_with_options('lexical_f64toa_with_options', F64_FORMATTED_SIZE, c_double, value, options)
 
 # PARSE
 
 def _parse(name, data):
-    if isinstance(data, str):
-        data = data.encode('ascii')
-    if not isinstance(data, (bytes, bytearray)):
-        raise TypeError("Must parse from bytes.")
+    # Call C-API.
     cb = getattr(LIB, name)
-    first = _to_u8_ptr(data)
-    last = _to_u8_ptr(_to_address(first) + len(data))
+    first, last = _to_range(_to_bytes(data))
     result = cb(first, last)
     return result.into()
 

@@ -53,7 +53,32 @@ create_number_format_builder!(
     fn lexical_number_format_builder_special_digit_separator(special_digit_separator: bool);
 );
 
-////
-//#[doc(hidden)]
-//#[no_mangle]
-//#[cfg(feature = "format")]
+/// Get the permissive number format.
+#[doc(hidden)]
+#[no_mangle]
+#[cfg(feature = "format")]
+pub unsafe extern fn lexical_number_format_permissive()
+    -> crate::option::Option<lexical_core::NumberFormat>
+{
+    lexical_core::NumberFormat::permissive().into()
+}
+
+/// Get the standard number format.
+#[doc(hidden)]
+#[no_mangle]
+#[cfg(feature = "format")]
+pub unsafe extern fn lexical_number_format_standard()
+    -> crate::option::Option<lexical_core::NumberFormat>
+{
+    lexical_core::NumberFormat::standard().into()
+}
+
+/// Get the ignore number format.
+#[doc(hidden)]
+#[no_mangle]
+#[cfg(feature = "format")]
+pub unsafe extern fn lexical_number_format_ignore(digit_separator: u8)
+    -> crate::option::Option<lexical_core::NumberFormat>
+{
+    lexical_core::NumberFormat::ignore(digit_separator).into()
+}

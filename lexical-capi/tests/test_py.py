@@ -163,6 +163,188 @@ class ErrorTests(unittest.TestCase):
         self.assertTrue(self.invalid_leading_zeros.is_invalid_leading_zeros())
 
 
+class NumberFormatTests(unittest.TestCase):
+    '''Test NumberFormat and related structures.'''
+
+    def test_builder(self):
+        builder = lexical.NumberFormat.builder()
+        if lexical.HAVE_FORMAT:
+            builder = builder.digit_separator('_')
+            builder = builder.required_integer_digits(False)
+            builder = builder.required_fraction_digits(False)
+            builder = builder.required_exponent_digits(False)
+            builder = builder.no_positive_mantissa_sign(False)
+            builder = builder.required_mantissa_sign(False)
+            builder = builder.no_exponent_notation(False)
+            builder = builder.no_positive_exponent_sign(False)
+            builder = builder.required_exponent_sign(False)
+            builder = builder.no_exponent_without_fraction(False)
+            builder = builder.no_special(False)
+            builder = builder.case_sensitive_special(False)
+            builder = builder.no_integer_leading_zeros(False)
+            builder = builder.no_float_leading_zeros(False)
+            builder = builder.integer_internal_digit_separator(False)
+            builder = builder.fraction_internal_digit_separator(False)
+            builder = builder.exponent_internal_digit_separator(False)
+            builder = builder.integer_leading_digit_separator(False)
+            builder = builder.fraction_leading_digit_separator(False)
+            builder = builder.exponent_leading_digit_separator(False)
+            builder = builder.integer_trailing_digit_separator(False)
+            builder = builder.fraction_trailing_digit_separator(False)
+            builder = builder.exponent_trailing_digit_separator(False)
+            builder = builder.integer_consecutive_digit_separator(False)
+            builder = builder.fraction_consecutive_digit_separator(False)
+            builder = builder.exponent_consecutive_digit_separator(False)
+            builder = builder.special_digit_separator(False)
+        format = builder.build()
+        if lexical.HAVE_FORMAT:
+            self.assertEqual(format.digit_separator, '\x00')
+            self.assertEqual(format.required_integer_digits, False)
+            self.assertEqual(format.required_fraction_digits, False)
+            self.assertEqual(format.required_exponent_digits, False)
+            self.assertEqual(format.no_positive_mantissa_sign, False)
+            self.assertEqual(format.required_mantissa_sign, False)
+            self.assertEqual(format.no_exponent_notation, False)
+            self.assertEqual(format.no_positive_exponent_sign, False)
+            self.assertEqual(format.required_exponent_sign, False)
+            self.assertEqual(format.no_exponent_without_fraction, False)
+            self.assertEqual(format.no_special, False)
+            self.assertEqual(format.case_sensitive_special, False)
+            self.assertEqual(format.no_integer_leading_zeros, False)
+            self.assertEqual(format.no_float_leading_zeros, False)
+            self.assertEqual(format.integer_internal_digit_separator, False)
+            self.assertEqual(format.fraction_internal_digit_separator, False)
+            self.assertEqual(format.exponent_internal_digit_separator, False)
+            self.assertEqual(format.integer_leading_digit_separator, False)
+            self.assertEqual(format.fraction_leading_digit_separator, False)
+            self.assertEqual(format.exponent_leading_digit_separator, False)
+            self.assertEqual(format.integer_trailing_digit_separator, False)
+            self.assertEqual(format.fraction_trailing_digit_separator, False)
+            self.assertEqual(format.exponent_trailing_digit_separator, False)
+            self.assertEqual(format.integer_consecutive_digit_separator, False)
+            self.assertEqual(format.fraction_consecutive_digit_separator, False)
+            self.assertEqual(format.exponent_consecutive_digit_separator, False)
+            self.assertEqual(format.special_digit_separator, False)
+
+    def test_constants(self):
+        if lexical.HAVE_FORMAT:
+            constants = [
+                lexical.NumberFormat.RustLiteral,
+                lexical.NumberFormat.RustString,
+                lexical.NumberFormat.RustStringStrict,
+                lexical.NumberFormat.PythonLiteral,
+                lexical.NumberFormat.PythonString,
+                lexical.NumberFormat.Cxx17Literal,
+                lexical.NumberFormat.Cxx17String,
+                lexical.NumberFormat.Cxx14Literal,
+                lexical.NumberFormat.Cxx14String,
+                lexical.NumberFormat.Cxx11Literal,
+                lexical.NumberFormat.Cxx11String,
+                lexical.NumberFormat.Cxx03Literal,
+                lexical.NumberFormat.Cxx03String,
+                lexical.NumberFormat.Cxx98Literal,
+                lexical.NumberFormat.Cxx98String,
+                lexical.NumberFormat.C18Literal,
+                lexical.NumberFormat.C18String,
+                lexical.NumberFormat.C11Literal,
+                lexical.NumberFormat.C11String,
+                lexical.NumberFormat.C99Literal,
+                lexical.NumberFormat.C99String,
+                lexical.NumberFormat.C90Literal,
+                lexical.NumberFormat.C90String,
+                lexical.NumberFormat.C89Literal,
+                lexical.NumberFormat.C89String,
+                lexical.NumberFormat.RubyLiteral,
+                lexical.NumberFormat.RubyString,
+                lexical.NumberFormat.SwiftLiteral,
+                lexical.NumberFormat.SwiftString,
+                lexical.NumberFormat.GoLiteral,
+                lexical.NumberFormat.GoString,
+                lexical.NumberFormat.HaskellLiteral,
+                lexical.NumberFormat.HaskellString,
+                lexical.NumberFormat.JavascriptLiteral,
+                lexical.NumberFormat.JavascriptString,
+                lexical.NumberFormat.PerlLiteral,
+                lexical.NumberFormat.PerlString,
+                lexical.NumberFormat.PhpLiteral,
+                lexical.NumberFormat.PhpString,
+                lexical.NumberFormat.JavaLiteral,
+                lexical.NumberFormat.JavaString,
+                lexical.NumberFormat.RLiteral,
+                lexical.NumberFormat.RString,
+                lexical.NumberFormat.KotlinLiteral,
+                lexical.NumberFormat.KotlinString,
+                lexical.NumberFormat.JuliaLiteral,
+                lexical.NumberFormat.JuliaString,
+                lexical.NumberFormat.Csharp7Literal,
+                lexical.NumberFormat.Csharp7String,
+                lexical.NumberFormat.Csharp6Literal,
+                lexical.NumberFormat.Csharp6String,
+                lexical.NumberFormat.Csharp5Literal,
+                lexical.NumberFormat.Csharp5String,
+                lexical.NumberFormat.Csharp4Literal,
+                lexical.NumberFormat.Csharp4String,
+                lexical.NumberFormat.Csharp3Literal,
+                lexical.NumberFormat.Csharp3String,
+                lexical.NumberFormat.Csharp2Literal,
+                lexical.NumberFormat.Csharp2String,
+                lexical.NumberFormat.Csharp1Literal,
+                lexical.NumberFormat.Csharp1String,
+                lexical.NumberFormat.KawaLiteral,
+                lexical.NumberFormat.KawaString,
+                lexical.NumberFormat.GambitcLiteral,
+                lexical.NumberFormat.GambitcString,
+                lexical.NumberFormat.GuileLiteral,
+                lexical.NumberFormat.GuileString,
+                lexical.NumberFormat.ClojureLiteral,
+                lexical.NumberFormat.ClojureString,
+                lexical.NumberFormat.ErlangLiteral,
+                lexical.NumberFormat.ErlangString,
+                lexical.NumberFormat.ElmLiteral,
+                lexical.NumberFormat.ElmString,
+                lexical.NumberFormat.ScalaLiteral,
+                lexical.NumberFormat.ScalaString,
+                lexical.NumberFormat.ElixirLiteral,
+                lexical.NumberFormat.ElixirString,
+                lexical.NumberFormat.FortranLiteral,
+                lexical.NumberFormat.FortranString,
+                lexical.NumberFormat.DLiteral,
+                lexical.NumberFormat.DString,
+                lexical.NumberFormat.CoffeescriptLiteral,
+                lexical.NumberFormat.CoffeescriptString,
+                lexical.NumberFormat.CobolLiteral,
+                lexical.NumberFormat.CobolString,
+                lexical.NumberFormat.FsharpLiteral,
+                lexical.NumberFormat.FsharpString,
+                lexical.NumberFormat.VbLiteral,
+                lexical.NumberFormat.VbString,
+                lexical.NumberFormat.OcamlLiteral,
+                lexical.NumberFormat.OcamlString,
+                lexical.NumberFormat.ObjectivecLiteral,
+                lexical.NumberFormat.ObjectivecString,
+                lexical.NumberFormat.ReasonmlLiteral,
+                lexical.NumberFormat.ReasonmlString,
+                lexical.NumberFormat.OctaveLiteral,
+                lexical.NumberFormat.OctaveString,
+                lexical.NumberFormat.MatlabLiteral,
+                lexical.NumberFormat.MatlabString,
+                lexical.NumberFormat.ZigLiteral,
+                lexical.NumberFormat.ZigString,
+                lexical.NumberFormat.SageLiteral,
+                lexical.NumberFormat.SageString,
+                lexical.NumberFormat.Json,
+                lexical.NumberFormat.Toml,
+                lexical.NumberFormat.Yaml,
+                lexical.NumberFormat.Xml,
+                lexical.NumberFormat.Sqlite,
+                lexical.NumberFormat.Postgresql,
+                lexical.NumberFormat.Mysql,
+                lexical.NumberFormat.Mongodb
+            ]
+            for constant in constants:
+                self.assertIsInstance(constant, lexical.NumberFormat)
+
+
 class ParseIntegerOptionsTests(unittest.TestCase):
     '''Test ParseIntegerOptions and related structures.'''
 
@@ -192,7 +374,7 @@ class ParseFloatOptionsTests(unittest.TestCase):
         if lexical.HAVE_FORMAT:
             builder = builder.format(lexical.NumberFormat.Json)
         if lexical.HAVE_ROUNDING:
-            builder = builder.format(lexical.RoundingKind.TowardZero)
+            builder = builder.rounding(lexical.RoundingKind.TowardZero)
         options = builder.build()
         self.assertEqual(options.lossy, True)
         self.assertEqual(options.exponent_char, 'e')
@@ -343,13 +525,13 @@ class ToStringTests(unittest.TestCase):
         self.assertEqual(cb(10, options), '10')
 
         if lexical.HAVE_RADIX:
-            options = lexical.WriteIntegerOptions.builder().radix(2).build()
+            options = lexical.WriteIntegerOptions.binary()
             self.assertEqual(cb(10, options), '1010')
 
-            options = lexical.WriteIntegerOptions.builder().radix(10).build()
+            options = lexical.WriteIntegerOptions.decimal()
             self.assertEqual(cb(10, options), '10')
 
-            options = lexical.WriteIntegerOptions.builder().radix(16).build()
+            options = lexical.WriteIntegerOptions.hexadecimal()
             self.assertEqual(cb(10, options), 'A')
 
     def _test_float(self, cb):
@@ -365,13 +547,13 @@ class ToStringTests(unittest.TestCase):
         self.assertEqual(cb(10.5, options), '10.5')
 
         if lexical.HAVE_RADIX:
-            options = lexical.WriteFloatOptions.builder().radix(2).build()
+            options = lexical.WriteFloatOptions.binary()
             self.assertEqual(cb(10.5, options), '1010.1')
 
-            options = lexical.WriteFloatOptions.builder().radix(10).build()
+            options = lexical.WriteFloatOptions.decimal()
             self.assertEqual(cb(10.5, options), '10.5')
 
-            options = lexical.WriteFloatOptions.builder().radix(16).build()
+            options = lexical.WriteFloatOptions.hexadecimal()
             self.assertEqual(cb(10.5, options), 'A.8')
 
     def test_i8toa(self):
@@ -478,17 +660,17 @@ class ParseTests(unittest.TestCase):
             callback('10a', options)
 
         if lexical.HAVE_RADIX:
-            options = options_type.builder().radix(2).build()
+            options = options_type.binary()
             self.assertEqual(callback('1010', options), value_type(10))
             with self.assertRaises(lexical.LexicalError):
                 callback('10102', options)
 
-            options = options_type.builder().radix(10).build()
+            options = options_type.decimal()
             self.assertEqual(callback('10', options), value_type(10))
             with self.assertRaises(lexical.LexicalError):
                 callback('10a', options)
 
-            options = options_type.builder().radix(16).build()
+            options = options_type.hexadecimal()
             self.assertEqual(callback('A', options), value_type(10))
             with self.assertRaises(lexical.LexicalError):
                 callback('AG', options)
@@ -515,18 +697,18 @@ class ParseTests(unittest.TestCase):
             self.assertEqual(callback('10e5', options), value_type(10e5))
 
             if lexical.HAVE_RADIX:
-                options = options_type.builder().radix(2).build()
+                options = options_type.binary()
                 self.assertEqual(callback('1010.1', options), value_type(10.5))
 
-                options = options_type.builder().radix(10).build()
+                options = options_type.decimal()
                 self.assertEqual(callback('10.5', options), value_type(10.5))
 
-                options = options_type.builder().radix(16).build()
+                options = options_type.hexadecimal()
                 self.assertEqual(callback('A.8', options), value_type(10.5))
 
             if lexical.HAVE_FORMAT:
                 options = options_type.builder().format(lexical.NumberFormat.FsharpString).build()
-                self.assertEqual(callback('1_0.5_1', options), value_type(10.51))
+                self.assertEqual(callback('1_0.7_5', options), value_type(10.75))
 
     def _partial_test(self, callback, value_type, *args):
         self.assertEqual(callback('10', *args), (value_type(10), 2))
@@ -554,15 +736,15 @@ class ParseTests(unittest.TestCase):
         self.assertEqual(callback('10a', options), (value_type(10), 2))
 
         if lexical.HAVE_RADIX:
-            options = options_type.builder().radix(2).build()
+            options = options_type.binary()
             self.assertEqual(callback('1010', options), (value_type(10), 4))
             self.assertEqual(callback('10102', options), (value_type(10), 4))
 
-            options = options_type.builder().radix(10).build()
+            options = options_type.decimal()
             self.assertEqual(callback('10', options), (value_type(10), 2))
             self.assertEqual(callback('10a', options), (value_type(10), 2))
 
-            options = options_type.builder().radix(16).build()
+            options = options_type.hexadecimal()
             self.assertEqual(callback('A', options), (value_type(10), 1))
             self.assertEqual(callback('AG', options), (value_type(10), 1))
 
@@ -587,18 +769,18 @@ class ParseTests(unittest.TestCase):
             self.assertEqual(callback('10e5', options), (value_type(10e5), 4))
 
             if lexical.HAVE_RADIX:
-                options = options_type.builder().radix(2).build()
+                options = options_type.binary()
                 self.assertEqual(callback('1010.1', options), (value_type(10.5), 6))
 
-                options = options_type.builder().radix(10).build()
+                options = options_type.decimal()
                 self.assertEqual(callback('10.5', options), (value_type(10.5), 4))
 
-                options = options_type.builder().radix(16).build()
+                options = options_type.hexadecimal()
                 self.assertEqual(callback('A.8', options), (value_type(10.5), 3))
 
             if lexical.HAVE_FORMAT:
                 options = options_type.builder().format(lexical.NumberFormat.FsharpString).build()
-                self.assertEqual(callback('1_0.5_1', options), (value_type(10.51), 7))
+                self.assertEqual(callback('1_0.7_5', options), (value_type(10.75), 7))
 
     def test_atoi8(self):
         self._complete_test(lexical.atoi8, int)
