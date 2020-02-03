@@ -2469,512 +2469,141 @@ def atof64_partial(data):
     '''Parse 64-bit float and the number of processed bytes from bytes.'''
     return _parse('lexical_atof64_partial', data)
 
-# TODO(ahuszagh)
-#   Need options.
+# PARSE WITH OPTIONS
 
-# TODO(ahuszagh) Restore from here.
-#if HAVE_RADIX:
-#    # PARSE RADIX
-#
-#    def _parse_radix(name, data, radix):
-#        if isinstance(data, str):
-#            data = data.encode('ascii')
-#        if not isinstance(data, (bytes, bytearray)):
-#            raise TypeError("Must parse from bytes.")
-#        if not isinstance(radix, c_uint8):
-#            radix = c_uint8(radix)
-#        cb = getattr(LIB, name)
-#        first = _to_u8_ptr(data)
-#        last = _to_u8_ptr(_to_address(first) + len(data))
-#        result = cb(first, last, radix)
-#        return result.into()
-#
-#    # COMPLETE PARSE RADIX
-#
-#    LIB.lexical_atoi8_radix.restype = ResultI8
-#    LIB.lexical_atoi16_radix.restype = ResultI16
-#    LIB.lexical_atoi32_radix.restype = ResultI32
-#    LIB.lexical_atoi64_radix.restype = ResultI64
-#    LIB.lexical_atoisize_radix.restype = ResultIsize
-#    LIB.lexical_atou8_radix.restype = ResultU8
-#    LIB.lexical_atou16_radix.restype = ResultU16
-#    LIB.lexical_atou32_radix.restype = ResultU32
-#    LIB.lexical_atou64_radix.restype = ResultU64
-#    LIB.lexical_atousize_radix.restype = ResultUsize
-#    LIB.lexical_atof32_radix.restype = ResultF32
-#    LIB.lexical_atof64_radix.restype = ResultF64
-#
-#    def atoi8_radix(data, radix):
-#        '''Parse 8-bit signed integer from bytes.'''
-#        return _parse_radix('lexical_atoi8_radix', data, radix)
-#
-#    def atoi16_radix(data, radix):
-#        '''Parse 16-bit signed integer from bytes.'''
-#        return _parse_radix('lexical_atoi16_radix', data, radix)
-#
-#    def atoi32_radix(data, radix):
-#        '''Parse 32-bit signed integer from bytes.'''
-#        return _parse_radix('lexical_atoi32_radix', data, radix)
-#
-#    def atoi64_radix(data, radix):
-#        '''Parse 64-bit signed integer from bytes.'''
-#        return _parse_radix('lexical_atoi64_radix', data, radix)
-#
-#    def atoisize_radix(data, radix):
-#        '''Parse ssize_t from bytes.'''
-#        return _parse_radix('lexical_atoisize_radix', data, radix)
-#
-#    def atou8_radix(data, radix):
-#        '''Parse 8-bit unsigned integer from bytes.'''
-#        return _parse_radix('lexical_atou8_radix', data, radix)
-#
-#    def atou16_radix(data, radix):
-#        '''Parse 16-bit unsigned integer from bytes.'''
-#        return _parse_radix('lexical_atou16_radix', data, radix)
-#
-#    def atou32_radix(data, radix):
-#        '''Parse 32-bit unsigned integer from bytes.'''
-#        return _parse_radix('lexical_atou32_radix', data, radix)
-#
-#    def atou64_radix(data, radix):
-#        '''Parse 64-bit unsigned integer from bytes.'''
-#        return _parse_radix('lexical_atou64_radix', data, radix)
-#
-#    def atousize_radix(data, radix):
-#        '''Parse size_t from bytes.'''
-#        return _parse_radix('lexical_atousize_radix', data, radix)
-#
-#    def atof32_radix(data, radix):
-#        '''Parse 32-bit float from bytes.'''
-#        return _parse_radix('lexical_atof32_radix', data, radix)
-#
-#    def atof64_radix(data, radix):
-#        '''Parse 64-bit float from bytes.'''
-#        return _parse_radix('lexical_atof64_radix', data, radix)
-#
-#    # COMPLETE PARSE LOSSY RADIX
-#
-#    LIB.lexical_atof32_lossy_radix.restype = ResultF32
-#    LIB.lexical_atof64_lossy_radix.restype = ResultF64
-#
-#    def atof32_lossy_radix(data, radix):
-#        '''Lossily parse 32-bit float from bytes.'''
-#        return _parse_radix('lexical_atof32_lossy_radix', data, radix)
-#
-#    def atof64_lossy_radix(data, radix):
-#        '''Lossily parse 64-bit float from bytes.'''
-#        return _parse_radix('lexical_atof64_lossy_radix', data, radix)
-#
-#    # PARTIAL PARSE RADIX
-#
-#    LIB.lexical_atoi8_partial_radix.restype = PartialResultI8
-#    LIB.lexical_atoi16_partial_radix.restype = PartialResultI16
-#    LIB.lexical_atoi32_partial_radix.restype = PartialResultI32
-#    LIB.lexical_atoi64_partial_radix.restype = PartialResultI64
-#    LIB.lexical_atoisize_partial_radix.restype = PartialResultIsize
-#    LIB.lexical_atou8_partial_radix.restype = PartialResultU8
-#    LIB.lexical_atou16_partial_radix.restype = PartialResultU16
-#    LIB.lexical_atou32_partial_radix.restype = PartialResultU32
-#    LIB.lexical_atou64_partial_radix.restype = PartialResultU64
-#    LIB.lexical_atousize_partial_radix.restype = PartialResultUsize
-#    LIB.lexical_atof32_partial_radix.restype = PartialResultF32
-#    LIB.lexical_atof64_partial_radix.restype = PartialResultF64
-#
-#    def atoi8_partial_radix(data, radix):
-#        '''Parse 8-bit signed integer and the number of processed bytes from input data.'''
-#        return _parse_radix('lexical_atoi8_partial_radix', data, radix)
-#
-#    def atoi16_partial_radix(data, radix):
-#        '''Parse 16-bit signed integer and the number of processed bytes from input data.'''
-#        return _parse_radix('lexical_atoi16_partial_radix', data, radix)
-#
-#    def atoi32_partial_radix(data, radix):
-#        '''Parse 32-bit signed integer and the number of processed bytes from input data.'''
-#        return _parse_radix('lexical_atoi32_partial_radix', data, radix)
-#
-#    def atoi64_partial_radix(data, radix):
-#        '''Parse 64-bit signed integer and the number of processed bytes from input data.'''
-#        return _parse_radix('lexical_atoi64_partial_radix', data, radix)
-#
-#    def atoisize_partial_radix(data, radix):
-#        '''Parse ssize_t and the number of processed bytes from input data.'''
-#        return _parse_radix('lexical_atoisize_partial_radix', data, radix)
-#
-#    def atou8_partial_radix(data, radix):
-#        '''Parse 8-bit unsigned integer and the number of processed bytes from input data.'''
-#        return _parse_radix('lexical_atou8_partial_radix', data, radix)
-#
-#    def atou16_partial_radix(data, radix):
-#        '''Parse 16-bit unsigned integer and the number of processed bytes from input data.'''
-#        return _parse_radix('lexical_atou16_partial_radix', data, radix)
-#
-#    def atou32_partial_radix(data, radix):
-#        '''Parse 32-bit unsigned integer and the number of processed bytes from input data.'''
-#        return _parse_radix('lexical_atou32_partial_radix', data, radix)
-#
-#    def atou64_partial_radix(data, radix):
-#        '''Parse 64-bit unsigned integer and the number of processed bytes from input data.'''
-#        return _parse_radix('lexical_atou64_partial_radix', data, radix)
-#
-#    def atousize_partial_radix(data, radix):
-#        '''Parse size_t and the number of processed bytes from input data.'''
-#        return _parse_radix('lexical_atousize_partial_radix', data, radix)
-#
-#    def atof32_partial_radix(data, radix):
-#        '''Parse 32-bit float and the number of processed bytes from bytes.'''
-#        return _parse_radix('lexical_atof32_partial_radix', data, radix)
-#
-#    def atof64_partial_radix(data, radix):
-#        '''Parse 64-bit float and the number of processed bytes from bytes.'''
-#        return _parse_radix('lexical_atof64_partial_radix', data, radix)
-#
-#    # PARTIAL PARSE LOSSY RADIX
-#
-#    LIB.lexical_atof32_partial_lossy_radix.restype = PartialResultF32
-#    LIB.lexical_atof64_partial_lossy_radix.restype = PartialResultF64
-#
-#    def atof32_partial_lossy_radix(data, radix):
-#        '''Lossily parse 32-bit float and the number of processed bytes from input data.'''
-#        return _parse_radix('lexical_atof32_partial_lossy_radix', data, radix)
-#
-#    def atof64_partial_lossy_radix(data, radix):
-#        '''Lossily parse 64-bit float and the number of processed bytes from input data.'''
-#        return _parse_radix('lexical_atof64_partial_lossy_radix', data, radix)
-#
-## PARSE FORMAT
-#
-#if HAVE_FORMAT:
-#    def _parse_format(name, data, format):
-#        if isinstance(data, str):
-#            data = data.encode('ascii')
-#        if not isinstance(data, (bytes, bytearray)):
-#            raise TypeError("Must parse from bytes.")
-#        if not isinstance(format, NumberFormat):
-#            format = NumberFormat(format)
-#        cb = getattr(LIB, name)
-#        first = _to_u8_ptr(data)
-#        last = _to_u8_ptr(_to_address(first) + len(data))
-#        result = cb(first, last, format)
-#        return result.into()
-#
-#    # COMPLETE PARSE FORMAT
-#
-#    LIB.lexical_atoi8_format.restype = ResultI8
-#    LIB.lexical_atoi16_format.restype = ResultI16
-#    LIB.lexical_atoi32_format.restype = ResultI32
-#    LIB.lexical_atoi64_format.restype = ResultI64
-#    LIB.lexical_atoisize_format.restype = ResultIsize
-#    LIB.lexical_atou8_format.restype = ResultU8
-#    LIB.lexical_atou16_format.restype = ResultU16
-#    LIB.lexical_atou32_format.restype = ResultU32
-#    LIB.lexical_atou64_format.restype = ResultU64
-#    LIB.lexical_atousize_format.restype = ResultUsize
-#    LIB.lexical_atof32_format.restype = ResultF32
-#    LIB.lexical_atof64_format.restype = ResultF64
-#
-#    def atoi8_format(data, format):
-#        '''Parse 8-bit signed integer from input data.'''
-#        return _parse_format('lexical_atoi8_format', data, format)
-#
-#    def atoi16_format(data, format):
-#        '''Parse 16-bit signed integer from input data.'''
-#        return _parse_format('lexical_atoi16_format', data, format)
-#
-#    def atoi32_format(data, format):
-#        '''Parse 32-bit signed integer from input data.'''
-#        return _parse_format('lexical_atoi32_format', data, format)
-#
-#    def atoi64_format(data, format):
-#        '''Parse 64-bit signed integer from input data.'''
-#        return _parse_format('lexical_atoi64_format', data, format)
-#
-#    def atoisize_format(data, format):
-#        '''Parse ssize_t from input data.'''
-#        return _parse_format('lexical_atoisize_format', data, format)
-#
-#    def atou8_format(data, format):
-#        '''Parse 8-bit unsigned integer from input data.'''
-#        return _parse_format('lexical_atou8_format', data, format)
-#
-#    def atou16_format(data, format):
-#        '''Parse 16-bit unsigned integer from input data.'''
-#        return _parse_format('lexical_atou16_format', data, format)
-#
-#    def atou32_format(data, format):
-#        '''Parse 32-bit unsigned integer from input data.'''
-#        return _parse_format('lexical_atou32_format', data, format)
-#
-#    def atou64_format(data, format):
-#        '''Parse 64-bit unsigned integer from input data.'''
-#        return _parse_format('lexical_atou64_format', data, format)
-#
-#    def atousize_format(data, format):
-#        '''Parse size_t from input data.'''
-#        return _parse_format('lexical_atousize_format', data, format)
-#
-#    def atof32_format(data, format):
-#        '''Parse 32-bit float from input data.'''
-#        return _parse_format('lexical_atof32_format', data, format)
-#
-#    def atof64_format(data, format):
-#        '''Parse 64-bit float from input data.'''
-#        return _parse_format('lexical_atof64_format', data, format)
-#
-#    # COMPLETE PARSE LOSSY FORMAT
-#
-#    LIB.lexical_atof32_lossy_format.restype = ResultF32
-#    LIB.lexical_atof64_lossy_format.restype = ResultF64
-#
-#    def atof32_lossy_format(data, format):
-#        '''Lossily parse 32-bit float from input data.'''
-#        return _parse_format('lexical_atof32_lossy_format', data, format)
-#
-#    def atof64_lossy_format(data, format):
-#        '''Lossily parse 64-bit float from input data.'''
-#        return _parse_format('lexical_atof64_lossy_format', data, format)
-#
-#    # PARTIAL PARSE FORMAT
-#
-#    LIB.lexical_atoi8_partial_format.restype = PartialResultI8
-#    LIB.lexical_atoi16_partial_format.restype = PartialResultI16
-#    LIB.lexical_atoi32_partial_format.restype = PartialResultI32
-#    LIB.lexical_atoi64_partial_format.restype = PartialResultI64
-#    LIB.lexical_atoisize_partial_format.restype = PartialResultIsize
-#    LIB.lexical_atou8_partial_format.restype = PartialResultU8
-#    LIB.lexical_atou16_partial_format.restype = PartialResultU16
-#    LIB.lexical_atou32_partial_format.restype = PartialResultU32
-#    LIB.lexical_atou64_partial_format.restype = PartialResultU64
-#    LIB.lexical_atousize_partial_format.restype = PartialResultUsize
-#    LIB.lexical_atof32_partial_format.restype = PartialResultF32
-#    LIB.lexical_atof64_partial_format.restype = PartialResultF64
-#
-#    def atoi8_partial_format(data, format):
-#        '''Parse 8-bit signed integer and the number of processed bytes from input data.'''
-#        return _parse_format('lexical_atoi8_partial_format', data, format)
-#
-#    def atoi16_partial_format(data, format):
-#        '''Parse 16-bit signed integer and the number of processed bytes from input data.'''
-#        return _parse_format('lexical_atoi16_partial_format', data, format)
-#
-#    def atoi32_partial_format(data, format):
-#        '''Parse 32-bit signed integer and the number of processed bytes from input data.'''
-#        return _parse_format('lexical_atoi32_partial_format', data, format)
-#
-#    def atoi64_partial_format(data, format):
-#        '''Parse 64-bit signed integer and the number of processed bytes from input data.'''
-#        return _parse_format('lexical_atoi64_partial_format', data, format)
-#
-#    def atoisize_partial_format(data, format):
-#        '''Parse ssize_t and the number of processed bytes from input data.'''
-#        return _parse_format('lexical_atoisize_partial_format', data, format)
-#
-#    def atou8_partial_format(data, format):
-#        '''Parse 8-bit unsigned integer and the number of processed bytes from input data.'''
-#        return _parse_format('lexical_atou8_partial_format', data, format)
-#
-#    def atou16_partial_format(data, format):
-#        '''Parse 16-bit unsigned integer and the number of processed bytes from input data.'''
-#        return _parse_format('lexical_atou16_partial_format', data, format)
-#
-#    def atou32_partial_format(data, format):
-#        '''Parse 32-bit unsigned integer and the number of processed bytes from input data.'''
-#        return _parse_format('lexical_atou32_partial_format', data, format)
-#
-#    def atou64_partial_format(data, format):
-#        '''Parse 64-bit unsigned integer and the number of processed bytes from input data.'''
-#        return _parse_format('lexical_atou64_partial_format', data, format)
-#
-#    def atousize_partial_format(data, format):
-#        '''Parse size_t and the number of processed bytes from input data.'''
-#        return _parse_format('lexical_atousize_partial_format', data, format)
-#
-#    def atof32_partial_format(data, format):
-#        '''Parse 32-bit float and the number of processed bytes from bytes.'''
-#        return _parse_format('lexical_atof32_partial_format', data, format)
-#
-#    def atof64_partial_format(data, format):
-#        '''Parse 64-bit float and the number of processed bytes from bytes.'''
-#        return _parse_format('lexical_atof64_partial_format', data, format)
-#
-#    # PARTIAL PARSE LOSSY FORMAT
-#
-#    LIB.lexical_atof32_partial_lossy_format.restype = PartialResultF32
-#    LIB.lexical_atof64_partial_lossy_format.restype = PartialResultF64
-#
-#    def atof32_partial_lossy_format(data, format):
-#        '''Lossily parse 32-bit float and the number of processed bytes from input data.'''
-#        return _parse_format('lexical_atof32_partial_lossy_format', data, format)
-#
-#    def atof64_partial_lossy_format(data, format):
-#        '''Lossily parse 64-bit float and the number of processed bytes from input data.'''
-#        return _parse_format('lexical_atof64_partial_lossy_format', data, format)
-#
-#if HAVE_RADIX and HAVE_FORMAT:
-#    # PARSE FORMAT RADIX
-#
-#    def _parse_format_radix(name, data, radix, format):
-#        if isinstance(data, str):
-#            data = data.encode('ascii')
-#        if not isinstance(data, (bytes, bytearray)):
-#            raise TypeError("Must parse from bytes.")
-#        if not isinstance(radix, c_uint8):
-#            radix = c_uint8(radix)
-#        if not isinstance(format, NumberFormat):
-#            format = NumberFormat(format)
-#        cb = getattr(LIB, name)
-#        first = _to_u8_ptr(data)
-#        last = _to_u8_ptr(_to_address(first) + len(data))
-#        result = cb(first, last, radix, format)
-#        return result.into()
-#
-#    # COMPLETE PARSE FORMAT RADIX
-#
-#    LIB.lexical_atoi8_format_radix.restype = ResultI8
-#    LIB.lexical_atoi16_format_radix.restype = ResultI16
-#    LIB.lexical_atoi32_format_radix.restype = ResultI32
-#    LIB.lexical_atoi64_format_radix.restype = ResultI64
-#    LIB.lexical_atoisize_format_radix.restype = ResultIsize
-#    LIB.lexical_atou8_format_radix.restype = ResultU8
-#    LIB.lexical_atou16_format_radix.restype = ResultU16
-#    LIB.lexical_atou32_format_radix.restype = ResultU32
-#    LIB.lexical_atou64_format_radix.restype = ResultU64
-#    LIB.lexical_atousize_format_radix.restype = ResultUsize
-#    LIB.lexical_atof32_format_radix.restype = ResultF32
-#    LIB.lexical_atof64_format_radix.restype = ResultF64
-#
-#    def atoi8_format_radix(data, radix, format):
-#        '''Parse 8-bit signed integer from bytes.'''
-#        return _parse_format_radix('lexical_atoi8_format_radix', data, radix, format)
-#
-#    def atoi16_format_radix(data, radix, format):
-#        '''Parse 16-bit signed integer from bytes.'''
-#        return _parse_format_radix('lexical_atoi16_format_radix', data, radix, format)
-#
-#    def atoi32_format_radix(data, radix, format):
-#        '''Parse 32-bit signed integer from bytes.'''
-#        return _parse_format_radix('lexical_atoi32_format_radix', data, radix, format)
-#
-#    def atoi64_format_radix(data, radix, format):
-#        '''Parse 64-bit signed integer from bytes.'''
-#        return _parse_format_radix('lexical_atoi64_format_radix', data, radix, format)
-#
-#    def atoisize_format_radix(data, radix, format):
-#        '''Parse ssize_t from bytes.'''
-#        return _parse_format_radix('lexical_atoisize_format_radix', data, radix, format)
-#
-#    def atou8_format_radix(data, radix, format):
-#        '''Parse 8-bit unsigned integer from bytes.'''
-#        return _parse_format_radix('lexical_atou8_format_radix', data, radix, format)
-#
-#    def atou16_format_radix(data, radix, format):
-#        '''Parse 16-bit unsigned integer from bytes.'''
-#        return _parse_format_radix('lexical_atou16_format_radix', data, radix, format)
-#
-#    def atou32_format_radix(data, radix, format):
-#        '''Parse 32-bit unsigned integer from bytes.'''
-#        return _parse_format_radix('lexical_atou32_format_radix', data, radix, format)
-#
-#    def atou64_format_radix(data, radix, format):
-#        '''Parse 64-bit unsigned integer from bytes.'''
-#        return _parse_format_radix('lexical_atou64_format_radix', data, radix, format)
-#
-#    def atousize_format_radix(data, radix, format):
-#        '''Parse size_t from bytes.'''
-#        return _parse_format_radix('lexical_atousize_format_radix', data, radix, format)
-#
-#    def atof32_format_radix(data, radix, format):
-#        '''Parse 32-bit float from bytes.'''
-#        return _parse_format_radix('lexical_atof32_format_radix', data, radix, format)
-#
-#    def atof64_format_radix(data, radix, format):
-#        '''Parse 64-bit float from bytes.'''
-#        return _parse_format_radix('lexical_atof64_format_radix', data, radix, format)
-#
-#    # COMPLETE PARSE LOSSY FORMAT RADIX
-#
-#    LIB.lexical_atof32_lossy_format_radix.restype = ResultF32
-#    LIB.lexical_atof64_lossy_format_radix.restype = ResultF64
-#
-#    def atof32_lossy_format_radix(data, radix, format):
-#        '''Lossily parse 32-bit float from bytes.'''
-#        return _parse_format_radix('lexical_atof32_lossy_format_radix', data, radix, format)
-#
-#    def atof64_lossy_format_radix(data, radix, format):
-#        '''Lossily parse 64-bit float from bytes.'''
-#        return _parse_format_radix('lexical_atof64_lossy_format_radix', data, radix, format)
-#
-#    # PARTIAL PARSE FORMAT RADIX
-#
-#    LIB.lexical_atoi8_partial_format_radix.restype = PartialResultI8
-#    LIB.lexical_atoi16_partial_format_radix.restype = PartialResultI16
-#    LIB.lexical_atoi32_partial_format_radix.restype = PartialResultI32
-#    LIB.lexical_atoi64_partial_format_radix.restype = PartialResultI64
-#    LIB.lexical_atoisize_partial_format_radix.restype = PartialResultIsize
-#    LIB.lexical_atou8_partial_format_radix.restype = PartialResultU8
-#    LIB.lexical_atou16_partial_format_radix.restype = PartialResultU16
-#    LIB.lexical_atou32_partial_format_radix.restype = PartialResultU32
-#    LIB.lexical_atou64_partial_format_radix.restype = PartialResultU64
-#    LIB.lexical_atousize_partial_format_radix.restype = PartialResultUsize
-#    LIB.lexical_atof32_partial_format_radix.restype = PartialResultF32
-#    LIB.lexical_atof64_partial_format_radix.restype = PartialResultF64
-#
-#    def atoi8_partial_format_radix(data, radix, format):
-#        '''Parse 8-bit signed integer and the number of processed bytes from input data.'''
-#        return _parse_format_radix('lexical_atoi8_partial_format_radix', data, radix, format)
-#
-#    def atoi16_partial_format_radix(data, radix, format):
-#        '''Parse 16-bit signed integer and the number of processed bytes from input data.'''
-#        return _parse_format_radix('lexical_atoi16_partial_format_radix', data, radix, format)
-#
-#    def atoi32_partial_format_radix(data, radix, format):
-#        '''Parse 32-bit signed integer and the number of processed bytes from input data.'''
-#        return _parse_format_radix('lexical_atoi32_partial_format_radix', data, radix, format)
-#
-#    def atoi64_partial_format_radix(data, radix, format):
-#        '''Parse 64-bit signed integer and the number of processed bytes from input data.'''
-#        return _parse_format_radix('lexical_atoi64_partial_format_radix', data, radix, format)
-#
-#    def atoisize_partial_format_radix(data, radix, format):
-#        '''Parse ssize_t and the number of processed bytes from input data.'''
-#        return _parse_format_radix('lexical_atoisize_partial_format_radix', data, radix, format)
-#
-#    def atou8_partial_format_radix(data, radix, format):
-#        '''Parse 8-bit unsigned integer and the number of processed bytes from input data.'''
-#        return _parse_format_radix('lexical_atou8_partial_format_radix', data, radix, format)
-#
-#    def atou16_partial_format_radix(data, radix, format):
-#        '''Parse 16-bit unsigned integer and the number of processed bytes from input data.'''
-#        return _parse_format_radix('lexical_atou16_partial_format_radix', data, radix, format)
-#
-#    def atou32_partial_format_radix(data, radix, format):
-#        '''Parse 32-bit unsigned integer and the number of processed bytes from input data.'''
-#        return _parse_format_radix('lexical_atou32_partial_format_radix', data, radix, format)
-#
-#    def atou64_partial_format_radix(data, radix, format):
-#        '''Parse 64-bit unsigned integer and the number of processed bytes from input data.'''
-#        return _parse_format_radix('lexical_atou64_partial_format_radix', data, radix, format)
-#
-#    def atousize_partial_format_radix(data, radix, format):
-#        '''Parse size_t and the number of processed bytes from input data.'''
-#        return _parse_format_radix('lexical_atousize_partial_format_radix', data, radix, format)
-#
-#    def atof32_partial_format_radix(data, radix, format):
-#        '''Parse 32-bit float and the number of processed bytes from bytes.'''
-#        return _parse_format_radix('lexical_atof32_partial_format_radix', data, radix, format)
-#
-#    def atof64_partial_format_radix(data, radix, format):
-#        '''Parse 64-bit float and the number of processed bytes from bytes.'''
-#        return _parse_format_radix('lexical_atof64_partial_format_radix', data, radix, format)
-#
-#    # PARTIAL PARSE LOSSY FORMAT RADIX
-#
-#    LIB.lexical_atof32_partial_lossy_format_radix.restype = PartialResultF32
-#    LIB.lexical_atof64_partial_lossy_format_radix.restype = PartialResultF64
-#
-#    def atof32_partial_lossy_format_radix(data, radix, format):
-#        '''Lossily parse 32-bit float and the number of processed bytes from input data.'''
-#        return _parse_format_radix('lexical_atof32_partial_lossy_format_radix', data, radix, format)
-#
-#    def atof64_partial_lossy_format_radix(data, radix, format):
-#        '''Lossily parse 64-bit float and the number of processed bytes from input data.'''
-#        return _parse_format_radix('lexical_atof64_partial_lossy_format_radix', data, radix, format)
+def _parse_with_options(name, data, options):
+    if isinstance(data, str):
+        data = data.encode('ascii')
+    if not isinstance(data, (bytes, bytearray)):
+        raise TypeError("Must parse from bytes.")
+    cb = getattr(LIB, name)
+    first = _to_u8_ptr(data)
+    last = _to_u8_ptr(_to_address(first) + len(data))
+    result = cb(first, last, pointer(options))
+    return result.into()
+
+# COMPLETE PARSE WITH OPTIONS
+
+LIB.lexical_atoi8_with_options.restype = ResultI8
+LIB.lexical_atoi16_with_options.restype = ResultI16
+LIB.lexical_atoi32_with_options.restype = ResultI32
+LIB.lexical_atoi64_with_options.restype = ResultI64
+LIB.lexical_atoisize_with_options.restype = ResultIsize
+LIB.lexical_atou8_with_options.restype = ResultU8
+LIB.lexical_atou16_with_options.restype = ResultU16
+LIB.lexical_atou32_with_options.restype = ResultU32
+LIB.lexical_atou64_with_options.restype = ResultU64
+LIB.lexical_atousize_with_options.restype = ResultUsize
+LIB.lexical_atof32_with_options.restype = ResultF32
+LIB.lexical_atof64_with_options.restype = ResultF64
+
+def atoi8_with_options(data, options):
+    '''Parse 8-bit signed integer from input data.'''
+    return _parse_with_options('lexical_atoi8_with_options', data, options)
+
+def atoi16_with_options(data, options):
+    '''Parse 16-bit signed integer from input data.'''
+    return _parse_with_options('lexical_atoi16_with_options', data, options)
+
+def atoi32_with_options(data, options):
+    '''Parse 32-bit signed integer from input data.'''
+    return _parse_with_options('lexical_atoi32_with_options', data, options)
+
+def atoi64_with_options(data, options):
+    '''Parse 64-bit signed integer from input data.'''
+    return _parse_with_options('lexical_atoi64_with_options', data, options)
+
+def atoisize_with_options(data, options):
+    '''Parse ssize_t from input data.'''
+    return _parse_with_options('lexical_atoisize_with_options', data, options)
+
+def atou8_with_options(data, options):
+    '''Parse 8-bit unsigned integer from input data.'''
+    return _parse_with_options('lexical_atou8_with_options', data, options)
+
+def atou16_with_options(data, options):
+    '''Parse 16-bit unsigned integer from input data.'''
+    return _parse_with_options('lexical_atou16_with_options', data, options)
+
+def atou32_with_options(data, options):
+    '''Parse 32-bit unsigned integer from input data.'''
+    return _parse_with_options('lexical_atou32_with_options', data, options)
+
+def atou64_with_options(data, options):
+    '''Parse 64-bit unsigned integer from input data.'''
+    return _parse_with_options('lexical_atou64_with_options', data, options)
+
+def atousize_with_options(data, options):
+    '''Parse size_t from input data.'''
+    return _parse_with_options('lexical_atousize_with_options', data, options)
+
+def atof32_with_options(data, options):
+    '''Parse 32-bit float from input data.'''
+    return _parse_with_options('lexical_atof32_with_options', data, options)
+
+def atof64_with_options(data, options):
+    '''Parse 64-bit float from input data.'''
+    return _parse_with_options('lexical_atof64_with_options', data, options)
+
+# PARTIAL PARSE WITH OPTIONS
+
+LIB.lexical_atoi8_partial_with_options.restype = PartialResultI8
+LIB.lexical_atoi16_partial_with_options.restype = PartialResultI16
+LIB.lexical_atoi32_partial_with_options.restype = PartialResultI32
+LIB.lexical_atoi64_partial_with_options.restype = PartialResultI64
+LIB.lexical_atoisize_partial_with_options.restype = PartialResultIsize
+LIB.lexical_atou8_partial_with_options.restype = PartialResultU8
+LIB.lexical_atou16_partial_with_options.restype = PartialResultU16
+LIB.lexical_atou32_partial_with_options.restype = PartialResultU32
+LIB.lexical_atou64_partial_with_options.restype = PartialResultU64
+LIB.lexical_atousize_partial_with_options.restype = PartialResultUsize
+LIB.lexical_atof32_partial_with_options.restype = PartialResultF32
+LIB.lexical_atof64_partial_with_options.restype = PartialResultF64
+
+def atoi8_partial_with_options(data, options):
+    '''Parse 8-bit signed integer and the number of processed bytes from input data.'''
+    return _parse_with_options('lexical_atoi8_partial_with_options', data, options)
+
+def atoi16_partial_with_options(data, options):
+    '''Parse 16-bit signed integer and the number of processed bytes from input data.'''
+    return _parse_with_options('lexical_atoi16_partial_with_options', data, options)
+
+def atoi32_partial_with_options(data, options):
+    '''Parse 32-bit signed integer and the number of processed bytes from input data.'''
+    return _parse_with_options('lexical_atoi32_partial_with_options', data, options)
+
+def atoi64_partial_with_options(data, options):
+    '''Parse 64-bit signed integer and the number of processed bytes from input data.'''
+    return _parse_with_options('lexical_atoi64_partial_with_options', data, options)
+
+def atoisize_partial_with_options(data, options):
+    '''Parse ssize_t and the number of processed bytes from input data.'''
+    return _parse_with_options('lexical_atoisize_partial_with_options', data, options)
+
+def atou8_partial_with_options(data, options):
+    '''Parse 8-bit unsigned integer and the number of processed bytes from input data.'''
+    return _parse_with_options('lexical_atou8_partial_with_options', data, options)
+
+def atou16_partial_with_options(data, options):
+    '''Parse 16-bit unsigned integer and the number of processed bytes from input data.'''
+    return _parse_with_options('lexical_atou16_partial_with_options', data, options)
+
+def atou32_partial_with_options(data, options):
+    '''Parse 32-bit unsigned integer and the number of processed bytes from input data.'''
+    return _parse_with_options('lexical_atou32_partial_with_options', data, options)
+
+def atou64_partial_with_options(data, options):
+    '''Parse 64-bit unsigned integer and the number of processed bytes from input data.'''
+    return _parse_with_options('lexical_atou64_partial_with_options', data, options)
+
+def atousize_partial_with_options(data, options):
+    '''Parse size_t and the number of processed bytes from input data.'''
+    return _parse_with_options('lexical_atousize_partial_with_options', data, options)
+
+def atof32_partial_with_options(data, options):
+    '''Parse 32-bit float and the number of processed bytes from bytes.'''
+    return _parse_with_options('lexical_atof32_partial_with_options', data, options)
+
+def atof64_partial_with_options(data, options):
+    '''Parse 64-bit float and the number of processed bytes from bytes.'''
+    return _parse_with_options('lexical_atof64_partial_with_options', data, options)
