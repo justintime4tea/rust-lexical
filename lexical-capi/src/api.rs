@@ -44,7 +44,7 @@ macro_rules! lexical_from_range {
         {
             assert!(first <= last && !first.is_null() && !last.is_null());
             let bytes = $crate::lib::slice::from_raw_parts(first, distance(first, last));
-            lexical_core::$callback(bytes $(,$argname)*).into()
+            lexical_core::$callback(bytes $(,$argname.as_ref().unwrap())*).into()
         }
     );
 }
@@ -66,7 +66,7 @@ macro_rules! lexical_partial_from_range {
         {
             assert!(first <= last && !first.is_null() && !last.is_null());
             let bytes = $crate::lib::slice::from_raw_parts(first, distance(first, last));
-            match lexical_core::$callback(bytes $(,$argname)*) {
+            match lexical_core::$callback(bytes $(,$argname.as_ref().unwrap())*) {
                 Ok(v)  => Ok(v.into()),
                 Err(e) => Err(e),
             }.into()
@@ -106,7 +106,7 @@ macro_rules! from_lexical {
             fn $options_name,
             callback => parse_with_options,
             type => $type,
-            args => options: &<$type as lexical_core::FromLexical>::Options ;,
+            args => options: *const <$type as lexical_core::FromLexical>::Options ;,
             condition =>
         );
 
@@ -115,7 +115,7 @@ macro_rules! from_lexical {
             fn $partial_options_name,
             callback => parse_partial_with_options,
             type => $type,
-            args => options: &<$type as lexical_core::FromLexical>::Options ;,
+            args => options: *const <$type as lexical_core::FromLexical>::Options ;,
             condition =>
         );
     );
@@ -139,7 +139,7 @@ macro_rules! lexical_to_range {
             -> *mut u8
         {
             let bytes = $crate::api::slice_from_range_mut(first, last);
-            let slc = lexical_core::$callback(value, bytes $(,$argname)* );
+            let slc = lexical_core::$callback(value, bytes $(,$argname.as_ref().unwrap())* );
             let len = slc.len();
             slc[len..].as_mut_ptr()
         }
@@ -167,7 +167,7 @@ macro_rules! to_lexical {
             fn $options_name,
             callback => write_with_options,
             type => $type,
-            args => options: &<$type as lexical_core::ToLexical>::Options,
+            args => options: *const <$type as lexical_core::ToLexical>::Options,
             condition =>
         );
     );

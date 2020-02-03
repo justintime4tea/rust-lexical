@@ -204,7 +204,7 @@ impl Builder for ParseIntegerOptionsBuilder {
 /// # }
 /// ```
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct ParseIntegerOptions {
     /// Radix for integer string.
     radix: u32,
@@ -405,7 +405,7 @@ impl Builder for ParseFloatOptionsBuilder {
 /// # }
 /// ```
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct ParseFloatOptions {
     /// Use the lossy, fast parser.
     lossy: bool,
@@ -581,7 +581,7 @@ impl Builder for WriteIntegerOptionsBuilder {
 /// # }
 /// ```
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct WriteIntegerOptions {
     /// Radix for integer string.
     radix: u32,
@@ -739,7 +739,7 @@ impl Builder for WriteFloatOptionsBuilder {
 /// # }
 /// ```
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct WriteFloatOptions {
     /// Character to designate exponent component.
     /// Warning: This is currently ignored if the radix is 10.

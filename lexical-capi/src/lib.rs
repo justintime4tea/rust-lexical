@@ -28,6 +28,9 @@ pub(crate) use core::*;
 
 // Hide implementation details, since they will generate symbols
 // but should not be used from Rust.
+#[macro_use]
+mod builder;
+
 mod api;
 mod config;
 mod format;
@@ -39,3 +42,5 @@ mod result;
 // Hide all documentation.
 pub use self::api::*;
 pub use self::config::*;
+pub use self::format::*;
+pub use self::options::*;

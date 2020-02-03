@@ -75,86 +75,19 @@ if LIB is None:
 # FEATURES
 # --------
 
-HAVE_FORMAT = hasattr(LIB, 'lexical_atou8_format')
-HAVE_RADIX = hasattr(LIB, 'lexical_get_exponent_backup_char')
-HAVE_ROUNDING = hasattr(LIB, 'lexical_get_float_rounding')
-HAVE_I128 = hasattr(LIB, 'LEXICAL_I128_FORMATTED_SIZE')
+HAVE_FORMAT = hasattr(LIB, 'parse_float_options_builder_format')
+HAVE_RADIX = hasattr(LIB, 'parse_float_options_builder_radix')
+HAVE_ROUNDING = hasattr(LIB, 'parse_float_options_builder_rounding')
 
-# CONFIG
-# ------
+class RoundingKind(Structure):
+    '''Immutable wrapper around enumerations for float rounding type.'''
 
-LIB.lexical_get_nan_string.restype = c_int
-LIB.lexical_set_nan_string.restype = c_int
-LIB.lexical_get_inf_string.restype = c_int
-LIB.lexical_set_inf_string.restype = c_int
-LIB.lexical_get_infinity_string.restype = c_int
-LIB.lexical_set_infinity_string.restype = c_int
-LIB.lexical_get_exponent_default_char.restype = c_ubyte
-
-def _get_string(name):
-    cb = getattr(LIB, name)
-    ptr = POINTER(c_ubyte)()
-    size = c_size_t()
-    if cb(byref(ptr), byref(size)) != 0:
-        raise OSError('Unexpected error in lexical_capi.{}'.format(name))
-    return string_at(ptr, size.value).decode('ascii')
-
-def _set_string(name, data):
-    if isinstance(data, str):
-        data = data.encode('ascii')
-    if not isinstance(data, (bytes, bytearray)):
-        raise TypeError("Must set string from bytes.")
-    cb = getattr(LIB, name)
-    ptr = cast(data, POINTER(c_ubyte))
-    size = c_size_t(len(data))
-    if cb(ptr, size) != 0:
-        raise OSError('Unexpected error in lexical_capi.{}'.format(name))
-
-def get_nan_string():
-    '''Get string representation of Not a Number as a byte slice.'''
-    return _get_string('lexical_get_nan_string')
-
-def set_nan_string(data):
-    '''Set string representation of Not a Number from a byte slice.'''
-    _set_string('lexical_set_nan_string', data)
-
-def get_inf_string():
-    '''Get the short representation of an Infinity literal as a byte slice.'''
-    return _get_string('lexical_get_inf_string')
-
-def set_inf_string(data):
-    '''Set the short representation of an Infinity literal from a byte slice.'''
-    _set_string('lexical_set_inf_string', data)
-
-def get_infinity_string():
-    '''Get the long representation of an Infinity literal as a byte slice.'''
-    return _get_string('lexical_get_infinity_string')
-
-def set_infinity_string(data):
-    '''Set the long representation of an Infinity literal from a byte slice.'''
-    _set_string('lexical_set_infinity_string', data)
-
-def get_exponent_default_char():
-    '''Get the default exponent character.'''
-    return chr(LIB.lexical_get_exponent_default_char())
-
-def set_exponent_default_char(character):
-    '''Set the default exponent character.'''
-    LIB.lexical_set_exponent_default_char(c_ubyte(ord(character)))
-
-if HAVE_RADIX:
-    def get_exponent_backup_char():
-        '''Get the backup exponent character.'''
-        return chr(LIB.lexical_get_exponent_backup_char())
-
-    def set_exponent_backup_char(character):
-        '''Set the backup exponent character.'''
-        LIB.lexical_set_exponent_backup_char(c_ubyte(ord(character)))
+    _fields_ = [
+        ("_value", c_int32)
+    ]
 
 if HAVE_ROUNDING:
-    LIB.lexical_get_float_rounding.restype = c_int
-
-    class RoundingKind(enum.Enum):
+    class RoundingKindEnum(enum.Enum):
         '''Rounding type for float-parsing.'''
 
         NearestTieEven = 0
@@ -163,13 +96,12 @@ if HAVE_ROUNDING:
         TowardNegativeInfinity = 3
         TowardZero = 4
 
-    def get_float_rounding():
-        '''Get the default rounding scheme.'''
-        return RoundingKind(LIB.lexical_get_float_rounding())
-
-    def set_float_rounding(rounding):
-        '''Set the default rounding scheme.'''
-        LIB.lexical_set_float_rounding(c_int(rounding.value))
+    # PRE-DEFINED CONSTANTS
+    RoundingKind.NearestTieEven = RoundingKind(RoundingKindEnum.NearestTieEven)
+    RoundingKind.NearestTieAwayZero = RoundingKind(RoundingKindEnum.NearestTieAwayZero)
+    RoundingKind.TowardPositiveInfinity = RoundingKind(RoundingKindEnum.TowardPositiveInfinity)
+    RoundingKind.TowardNegativeInfinity = RoundingKind(RoundingKindEnum.TowardNegativeInfinity)
+    RoundingKind.TowardZero = RoundingKind(RoundingKindEnum.TowardZero)
 
 if HAVE_FORMAT:
 
@@ -181,39 +113,7 @@ if HAVE_FORMAT:
         '''Extract digit separator byte from 32-bit flags.'''
         return chr(flags >> 56).encode('ascii')
 
-    def is_ascii(ch):
-        '''Determine if character is valid ASCII.'''
-        return ord(ch) < 0x80
-
-    if HAVE_RADIX:
-        def is_valid_separator(ch):
-            '''Determine if the digit separator is valid.'''
-
-            code = ord(ch)
-            if code >= ord(b'A') and code <= ord(b'Z'):
-                return False
-            elif code >= ord(b'a') and code <= ord(b'z'):
-                return False
-            elif code >= ord(b'0') and code <= ord(b'9'):
-                return False
-            elif ch == b'+' or ch == b'.' or ch == b'-':
-                return False
-            return (
-                is_ascii(ch)
-                and code != ord(get_exponent_default_char())
-                and code != ord(get_exponent_backup_char())
-            )
-
-    else:
-        def is_valid_separator(ch):
-            '''Determine if the digit separator is valid.'''
-
-            code = ord(ch)
-            if code >= ord(b'0') and code <= ord(b'9'):
-                return False
-            elif ch == b'+' or ch == b'.' or ch == b'-':
-                return False
-            return is_ascii(ch) and code != ord(get_exponent_default_char())
+    # TODO(ahuszagh) Should have ignore on the Rust side.
 
 
     class NumberFormatFlags(enum.Flag):
@@ -363,146 +263,147 @@ if HAVE_FORMAT:
 
         # FUNCTIONS
 
-        def compile(
-            digit_separator=b'_',
-            required_integer_digits=False,
-            required_fraction_digits=False,
-            required_exponent_digits=False,
-            no_positive_mantissa_sign=False,
-            required_mantissa_sign=False,
-            no_exponent_notation=False,
-            no_positive_exponent_sign=False,
-            required_exponent_sign=False,
-            no_exponent_without_fraction=False,
-            no_special=False,
-            case_sensitive_special=False,
-            no_integer_leading_zeros=False,
-            no_float_leading_zeros=False,
-            integer_internal_digit_separator=False,
-            fraction_internal_digit_separator=False,
-            exponent_internal_digit_separator=False,
-            integer_leading_digit_separator=False,
-            fraction_leading_digit_separator=False,
-            exponent_leading_digit_separator=False,
-            integer_trailing_digit_separator=False,
-            fraction_trailing_digit_separator=False,
-            exponent_trailing_digit_separator=False,
-            integer_consecutive_digit_separator=False,
-            fraction_consecutive_digit_separator=False,
-            exponent_consecutive_digit_separator=False,
-            special_digit_separator=False
-        ):
-            '''
-            Compile float format value from specifications.
-
-            * `digit_separator`                         - Character to separate digits.
-            * `required_integer_digits`                 - If digits are required before the decimal point.
-            * `required_fraction_digits`                - If digits are required after the decimal point.
-            * `required_exponent_digits`                - If digits are required after the exponent character.
-            * `no_positive_mantissa_sign`               - If positive sign before the mantissa is not allowed.
-            * `required_mantissa_sign`                  - If positive sign before the mantissa is required.
-            * `no_exponent_notation`                    - If exponent notation is not allowed.
-            * `no_positive_exponent_sign`               - If positive sign before the exponent is not allowed.
-            * `required_exponent_sign`                  - If sign before the exponent is required.
-            * `no_exponent_without_fraction`            - If exponent without fraction is not allowed.
-            * `no_special`                              - If special (non-finite) values are not allowed.
-            * `case_sensitive_special`                  - If special (non-finite) values are case-sensitive.
-            * `integer_internal_digit_separator`        - If digit separators are allowed between integer digits.
-            * `fraction_internal_digit_separator`       - If digit separators are allowed between fraction digits.
-            * `exponent_internal_digit_separator`       - If digit separators are allowed between exponent digits.
-            * `integer_leading_digit_separator`         - If a digit separator is allowed before any integer digits.
-            * `fraction_leading_digit_separator`        - If a digit separator is allowed before any fraction digits.
-            * `exponent_leading_digit_separator`        - If a digit separator is allowed before any exponent digits.
-            * `integer_trailing_digit_separator`        - If a digit separator is allowed after any integer digits.
-            * `fraction_trailing_digit_separator`       - If a digit separator is allowed after any fraction digits.
-            * `exponent_trailing_digit_separator`       - If a digit separator is allowed after any exponent digits.
-            * `integer_consecutive_digit_separator`     - If multiple consecutive integer digit separators are allowed.
-            * `fraction_consecutive_digit_separator`    - If multiple consecutive fraction digit separators are allowed.
-            * `special_digit_separator`                 - If any digit separators are allowed in special (non-finite) values.
-
-            Returns the value if it was able to compile the format,
-            otherwise, returns None. Digit separators must not be
-            in the character group `[A-Za-z0-9+.-]`, nor be equal to
-            `get_exponent_default_char` or `get_exponent_backup_char`.
-            '''
-
-            flags = 0
-            # Generic flags.
-            if required_integer_digits:
-                flags |= NumberFormatFlags.RequiredIntegerDigits.value
-            if required_fraction_digits:
-                flags |= NumberFormatFlags.RequiredFractionDigits.value
-            if required_exponent_digits:
-                flags |= NumberFormatFlags.RequiredExponentDigits.value
-            if no_positive_mantissa_sign:
-                flags |= NumberFormatFlags.NoPositiveMantissaSign.value
-            if required_mantissa_sign:
-                flags |= NumberFormatFlags.RequiredMantissaSign.value
-            if no_exponent_notation:
-                flags |= NumberFormatFlags.NoExponentNotation.value
-            if no_positive_exponent_sign:
-                flags |= NumberFormatFlags.NoPositiveExponentSign.value
-            if required_exponent_sign:
-                flags |= NumberFormatFlags.RequiredExponentSign.value
-            if no_exponent_without_fraction:
-                flags |= NumberFormatFlags.NoExponentWithoutFraction.value
-            if no_special:
-                flags |= NumberFormatFlags.NoSpecial.value
-            if case_sensitive_special:
-                flags |= NumberFormatFlags.CaseSensitiveSpecial.value
-            if no_integer_leading_zeros:
-                flags |= NumberFormatFlags.NoIntegerLeadingZeros.value
-            if no_float_leading_zeros:
-                flags |= NumberFormatFlags.NoFloatLeadingZeros.value
-
-            # Digit separator flags.
-            if integer_internal_digit_separator:
-                flags |= NumberFormatFlags.IntegerInternalDigitSeparator.value
-            if fraction_internal_digit_separator:
-                flags |= NumberFormatFlags.FractionInternalDigitSeparator.value
-            if exponent_internal_digit_separator:
-                flags |= NumberFormatFlags.ExponentInternalDigitSeparator.value
-            if integer_leading_digit_separator:
-                flags |= NumberFormatFlags.IntegerLeadingDigitSeparator.value
-            if fraction_leading_digit_separator:
-                flags |= NumberFormatFlags.FractionLeadingDigitSeparator.value
-            if exponent_leading_digit_separator:
-                flags |= NumberFormatFlags.ExponentLeadingDigitSeparator.value
-            if integer_trailing_digit_separator:
-                flags |= NumberFormatFlags.IntegerTrailingDigitSeparator.value
-            if fraction_trailing_digit_separator:
-                flags |= NumberFormatFlags.FractionTrailingDigitSeparator.value
-            if exponent_trailing_digit_separator:
-                flags |= NumberFormatFlags.ExponentTrailingDigitSeparator.value
-            if integer_consecutive_digit_separator:
-                flags |= NumberFormatFlags.IntegerConsecutiveDigitSeparator.value
-            if fraction_consecutive_digit_separator:
-                flags |= NumberFormatFlags.FractionConsecutiveDigitSeparator.value
-            if exponent_consecutive_digit_separator:
-                flags |= NumberFormatFlags.ExponentConsecutiveDigitSeparator.value
-            if special_digit_separator:
-                flags |= NumberFormatFlags.SpecialDigitSeparator.value
-
-            # Digit separator.
-            format = NumberFormat(flags)
-            if format.intersects(NumberFormatFlags.DigitSeparatorFlagMask):
-                format._value |= digit_separator_to_flags(digit_separator)
-
-            # Validation.
-            is_invalid = (
-                not is_valid_separator(digit_separator)
-                or (format.intersects(NumberFormatFlags.NoExponentNotation) and format.intersects(NumberFormatFlags.ExponentFlagMask))
-                or (no_positive_mantissa_sign and required_mantissa_sign)
-                or (no_positive_exponent_sign and required_exponent_sign)
-                or (no_special and (case_sensitive_special or special_digit_separator))
-                or (format.flags & NumberFormatFlags.IntegerDigitSeparatorFlagMask == NumberFormatFlags.IntegerConsecutiveDigitSeparator)
-                or (format.flags & NumberFormatFlags.FractionDigitSeparatorFlagMask == NumberFormatFlags.FractionConsecutiveDigitSeparator)
-                or (format.flags & NumberFormatFlags.ExponentDigitSeparatorFlagMask == NumberFormatFlags.ExponentConsecutiveDigitSeparator)
-            )
-            if is_invalid:
-                raise ValueError('invalid number format with value {}'.format(format))
-
-            return format
+# TODO(ahuszagh) Change to use the builder API.
+#        def compile(
+#            digit_separator=b'_',
+#            required_integer_digits=False,
+#            required_fraction_digits=False,
+#            required_exponent_digits=False,
+#            no_positive_mantissa_sign=False,
+#            required_mantissa_sign=False,
+#            no_exponent_notation=False,
+#            no_positive_exponent_sign=False,
+#            required_exponent_sign=False,
+#            no_exponent_without_fraction=False,
+#            no_special=False,
+#            case_sensitive_special=False,
+#            no_integer_leading_zeros=False,
+#            no_float_leading_zeros=False,
+#            integer_internal_digit_separator=False,
+#            fraction_internal_digit_separator=False,
+#            exponent_internal_digit_separator=False,
+#            integer_leading_digit_separator=False,
+#            fraction_leading_digit_separator=False,
+#            exponent_leading_digit_separator=False,
+#            integer_trailing_digit_separator=False,
+#            fraction_trailing_digit_separator=False,
+#            exponent_trailing_digit_separator=False,
+#            integer_consecutive_digit_separator=False,
+#            fraction_consecutive_digit_separator=False,
+#            exponent_consecutive_digit_separator=False,
+#            special_digit_separator=False
+#        ):
+#            '''
+#            Compile float format value from specifications.
+#
+#            * `digit_separator`                         - Character to separate digits.
+#            * `required_integer_digits`                 - If digits are required before the decimal point.
+#            * `required_fraction_digits`                - If digits are required after the decimal point.
+#            * `required_exponent_digits`                - If digits are required after the exponent character.
+#            * `no_positive_mantissa_sign`               - If positive sign before the mantissa is not allowed.
+#            * `required_mantissa_sign`                  - If positive sign before the mantissa is required.
+#            * `no_exponent_notation`                    - If exponent notation is not allowed.
+#            * `no_positive_exponent_sign`               - If positive sign before the exponent is not allowed.
+#            * `required_exponent_sign`                  - If sign before the exponent is required.
+#            * `no_exponent_without_fraction`            - If exponent without fraction is not allowed.
+#            * `no_special`                              - If special (non-finite) values are not allowed.
+#            * `case_sensitive_special`                  - If special (non-finite) values are case-sensitive.
+#            * `integer_internal_digit_separator`        - If digit separators are allowed between integer digits.
+#            * `fraction_internal_digit_separator`       - If digit separators are allowed between fraction digits.
+#            * `exponent_internal_digit_separator`       - If digit separators are allowed between exponent digits.
+#            * `integer_leading_digit_separator`         - If a digit separator is allowed before any integer digits.
+#            * `fraction_leading_digit_separator`        - If a digit separator is allowed before any fraction digits.
+#            * `exponent_leading_digit_separator`        - If a digit separator is allowed before any exponent digits.
+#            * `integer_trailing_digit_separator`        - If a digit separator is allowed after any integer digits.
+#            * `fraction_trailing_digit_separator`       - If a digit separator is allowed after any fraction digits.
+#            * `exponent_trailing_digit_separator`       - If a digit separator is allowed after any exponent digits.
+#            * `integer_consecutive_digit_separator`     - If multiple consecutive integer digit separators are allowed.
+#            * `fraction_consecutive_digit_separator`    - If multiple consecutive fraction digit separators are allowed.
+#            * `special_digit_separator`                 - If any digit separators are allowed in special (non-finite) values.
+#
+#            Returns the value if it was able to compile the format,
+#            otherwise, returns None. Digit separators must not be
+#            in the character group `[A-Za-z0-9+.-]`, nor be equal to
+#            `get_exponent_default_char` or `get_exponent_backup_char`.
+#            '''
+#
+#            flags = 0
+#            # Generic flags.
+#            if required_integer_digits:
+#                flags |= NumberFormatFlags.RequiredIntegerDigits.value
+#            if required_fraction_digits:
+#                flags |= NumberFormatFlags.RequiredFractionDigits.value
+#            if required_exponent_digits:
+#                flags |= NumberFormatFlags.RequiredExponentDigits.value
+#            if no_positive_mantissa_sign:
+#                flags |= NumberFormatFlags.NoPositiveMantissaSign.value
+#            if required_mantissa_sign:
+#                flags |= NumberFormatFlags.RequiredMantissaSign.value
+#            if no_exponent_notation:
+#                flags |= NumberFormatFlags.NoExponentNotation.value
+#            if no_positive_exponent_sign:
+#                flags |= NumberFormatFlags.NoPositiveExponentSign.value
+#            if required_exponent_sign:
+#                flags |= NumberFormatFlags.RequiredExponentSign.value
+#            if no_exponent_without_fraction:
+#                flags |= NumberFormatFlags.NoExponentWithoutFraction.value
+#            if no_special:
+#                flags |= NumberFormatFlags.NoSpecial.value
+#            if case_sensitive_special:
+#                flags |= NumberFormatFlags.CaseSensitiveSpecial.value
+#            if no_integer_leading_zeros:
+#                flags |= NumberFormatFlags.NoIntegerLeadingZeros.value
+#            if no_float_leading_zeros:
+#                flags |= NumberFormatFlags.NoFloatLeadingZeros.value
+#
+#            # Digit separator flags.
+#            if integer_internal_digit_separator:
+#                flags |= NumberFormatFlags.IntegerInternalDigitSeparator.value
+#            if fraction_internal_digit_separator:
+#                flags |= NumberFormatFlags.FractionInternalDigitSeparator.value
+#            if exponent_internal_digit_separator:
+#                flags |= NumberFormatFlags.ExponentInternalDigitSeparator.value
+#            if integer_leading_digit_separator:
+#                flags |= NumberFormatFlags.IntegerLeadingDigitSeparator.value
+#            if fraction_leading_digit_separator:
+#                flags |= NumberFormatFlags.FractionLeadingDigitSeparator.value
+#            if exponent_leading_digit_separator:
+#                flags |= NumberFormatFlags.ExponentLeadingDigitSeparator.value
+#            if integer_trailing_digit_separator:
+#                flags |= NumberFormatFlags.IntegerTrailingDigitSeparator.value
+#            if fraction_trailing_digit_separator:
+#                flags |= NumberFormatFlags.FractionTrailingDigitSeparator.value
+#            if exponent_trailing_digit_separator:
+#                flags |= NumberFormatFlags.ExponentTrailingDigitSeparator.value
+#            if integer_consecutive_digit_separator:
+#                flags |= NumberFormatFlags.IntegerConsecutiveDigitSeparator.value
+#            if fraction_consecutive_digit_separator:
+#                flags |= NumberFormatFlags.FractionConsecutiveDigitSeparator.value
+#            if exponent_consecutive_digit_separator:
+#                flags |= NumberFormatFlags.ExponentConsecutiveDigitSeparator.value
+#            if special_digit_separator:
+#                flags |= NumberFormatFlags.SpecialDigitSeparator.value
+#
+#            # Digit separator.
+#            format = NumberFormat(flags)
+#            if format.intersects(NumberFormatFlags.DigitSeparatorFlagMask):
+#                format._value |= digit_separator_to_flags(digit_separator)
+#
+#            # Validation.
+#            is_invalid = (
+#                not is_valid_separator(digit_separator)
+#                or (format.intersects(NumberFormatFlags.NoExponentNotation) and format.intersects(NumberFormatFlags.ExponentFlagMask))
+#                or (no_positive_mantissa_sign and required_mantissa_sign)
+#                or (no_positive_exponent_sign and required_exponent_sign)
+#                or (no_special and (case_sensitive_special or special_digit_separator))
+#                or (format.flags & NumberFormatFlags.IntegerDigitSeparatorFlagMask == NumberFormatFlags.IntegerConsecutiveDigitSeparator)
+#                or (format.flags & NumberFormatFlags.FractionDigitSeparatorFlagMask == NumberFormatFlags.FractionConsecutiveDigitSeparator)
+#                or (format.flags & NumberFormatFlags.ExponentDigitSeparatorFlagMask == NumberFormatFlags.ExponentConsecutiveDigitSeparator)
+#            )
+#            if is_invalid:
+#                raise ValueError('invalid number format with value {}'.format(format))
+#
+#            return format
 
         @staticmethod
         def permissive():
@@ -1462,6 +1363,16 @@ if HAVE_FORMAT:
         | NumberFormatFlags.CaseSensitiveSpecial.value
     )
 
+else:
+    # not HAVE_FORMAT, need a dummy NumberFormat.
+
+    class NumberFormat(Structure):
+        '''Immutable wrapper around bitflags for a serialized number format.'''
+
+        _fields_ = [
+            ("_value", c_uint64)
+        ]
+
 # GLOBALS
 # -------
 
@@ -1470,11 +1381,13 @@ I8_FORMATTED_SIZE = c_size_t.in_dll(LIB, 'LEXICAL_I8_FORMATTED_SIZE').value
 I16_FORMATTED_SIZE = c_size_t.in_dll(LIB, 'LEXICAL_I16_FORMATTED_SIZE').value
 I32_FORMATTED_SIZE = c_size_t.in_dll(LIB, 'LEXICAL_I32_FORMATTED_SIZE').value
 I64_FORMATTED_SIZE = c_size_t.in_dll(LIB, 'LEXICAL_I64_FORMATTED_SIZE').value
+I128_FORMATTED_SIZE = c_size_t.in_dll(LIB, 'LEXICAL_I128_FORMATTED_SIZE').value
 ISIZE_FORMATTED_SIZE = c_size_t.in_dll(LIB, 'LEXICAL_ISIZE_FORMATTED_SIZE').value
 U8_FORMATTED_SIZE = c_size_t.in_dll(LIB, 'LEXICAL_U8_FORMATTED_SIZE').value
 U16_FORMATTED_SIZE = c_size_t.in_dll(LIB, 'LEXICAL_U16_FORMATTED_SIZE').value
 U32_FORMATTED_SIZE = c_size_t.in_dll(LIB, 'LEXICAL_U32_FORMATTED_SIZE').value
 U64_FORMATTED_SIZE = c_size_t.in_dll(LIB, 'LEXICAL_U64_FORMATTED_SIZE').value
+U128_FORMATTED_SIZE = c_size_t.in_dll(LIB, 'LEXICAL_U128_FORMATTED_SIZE').value
 USIZE_FORMATTED_SIZE = c_size_t.in_dll(LIB, 'LEXICAL_USIZE_FORMATTED_SIZE').value
 F32_FORMATTED_SIZE = c_size_t.in_dll(LIB, 'LEXICAL_F32_FORMATTED_SIZE').value
 F64_FORMATTED_SIZE = c_size_t.in_dll(LIB, 'LEXICAL_F64_FORMATTED_SIZE').value
@@ -1483,22 +1396,18 @@ I8_FORMATTED_SIZE_DECIMAL = c_size_t.in_dll(LIB, 'LEXICAL_I8_FORMATTED_SIZE_DECI
 I16_FORMATTED_SIZE_DECIMAL = c_size_t.in_dll(LIB, 'LEXICAL_I16_FORMATTED_SIZE_DECIMAL').value
 I32_FORMATTED_SIZE_DECIMAL = c_size_t.in_dll(LIB, 'LEXICAL_I32_FORMATTED_SIZE_DECIMAL').value
 I64_FORMATTED_SIZE_DECIMAL = c_size_t.in_dll(LIB, 'LEXICAL_I64_FORMATTED_SIZE_DECIMAL').value
+I128_FORMATTED_SIZE_DECIMAL = c_size_t.in_dll(LIB, 'LEXICAL_I128_FORMATTED_SIZE_DECIMAL').value
 ISIZE_FORMATTED_SIZE_DECIMAL = c_size_t.in_dll(LIB, 'LEXICAL_ISIZE_FORMATTED_SIZE_DECIMAL').value
 U8_FORMATTED_SIZE_DECIMAL = c_size_t.in_dll(LIB, 'LEXICAL_U8_FORMATTED_SIZE_DECIMAL').value
 U16_FORMATTED_SIZE_DECIMAL = c_size_t.in_dll(LIB, 'LEXICAL_U16_FORMATTED_SIZE_DECIMAL').value
 U32_FORMATTED_SIZE_DECIMAL = c_size_t.in_dll(LIB, 'LEXICAL_U32_FORMATTED_SIZE_DECIMAL').value
 U64_FORMATTED_SIZE_DECIMAL = c_size_t.in_dll(LIB, 'LEXICAL_U64_FORMATTED_SIZE_DECIMAL').value
+U128_FORMATTED_SIZE_DECIMAL = c_size_t.in_dll(LIB, 'LEXICAL_U128_FORMATTED_SIZE_DECIMAL').value
 USIZE_FORMATTED_SIZE_DECIMAL = c_size_t.in_dll(LIB, 'LEXICAL_USIZE_FORMATTED_SIZE_DECIMAL').value
 F32_FORMATTED_SIZE_DECIMAL = c_size_t.in_dll(LIB, 'LEXICAL_F32_FORMATTED_SIZE_DECIMAL').value
 F64_FORMATTED_SIZE_DECIMAL = c_size_t.in_dll(LIB, 'LEXICAL_F64_FORMATTED_SIZE_DECIMAL').value
 
 BUFFER_SIZE = c_size_t.in_dll(LIB, 'LEXICAL_BUFFER_SIZE').value
-
-if HAVE_I128:
-    I128_FORMATTED_SIZE = c_size_t.in_dll(LIB, 'LEXICAL_I128_FORMATTED_SIZE').value
-    U128_FORMATTED_SIZE = c_size_t.in_dll(LIB, 'LEXICAL_U128_FORMATTED_SIZE').value
-    I128_FORMATTED_SIZE_DECIMAL = c_size_t.in_dll(LIB, 'LEXICAL_I128_FORMATTED_SIZE_DECIMAL').value
-    U128_FORMATTED_SIZE_DECIMAL = c_size_t.in_dll(LIB, 'LEXICAL_U128_FORMATTED_SIZE_DECIMAL').value
 
 # TYPES
 # -----
@@ -1627,6 +1536,470 @@ class LexicalError(Exception):
             return 'Number was found with invalid leading zeros at index {}'.format(self.error.index)
         else:
             raise ValueError('Invalid ErrorCode for lexical error.')
+
+# OPTION TAG
+
+class OptionTag(enum.Enum):
+    '''Tag for the option tagged enum.'''
+
+    Some = 0
+    NotAny = 1
+
+# OPTION
+
+def _option(cls, name):
+    class Option(Structure):
+        _fields_ = [
+            ("_tag", c_uint),
+            ("data", cls)
+        ]
+
+        @property
+        def tag(self):
+            return OptionTag(self._tag)
+
+        @tag.setter
+        def tag(self, value):
+            if not isinstance(value, OptionTag):
+                raise TypeError('Expected OptionTag')
+            self._tag = value.value
+
+        def into(self):
+            '''Extract value from structure.'''
+
+            if self.tag == OptionTag.NotAny:
+                raise RuntimeError('Option was None.')
+            return self.data
+
+    Option.__name__ = name
+    return Option
+
+# PARSE INTEGER OPTIONS
+
+class _ParseIntegerOptionsBuilder(Structure):
+    _fields_ = [
+        ('_radix', c_uint8),
+        ('_format', NumberFormat),
+    ]
+
+    def build(self):
+        return LIB.parse_integer_options_build(self)
+
+    if HAVE_RADIX:
+        def radix(self, radix):
+            return LIB.parse_integer_options_builder_radix(self, radix)
+
+    if HAVE_FORMAT:
+        def format(self, format):
+            return LIB.parse_integer_options_builder_format(self, format)
+
+
+class ParseIntegerOptionsBuilder:
+    '''Wrapper around _ParseIntegerOptionsBuilder'''
+
+    def __init__(self, builder):
+        self.builder = builder
+
+    def build(self):
+        return self.builder.build().into()
+
+    if HAVE_RADIX:
+        def radix(self, radix):
+            self.builder = self.builder.radix(radix)
+
+    if HAVE_FORMAT:
+        def format(self, format):
+            self.builder = self.builder.format(format)
+
+
+class ParseIntegerOptions(Structure):
+    '''Options to customize parsing integers.'''
+
+    _fields_ = [
+        ('_radix', c_uint32),
+        ('_format', NumberFormat),
+    ]
+
+    @staticmethod
+    def builder():
+        return ParseIntegerOptionsBuilder(LIB.parse_integer_options_builder())
+
+    @property
+    def radix(self):
+        return self._radix
+
+    @property
+    def format(self):
+        return self._format
+
+
+_OptionParseIntegerOptions = _option(ParseIntegerOptions, '_OptionParseIntegerOptions')
+LIB.parse_integer_options_builder.restype = _ParseIntegerOptionsBuilder
+LIB.parse_integer_options_build.restype = _OptionParseIntegerOptions
+if HAVE_RADIX:
+    LIB.parse_integer_options_builder_radix.restype = _ParseIntegerOptionsBuilder
+if HAVE_FORMAT:
+    LIB.parse_integer_options_builder_format.restype = _ParseIntegerOptionsBuilder
+
+# PARSE FLOAT OPTIONS
+
+class _ParseFloatOptionsBuilder(Structure):
+    _fields_ = [
+        ('_lossy', c_bool),
+        ('_exponent_char', c_uint8),
+        ('_radix', c_uint8),
+        ('_format', NumberFormat),
+        ('_rounding', c_int32),
+        ('_nan_string_ptr', POINTER(c_ubyte)),
+        ('_nan_string_length', c_size_t),
+        ('_inf_string_ptr', POINTER(c_ubyte)),
+        ('_inf_string_length', c_size_t),
+        ('_infinity_string_ptr', POINTER(c_ubyte)),
+        ('_infinity_string_length', c_size_t),
+    ]
+
+    def build(self):
+        return LIB.parse_float_options_build(self)
+
+    def lossy(self, lossy):
+        return LIB.parse_float_options_builder_lossy(self, lossy)
+
+    def exponent_char(self, exponent_char):
+        return LIB.parse_float_options_builder_exponent_char(self, exponent_char)
+
+    def nan_string(self, nan_string):
+        ptr = _to_u8_ptr(nan_string)
+        length = len(nan_string)
+        return LIB.parse_float_options_builder_nan_string(self, ptr, length)
+
+    def inf_string(self, inf_string):
+        ptr = _to_u8_ptr(inf_string)
+        length = len(inf_string)
+        return LIB.parse_float_options_builder_inf_string(self, ptr, length)
+
+    def infinity_string(self, infinity_string):
+        ptr = _to_u8_ptr(infinity_string)
+        length = len(infinity_string)
+        return LIB.parse_float_options_builder_infinity_string(self, ptr, length)
+
+    if HAVE_RADIX:
+        def radix(self, radix):
+            return LIB.parse_float_options_builder_radix(self, radix)
+
+    if HAVE_FORMAT:
+        def format(self, format):
+            return LIB.parse_float_options_builder_format(self, format)
+
+    if HAVE_ROUNDING:
+        def rounding(self, rounding):
+            return LIB.parse_float_options_builder_rounding(self, rounding)
+
+class ParseFloatOptionsBuilder:
+    '''Wrapper around _ParseFloatOptionsBuilder.'''
+
+    def __init__(self, builder):
+        # Store memos to ensure the pointers don't become invalid.
+        self.builder = builder
+        self._nan_string = None
+        self._inf_string = None
+        self._infinity_string = None
+
+    def build(self):
+        # Copy over memos to ensure pointers don't become invalid.
+        result = ParseFloatOptions(self.builder.build().into())
+        result._nan_string = self._nan_string
+        result._inf_string = self._inf_string
+        result._infinity_string = self._infinity_string
+        return result
+
+    def lossy(self, lossy):
+        self.builder = self.builder.lossy(lossy)
+
+    def exponent_char(self, exponent_char):
+        self.builder = self.builder.exponent_char(exponent_char)
+
+    def nan_string(self, nan_string):
+        self._nan_string = nan_string
+        self.builder = self.builder.nan_string(nan_string)
+
+    def inf_string(self, inf_string):
+        self._inf_string = inf_string
+        self.builder = self.builder.inf_string(inf_string)
+
+    def infinity_string(self, infinity_string):
+        self._infinity_string = infinity_string
+        self.builder = self.builder.infinity_string(infinity_string)
+
+    if HAVE_RADIX:
+        def radix(self, radix):
+            self.builder = self.builder.radix(radix)
+
+    if HAVE_FORMAT:
+        def format(self, format):
+            self.builder = self.builder.format(format)
+
+    if HAVE_ROUNDING:
+        def rounding(self, rounding):
+            self.builder = self.builder.rounding(rounding)
+
+class _ParseFloatOptions(Structure):
+    _fields_ = [
+        ('_lossy', c_bool),
+        ('_exponent_char', c_uint8),
+        ('_radix', c_uint32),
+        ('_format', NumberFormat),
+        ('_rounding', RoundingKind),
+        ('_nan_string_ptr', POINTER(c_ubyte)),
+        ('_nan_string_length', c_size_t),
+        ('_inf_string_ptr', POINTER(c_ubyte)),
+        ('_inf_string_length', c_size_t),
+        ('_infinity_string_ptr', POINTER(c_ubyte)),
+        ('_infinity_string_length', c_size_t),
+    ]
+
+class ParseFloatOptions:
+    '''Options to customize parsing floats.'''
+
+    def __init__(self, options):
+        # Store memos to ensure the pointers don't become invalid.
+        self._options = options
+        self._nan_string = None
+        self._inf_string = None
+        self._infinity_string = None
+
+    @staticmethod
+    def builder():
+        return ParseFloatOptionsBuilder(LIB.parse_float_options_builder())
+
+    @property
+    def lossy(self):
+        return self._options._lossy
+
+    @property
+    def exponent_char(self):
+        return self._options._exponent_char
+
+    @property
+    def radix(self):
+        return self._options._radix
+
+    @property
+    def format(self):
+        return self._options._format
+
+    @property
+    def rounding(self):
+        return self._options._rounding
+
+    @property
+    def nan_string(self):
+        ptr = self._options._nan_string_ptr
+        length = self._options._nan_string_length
+        return string_at(ptr, length).decode('ascii')
+
+    @property
+    def inf_string(self):
+        ptr = self._options._inf_string_ptr
+        length = self._options._inf_string_length
+        return string_at(ptr, length).decode('ascii')
+
+    @property
+    def infinity_string(self):
+        ptr = self._options._infinity_string_ptr
+        length = self._options._infinity_string_length
+        return string_at(ptr, length).decode('ascii')
+
+_OptionParseFloatOptions = _option(_ParseFloatOptions, '_OptionParseFloatOptions')
+LIB.parse_float_options_builder.restype = _ParseFloatOptionsBuilder
+LIB.parse_float_options_build.restype = _OptionParseFloatOptions
+LIB.parse_float_options_builder_lossy.restype = _ParseFloatOptionsBuilder
+LIB.parse_float_options_builder_exponent_char.restype = _ParseFloatOptionsBuilder
+LIB.parse_float_options_builder_nan_string.restype = _ParseFloatOptionsBuilder
+LIB.parse_float_options_builder_inf_string.restype = _ParseFloatOptionsBuilder
+LIB.parse_float_options_builder_infinity_string.restype = _ParseFloatOptionsBuilder
+if HAVE_RADIX:
+    LIB.parse_float_options_builder_radix.restype = _ParseFloatOptionsBuilder
+if HAVE_FORMAT:
+    LIB.parse_float_options_builder_format.restype = _ParseFloatOptionsBuilder
+if HAVE_ROUNDING:
+    LIB.parse_float_options_builder_rounding.restype = _ParseFloatOptionsBuilder
+
+# WRITE INTEGER OPTIONS
+
+class _WriteIntegerOptionsBuilder(Structure):
+    _fields_ = [
+        ('_radix', c_uint8),
+    ]
+
+    def build(self):
+        return LIB.write_integer_options_build(self)
+
+    if HAVE_RADIX:
+        def radix(self, radix):
+            return LIB.write_integer_options_builder_radix(self, radix)
+
+
+class WriteIntegerOptionsBuilder:
+    '''Wrapper around _WriteIntegerOptionsBuilder'''
+
+    def __init__(self, builder):
+        self.builder = builder
+
+    def build(self):
+        return self.builder.build().into()
+
+    if HAVE_RADIX:
+        def radix(self, radix):
+            self.builder = self.builder.radix(radix)
+
+class WriteIntegerOptions(Structure):
+    '''Options to customize writing integers.'''
+
+    _fields_ = [
+        ('_radix', c_uint32),
+    ]
+
+    @staticmethod
+    def builder():
+        return WriteIntegerOptionsBuilder(LIB.write_integer_options_builder())
+
+    @property
+    def radix(self):
+        return self._radix
+
+_OptionWriteIntegerOptions = _option(WriteIntegerOptions, '_OptionWriteIntegerOptions')
+LIB.write_integer_options_builder.restype = _WriteIntegerOptionsBuilder
+LIB.write_integer_options_build.restype = _OptionWriteIntegerOptions
+if HAVE_RADIX:
+    LIB.write_integer_options_builder_radix.restype = _WriteIntegerOptionsBuilder
+
+# WRITE FLOAT OPTIONS
+
+class _WriteFloatOptionsBuilder(Structure):
+    _fields_ = [
+        ('_exponent_char', c_uint8),
+        ('_radix', c_uint8),
+        ('_trim_floats', c_bool),
+        ('_nan_string_ptr', POINTER(c_ubyte)),
+        ('_nan_string_length', c_size_t),
+        ('_inf_string_ptr', POINTER(c_ubyte)),
+        ('_inf_string_length', c_size_t),
+    ]
+
+    def build(self):
+        return LIB.write_float_options_build(self)
+
+    def exponent_char(self, exponent_char):
+        return LIB.write_float_options_builder_exponent_char(self, exponent_char)
+
+    def trim_floats(self, trim_floats):
+        return LIB.write_float_options_builder_trim_floats(self, trim_floats)
+
+    def nan_string(self, nan_string):
+        ptr = _to_u8_ptr(nan_string)
+        length = len(nan_string)
+        return LIB.write_float_options_builder_nan_string(self, ptr, length)
+
+    def inf_string(self, inf_string):
+        ptr = _to_u8_ptr(inf_string)
+        length = len(inf_string)
+        return LIB.write_float_options_builder_inf_string(self, ptr, length)
+
+    if HAVE_RADIX:
+        def radix(self, radix):
+            return LIB.write_float_options_builder_radix(self, radix)
+
+class WriteFloatOptionsBuilder:
+    '''Wrapper around _WriteFloatOptionsBuilder.'''
+
+    def __init__(self, builder):
+        # Store memos to ensure the pointers don't become invalid.
+        self.builder = builder
+        self._nan_string = None
+        self._inf_string = None
+
+    def build(self):
+        # Copy over memos to ensure pointers don't become invalid.
+        result = WriteFloatOptions(self.builder.build().into())
+        result._nan_string = self._nan_string
+        result._inf_string = self._inf_string
+        return result
+
+    def exponent_char(self, exponent_char):
+        self.builder = self.builder.exponent_char(exponent_char)
+
+    def trim_floats(self, trim_floats):
+        self.builder = self.builder.trim_floats(trim_floats)
+
+    def nan_string(self, nan_string):
+        self._nan_string = nan_string
+        self.builder = self.builder.nan_string(nan_string)
+
+    def inf_string(self, inf_string):
+        self._inf_string = inf_string
+        self.builder = self.builder.inf_string(inf_string)
+
+    if HAVE_RADIX:
+        def radix(self, radix):
+            self.builder = self.builder.radix(radix)
+
+class _WriteFloatOptions(Structure):
+    _fields_ = [
+        ('_exponent_char', c_uint8),
+        ('_radix', c_uint32),
+        ('_trim_floats', c_bool),
+        ('_nan_string_ptr', POINTER(c_ubyte)),
+        ('_nan_string_length', c_size_t),
+        ('_inf_string_ptr', POINTER(c_ubyte)),
+        ('_inf_string_length', c_size_t),
+    ]
+
+class WriteFloatOptions:
+    '''Options to customize writing floats.'''
+
+    def __init__(self, options):
+        # Store memos to ensure the pointers don't become invalid.
+        self._options = options
+        self._nan_string = None
+        self._inf_string = None
+
+    @staticmethod
+    def builder():
+        return WriteFloatOptionsBuilder(LIB.write_float_options_builder())
+
+    @property
+    def exponent_char(self):
+        return self._options._exponent_char
+
+    @property
+    def radix(self):
+        return self._options._radix
+
+    @property
+    def trim_floats(self):
+        return self._options._trim_floats
+
+    @property
+    def nan_string(self):
+        ptr = self._options._nan_string_ptr
+        length = self._options._nan_string_length
+        return string_at(ptr, length).decode('ascii')
+
+    @property
+    def inf_string(self):
+        ptr = self._options._inf_string_ptr
+        length = self._options._inf_string_length
+        return string_at(ptr, length).decode('ascii')
+
+_OptionWriteFloatOptions = _option(_WriteFloatOptions, '_OptionWriteFloatOptions')
+LIB.write_float_options_builder.restype = _WriteFloatOptionsBuilder
+LIB.write_float_options_build.restype = _OptionWriteFloatOptions
+LIB.write_float_options_builder_exponent_char.restype = _WriteFloatOptionsBuilder
+LIB.write_float_options_builder_trim_floats.restype = _WriteFloatOptionsBuilder
+LIB.write_float_options_builder_nan_string.restype = _WriteFloatOptionsBuilder
+LIB.write_float_options_builder_inf_string.restype = _WriteFloatOptionsBuilder
+if HAVE_RADIX:
+    LIB.write_float_options_builder_radix.restype = _WriteFloatOptionsBuilder
 
 # RESULT TAG
 
@@ -1884,84 +2257,78 @@ def f64toa(value):
     '''Format 64-bit float to bytes'''
     return _to_string('lexical_f64toa', F64_FORMATTED_SIZE_DECIMAL, c_double, value)
 
-if HAVE_RADIX:
-    # TO_STRING_RADIX
+def _to_string_with_options(name, max_size, type, value, options):
+    buffer_type = c_ubyte * max_size
+    buffer = buffer_type()
+    if not isinstance(value, type):
+        value = type(value)
+    cb = getattr(LIB, name)
+    first = _to_u8_ptr(buffer)
+    last = _to_u8_ptr(_to_address(first) + len(buffer))
+    ptr = cb(value, pointer(options), first, last)
+    length = _distance(first, ptr)
+    return string_at(buffer, length).decode('ascii')
 
-    def _to_string_radix(name, max_size, type, value, radix):
-        buffer_type = c_ubyte * max_size
-        buffer = buffer_type()
-        if not isinstance(value, type):
-            value = type(value)
-        if not isinstance(radix, c_uint8):
-            radix = c_uint8(radix)
-        cb = getattr(LIB, name)
-        first = _to_u8_ptr(buffer)
-        last = _to_u8_ptr(_to_address(first) + len(buffer))
-        ptr = cb(value, radix, first, last)
-        length = _distance(first, ptr)
-        return string_at(buffer, length).decode('ascii')
+LIB.lexical_i8toa_with_options.restype = POINTER(c_ubyte)
+LIB.lexical_i16toa_with_options.restype = POINTER(c_ubyte)
+LIB.lexical_i32toa_with_options.restype = POINTER(c_ubyte)
+LIB.lexical_i64toa_with_options.restype = POINTER(c_ubyte)
+LIB.lexical_isizetoa_with_options.restype = POINTER(c_ubyte)
+LIB.lexical_u8toa_with_options.restype = POINTER(c_ubyte)
+LIB.lexical_u16toa_with_options.restype = POINTER(c_ubyte)
+LIB.lexical_u32toa_with_options.restype = POINTER(c_ubyte)
+LIB.lexical_u64toa_with_options.restype = POINTER(c_ubyte)
+LIB.lexical_usizetoa_with_options.restype = POINTER(c_ubyte)
+LIB.lexical_f32toa_with_options.restype = POINTER(c_ubyte)
+LIB.lexical_f64toa_with_options.restype = POINTER(c_ubyte)
 
-    LIB.lexical_i8toa_radix.restype = POINTER(c_ubyte)
-    LIB.lexical_i16toa_radix.restype = POINTER(c_ubyte)
-    LIB.lexical_i32toa_radix.restype = POINTER(c_ubyte)
-    LIB.lexical_i64toa_radix.restype = POINTER(c_ubyte)
-    LIB.lexical_isizetoa_radix.restype = POINTER(c_ubyte)
-    LIB.lexical_u8toa_radix.restype = POINTER(c_ubyte)
-    LIB.lexical_u16toa_radix.restype = POINTER(c_ubyte)
-    LIB.lexical_u32toa_radix.restype = POINTER(c_ubyte)
-    LIB.lexical_u64toa_radix.restype = POINTER(c_ubyte)
-    LIB.lexical_usizetoa_radix.restype = POINTER(c_ubyte)
-    LIB.lexical_f32toa_radix.restype = POINTER(c_ubyte)
-    LIB.lexical_f64toa_radix.restype = POINTER(c_ubyte)
+def i8toa_with_options(value, options):
+    '''Format 8-bit signed integer to bytes with options.'''
+    return _to_string_with_options('lexical_i8toa_with_options', I8_FORMATTED_SIZE, c_int8, value, options)
 
-    def i8toa_radix(value, radix):
-        '''Format 8-bit signed integer to bytes'''
-        return _to_string_radix('lexical_i8toa_radix', I8_FORMATTED_SIZE, c_int8, value, radix)
+def i16toa_with_options(value, options):
+    '''Format 16-bit signed integer to bytes with options.'''
+    return _to_string_with_options('lexical_i16toa_with_options', I16_FORMATTED_SIZE, c_int16, value, options)
 
-    def i16toa_radix(value, radix):
-        '''Format 16-bit signed integer to bytes'''
-        return _to_string_radix('lexical_i16toa_radix', I16_FORMATTED_SIZE, c_int16, value, radix)
+def i32toa_with_options(value, options):
+    '''Format 32-bit signed integer to bytes with options.'''
+    return _to_string_with_options('lexical_i32toa_with_options', I32_FORMATTED_SIZE, c_int32, value, options)
 
-    def i32toa_radix(value, radix):
-        '''Format 32-bit signed integer to bytes'''
-        return _to_string_radix('lexical_i32toa_radix', I32_FORMATTED_SIZE, c_int32, value, radix)
+def i64toa_with_options(value, options):
+    '''Format 64-bit signed integer to bytes with options.'''
+    return _to_string_with_options('lexical_i64toa_with_options', I64_FORMATTED_SIZE, c_int64, value, options)
 
-    def i64toa_radix(value, radix):
-        '''Format 64-bit signed integer to bytes'''
-        return _to_string_radix('lexical_i64toa_radix', I64_FORMATTED_SIZE, c_int64, value, radix)
+def isizetoa_with_options(value, options):
+    '''Format ssize_t to bytes with options.'''
+    return _to_string_with_options('lexical_isizetoa_with_options', ISIZE_FORMATTED_SIZE, c_ssize_t, value, options)
 
-    def isizetoa_radix(value, radix):
-        '''Format ssize_t to bytes'''
-        return _to_string_radix('lexical_isizetoa_radix', ISIZE_FORMATTED_SIZE, c_ssize_t, value, radix)
+def u8toa_with_options(value, options):
+    '''Format 8-bit unsigned integer to bytes with options.'''
+    return _to_string_with_options('lexical_u8toa_with_options', U8_FORMATTED_SIZE, c_uint8, value, options)
 
-    def u8toa_radix(value, radix):
-        '''Format 8-bit unsigned integer to bytes'''
-        return _to_string_radix('lexical_u8toa_radix', U8_FORMATTED_SIZE, c_uint8, value, radix)
+def u16toa_with_options(value, options):
+    '''Format 16-bit unsigned integer to bytes with options.'''
+    return _to_string_with_options('lexical_u16toa_with_options', U16_FORMATTED_SIZE, c_uint16, value, options)
 
-    def u16toa_radix(value, radix):
-        '''Format 16-bit unsigned integer to bytes'''
-        return _to_string_radix('lexical_u16toa_radix', U16_FORMATTED_SIZE, c_uint16, value, radix)
+def u32toa_with_options(value, options):
+    '''Format 32-bit unsigned integer to bytes with options.'''
+    return _to_string_with_options('lexical_u32toa_with_options', U32_FORMATTED_SIZE, c_uint32, value, options)
 
-    def u32toa_radix(value, radix):
-        '''Format 32-bit unsigned integer to bytes'''
-        return _to_string_radix('lexical_u32toa_radix', U32_FORMATTED_SIZE, c_uint32, value, radix)
+def u64toa_with_options(value, options):
+    '''Format 64-bit unsigned integer to bytes with options.'''
+    return _to_string_with_options('lexical_u64toa_with_options', U64_FORMATTED_SIZE, c_uint64, value, options)
 
-    def u64toa_radix(value, radix):
-        '''Format 64-bit unsigned integer to bytes'''
-        return _to_string_radix('lexical_u64toa_radix', U64_FORMATTED_SIZE, c_uint64, value, radix)
+def usizetoa_with_options(value, options):
+    '''Format size_t to bytes with options.'''
+    return _to_string_with_options('lexical_usizetoa_with_options', USIZE_FORMATTED_SIZE, c_size_t, value, options)
 
-    def usizetoa_radix(value, radix):
-        '''Format size_t to bytes'''
-        return _to_string_radix('lexical_usizetoa_radix', USIZE_FORMATTED_SIZE, c_size_t, value, radix)
+def f32toa_with_options(value, options):
+    '''Format 32-bit float to bytes with options.'''
+    return _to_string_with_options('lexical_f32toa_with_options', F32_FORMATTED_SIZE, c_float, value, options)
 
-    def f32toa_radix(value, radix):
-        '''Format 32-bit float to bytes'''
-        return _to_string_radix('lexical_f32toa_radix', F32_FORMATTED_SIZE, c_float, value, radix)
-
-    def f64toa_radix(value, radix):
-        '''Format 64-bit float to bytes'''
-        return _to_string_radix('lexical_f64toa_radix', F64_FORMATTED_SIZE, c_double, value, radix)
-
+def f64toa_with_options(value, options):
+    '''Format 64-bit float to bytes with options.'''
+    return _to_string_with_options('lexical_f64toa_with_options', F64_FORMATTED_SIZE, c_double, value, options)
 
 # PARSE
 
@@ -2039,19 +2406,6 @@ def atof64(data):
     '''Parse 64-bit float from input data.'''
     return _parse('lexical_atof64', data)
 
-# COMPLETE PARSE LOSSY
-
-LIB.lexical_atof32_lossy.restype = ResultF32
-LIB.lexical_atof64_lossy.restype = ResultF64
-
-def atof32_lossy(data):
-    '''Lossily parse 32-bit float from input data.'''
-    return _parse('lexical_atof32_lossy', data)
-
-def atof64_lossy(data):
-    '''Lossily parse 64-bit float from input data.'''
-    return _parse('lexical_atof64_lossy', data)
-
 # PARTIAL PARSE
 
 LIB.lexical_atoi8_partial.restype = PartialResultI8
@@ -2115,521 +2469,512 @@ def atof64_partial(data):
     '''Parse 64-bit float and the number of processed bytes from bytes.'''
     return _parse('lexical_atof64_partial', data)
 
-# PARTIAL PARSE LOSSY
-
-LIB.lexical_atof32_partial_lossy.restype = PartialResultF32
-LIB.lexical_atof64_partial_lossy.restype = PartialResultF64
-
-def atof32_partial_lossy(data):
-    '''Lossily parse 32-bit float and the number of processed bytes from input data.'''
-    return _parse('lexical_atof32_partial_lossy', data)
-
-def atof64_partial_lossy(data):
-    '''Lossily parse 64-bit float and the number of processed bytes from input data.'''
-    return _parse('lexical_atof64_partial_lossy', data)
-
-if HAVE_RADIX:
-    # PARSE RADIX
-
-    def _parse_radix(name, data, radix):
-        if isinstance(data, str):
-            data = data.encode('ascii')
-        if not isinstance(data, (bytes, bytearray)):
-            raise TypeError("Must parse from bytes.")
-        if not isinstance(radix, c_uint8):
-            radix = c_uint8(radix)
-        cb = getattr(LIB, name)
-        first = _to_u8_ptr(data)
-        last = _to_u8_ptr(_to_address(first) + len(data))
-        result = cb(first, last, radix)
-        return result.into()
-
-    # COMPLETE PARSE RADIX
-
-    LIB.lexical_atoi8_radix.restype = ResultI8
-    LIB.lexical_atoi16_radix.restype = ResultI16
-    LIB.lexical_atoi32_radix.restype = ResultI32
-    LIB.lexical_atoi64_radix.restype = ResultI64
-    LIB.lexical_atoisize_radix.restype = ResultIsize
-    LIB.lexical_atou8_radix.restype = ResultU8
-    LIB.lexical_atou16_radix.restype = ResultU16
-    LIB.lexical_atou32_radix.restype = ResultU32
-    LIB.lexical_atou64_radix.restype = ResultU64
-    LIB.lexical_atousize_radix.restype = ResultUsize
-    LIB.lexical_atof32_radix.restype = ResultF32
-    LIB.lexical_atof64_radix.restype = ResultF64
-
-    def atoi8_radix(data, radix):
-        '''Parse 8-bit signed integer from bytes.'''
-        return _parse_radix('lexical_atoi8_radix', data, radix)
-
-    def atoi16_radix(data, radix):
-        '''Parse 16-bit signed integer from bytes.'''
-        return _parse_radix('lexical_atoi16_radix', data, radix)
-
-    def atoi32_radix(data, radix):
-        '''Parse 32-bit signed integer from bytes.'''
-        return _parse_radix('lexical_atoi32_radix', data, radix)
-
-    def atoi64_radix(data, radix):
-        '''Parse 64-bit signed integer from bytes.'''
-        return _parse_radix('lexical_atoi64_radix', data, radix)
-
-    def atoisize_radix(data, radix):
-        '''Parse ssize_t from bytes.'''
-        return _parse_radix('lexical_atoisize_radix', data, radix)
-
-    def atou8_radix(data, radix):
-        '''Parse 8-bit unsigned integer from bytes.'''
-        return _parse_radix('lexical_atou8_radix', data, radix)
-
-    def atou16_radix(data, radix):
-        '''Parse 16-bit unsigned integer from bytes.'''
-        return _parse_radix('lexical_atou16_radix', data, radix)
-
-    def atou32_radix(data, radix):
-        '''Parse 32-bit unsigned integer from bytes.'''
-        return _parse_radix('lexical_atou32_radix', data, radix)
-
-    def atou64_radix(data, radix):
-        '''Parse 64-bit unsigned integer from bytes.'''
-        return _parse_radix('lexical_atou64_radix', data, radix)
-
-    def atousize_radix(data, radix):
-        '''Parse size_t from bytes.'''
-        return _parse_radix('lexical_atousize_radix', data, radix)
-
-    def atof32_radix(data, radix):
-        '''Parse 32-bit float from bytes.'''
-        return _parse_radix('lexical_atof32_radix', data, radix)
-
-    def atof64_radix(data, radix):
-        '''Parse 64-bit float from bytes.'''
-        return _parse_radix('lexical_atof64_radix', data, radix)
-
-    # COMPLETE PARSE LOSSY RADIX
-
-    LIB.lexical_atof32_lossy_radix.restype = ResultF32
-    LIB.lexical_atof64_lossy_radix.restype = ResultF64
-
-    def atof32_lossy_radix(data, radix):
-        '''Lossily parse 32-bit float from bytes.'''
-        return _parse_radix('lexical_atof32_lossy_radix', data, radix)
-
-    def atof64_lossy_radix(data, radix):
-        '''Lossily parse 64-bit float from bytes.'''
-        return _parse_radix('lexical_atof64_lossy_radix', data, radix)
-
-    # PARTIAL PARSE RADIX
-
-    LIB.lexical_atoi8_partial_radix.restype = PartialResultI8
-    LIB.lexical_atoi16_partial_radix.restype = PartialResultI16
-    LIB.lexical_atoi32_partial_radix.restype = PartialResultI32
-    LIB.lexical_atoi64_partial_radix.restype = PartialResultI64
-    LIB.lexical_atoisize_partial_radix.restype = PartialResultIsize
-    LIB.lexical_atou8_partial_radix.restype = PartialResultU8
-    LIB.lexical_atou16_partial_radix.restype = PartialResultU16
-    LIB.lexical_atou32_partial_radix.restype = PartialResultU32
-    LIB.lexical_atou64_partial_radix.restype = PartialResultU64
-    LIB.lexical_atousize_partial_radix.restype = PartialResultUsize
-    LIB.lexical_atof32_partial_radix.restype = PartialResultF32
-    LIB.lexical_atof64_partial_radix.restype = PartialResultF64
-
-    def atoi8_partial_radix(data, radix):
-        '''Parse 8-bit signed integer and the number of processed bytes from input data.'''
-        return _parse_radix('lexical_atoi8_partial_radix', data, radix)
-
-    def atoi16_partial_radix(data, radix):
-        '''Parse 16-bit signed integer and the number of processed bytes from input data.'''
-        return _parse_radix('lexical_atoi16_partial_radix', data, radix)
-
-    def atoi32_partial_radix(data, radix):
-        '''Parse 32-bit signed integer and the number of processed bytes from input data.'''
-        return _parse_radix('lexical_atoi32_partial_radix', data, radix)
-
-    def atoi64_partial_radix(data, radix):
-        '''Parse 64-bit signed integer and the number of processed bytes from input data.'''
-        return _parse_radix('lexical_atoi64_partial_radix', data, radix)
-
-    def atoisize_partial_radix(data, radix):
-        '''Parse ssize_t and the number of processed bytes from input data.'''
-        return _parse_radix('lexical_atoisize_partial_radix', data, radix)
-
-    def atou8_partial_radix(data, radix):
-        '''Parse 8-bit unsigned integer and the number of processed bytes from input data.'''
-        return _parse_radix('lexical_atou8_partial_radix', data, radix)
-
-    def atou16_partial_radix(data, radix):
-        '''Parse 16-bit unsigned integer and the number of processed bytes from input data.'''
-        return _parse_radix('lexical_atou16_partial_radix', data, radix)
-
-    def atou32_partial_radix(data, radix):
-        '''Parse 32-bit unsigned integer and the number of processed bytes from input data.'''
-        return _parse_radix('lexical_atou32_partial_radix', data, radix)
-
-    def atou64_partial_radix(data, radix):
-        '''Parse 64-bit unsigned integer and the number of processed bytes from input data.'''
-        return _parse_radix('lexical_atou64_partial_radix', data, radix)
-
-    def atousize_partial_radix(data, radix):
-        '''Parse size_t and the number of processed bytes from input data.'''
-        return _parse_radix('lexical_atousize_partial_radix', data, radix)
-
-    def atof32_partial_radix(data, radix):
-        '''Parse 32-bit float and the number of processed bytes from bytes.'''
-        return _parse_radix('lexical_atof32_partial_radix', data, radix)
-
-    def atof64_partial_radix(data, radix):
-        '''Parse 64-bit float and the number of processed bytes from bytes.'''
-        return _parse_radix('lexical_atof64_partial_radix', data, radix)
-
-    # PARTIAL PARSE LOSSY RADIX
-
-    LIB.lexical_atof32_partial_lossy_radix.restype = PartialResultF32
-    LIB.lexical_atof64_partial_lossy_radix.restype = PartialResultF64
-
-    def atof32_partial_lossy_radix(data, radix):
-        '''Lossily parse 32-bit float and the number of processed bytes from input data.'''
-        return _parse_radix('lexical_atof32_partial_lossy_radix', data, radix)
-
-    def atof64_partial_lossy_radix(data, radix):
-        '''Lossily parse 64-bit float and the number of processed bytes from input data.'''
-        return _parse_radix('lexical_atof64_partial_lossy_radix', data, radix)
-
-# PARSE FORMAT
-
-if HAVE_FORMAT:
-    def _parse_format(name, data, format):
-        if isinstance(data, str):
-            data = data.encode('ascii')
-        if not isinstance(data, (bytes, bytearray)):
-            raise TypeError("Must parse from bytes.")
-        if not isinstance(format, NumberFormat):
-            format = NumberFormat(format)
-        cb = getattr(LIB, name)
-        first = _to_u8_ptr(data)
-        last = _to_u8_ptr(_to_address(first) + len(data))
-        result = cb(first, last, format)
-        return result.into()
-
-    # COMPLETE PARSE FORMAT
-
-    LIB.lexical_atoi8_format.restype = ResultI8
-    LIB.lexical_atoi16_format.restype = ResultI16
-    LIB.lexical_atoi32_format.restype = ResultI32
-    LIB.lexical_atoi64_format.restype = ResultI64
-    LIB.lexical_atoisize_format.restype = ResultIsize
-    LIB.lexical_atou8_format.restype = ResultU8
-    LIB.lexical_atou16_format.restype = ResultU16
-    LIB.lexical_atou32_format.restype = ResultU32
-    LIB.lexical_atou64_format.restype = ResultU64
-    LIB.lexical_atousize_format.restype = ResultUsize
-    LIB.lexical_atof32_format.restype = ResultF32
-    LIB.lexical_atof64_format.restype = ResultF64
-
-    def atoi8_format(data, format):
-        '''Parse 8-bit signed integer from input data.'''
-        return _parse_format('lexical_atoi8_format', data, format)
-
-    def atoi16_format(data, format):
-        '''Parse 16-bit signed integer from input data.'''
-        return _parse_format('lexical_atoi16_format', data, format)
-
-    def atoi32_format(data, format):
-        '''Parse 32-bit signed integer from input data.'''
-        return _parse_format('lexical_atoi32_format', data, format)
-
-    def atoi64_format(data, format):
-        '''Parse 64-bit signed integer from input data.'''
-        return _parse_format('lexical_atoi64_format', data, format)
-
-    def atoisize_format(data, format):
-        '''Parse ssize_t from input data.'''
-        return _parse_format('lexical_atoisize_format', data, format)
-
-    def atou8_format(data, format):
-        '''Parse 8-bit unsigned integer from input data.'''
-        return _parse_format('lexical_atou8_format', data, format)
-
-    def atou16_format(data, format):
-        '''Parse 16-bit unsigned integer from input data.'''
-        return _parse_format('lexical_atou16_format', data, format)
-
-    def atou32_format(data, format):
-        '''Parse 32-bit unsigned integer from input data.'''
-        return _parse_format('lexical_atou32_format', data, format)
-
-    def atou64_format(data, format):
-        '''Parse 64-bit unsigned integer from input data.'''
-        return _parse_format('lexical_atou64_format', data, format)
-
-    def atousize_format(data, format):
-        '''Parse size_t from input data.'''
-        return _parse_format('lexical_atousize_format', data, format)
-
-    def atof32_format(data, format):
-        '''Parse 32-bit float from input data.'''
-        return _parse_format('lexical_atof32_format', data, format)
-
-    def atof64_format(data, format):
-        '''Parse 64-bit float from input data.'''
-        return _parse_format('lexical_atof64_format', data, format)
-
-    # COMPLETE PARSE LOSSY FORMAT
-
-    LIB.lexical_atof32_lossy_format.restype = ResultF32
-    LIB.lexical_atof64_lossy_format.restype = ResultF64
-
-    def atof32_lossy_format(data, format):
-        '''Lossily parse 32-bit float from input data.'''
-        return _parse_format('lexical_atof32_lossy_format', data, format)
-
-    def atof64_lossy_format(data, format):
-        '''Lossily parse 64-bit float from input data.'''
-        return _parse_format('lexical_atof64_lossy_format', data, format)
-
-    # PARTIAL PARSE FORMAT
-
-    LIB.lexical_atoi8_partial_format.restype = PartialResultI8
-    LIB.lexical_atoi16_partial_format.restype = PartialResultI16
-    LIB.lexical_atoi32_partial_format.restype = PartialResultI32
-    LIB.lexical_atoi64_partial_format.restype = PartialResultI64
-    LIB.lexical_atoisize_partial_format.restype = PartialResultIsize
-    LIB.lexical_atou8_partial_format.restype = PartialResultU8
-    LIB.lexical_atou16_partial_format.restype = PartialResultU16
-    LIB.lexical_atou32_partial_format.restype = PartialResultU32
-    LIB.lexical_atou64_partial_format.restype = PartialResultU64
-    LIB.lexical_atousize_partial_format.restype = PartialResultUsize
-    LIB.lexical_atof32_partial_format.restype = PartialResultF32
-    LIB.lexical_atof64_partial_format.restype = PartialResultF64
-
-    def atoi8_partial_format(data, format):
-        '''Parse 8-bit signed integer and the number of processed bytes from input data.'''
-        return _parse_format('lexical_atoi8_partial_format', data, format)
-
-    def atoi16_partial_format(data, format):
-        '''Parse 16-bit signed integer and the number of processed bytes from input data.'''
-        return _parse_format('lexical_atoi16_partial_format', data, format)
-
-    def atoi32_partial_format(data, format):
-        '''Parse 32-bit signed integer and the number of processed bytes from input data.'''
-        return _parse_format('lexical_atoi32_partial_format', data, format)
-
-    def atoi64_partial_format(data, format):
-        '''Parse 64-bit signed integer and the number of processed bytes from input data.'''
-        return _parse_format('lexical_atoi64_partial_format', data, format)
-
-    def atoisize_partial_format(data, format):
-        '''Parse ssize_t and the number of processed bytes from input data.'''
-        return _parse_format('lexical_atoisize_partial_format', data, format)
-
-    def atou8_partial_format(data, format):
-        '''Parse 8-bit unsigned integer and the number of processed bytes from input data.'''
-        return _parse_format('lexical_atou8_partial_format', data, format)
-
-    def atou16_partial_format(data, format):
-        '''Parse 16-bit unsigned integer and the number of processed bytes from input data.'''
-        return _parse_format('lexical_atou16_partial_format', data, format)
-
-    def atou32_partial_format(data, format):
-        '''Parse 32-bit unsigned integer and the number of processed bytes from input data.'''
-        return _parse_format('lexical_atou32_partial_format', data, format)
-
-    def atou64_partial_format(data, format):
-        '''Parse 64-bit unsigned integer and the number of processed bytes from input data.'''
-        return _parse_format('lexical_atou64_partial_format', data, format)
-
-    def atousize_partial_format(data, format):
-        '''Parse size_t and the number of processed bytes from input data.'''
-        return _parse_format('lexical_atousize_partial_format', data, format)
-
-    def atof32_partial_format(data, format):
-        '''Parse 32-bit float and the number of processed bytes from bytes.'''
-        return _parse_format('lexical_atof32_partial_format', data, format)
-
-    def atof64_partial_format(data, format):
-        '''Parse 64-bit float and the number of processed bytes from bytes.'''
-        return _parse_format('lexical_atof64_partial_format', data, format)
-
-    # PARTIAL PARSE LOSSY FORMAT
-
-    LIB.lexical_atof32_partial_lossy_format.restype = PartialResultF32
-    LIB.lexical_atof64_partial_lossy_format.restype = PartialResultF64
-
-    def atof32_partial_lossy_format(data, format):
-        '''Lossily parse 32-bit float and the number of processed bytes from input data.'''
-        return _parse_format('lexical_atof32_partial_lossy_format', data, format)
-
-    def atof64_partial_lossy_format(data, format):
-        '''Lossily parse 64-bit float and the number of processed bytes from input data.'''
-        return _parse_format('lexical_atof64_partial_lossy_format', data, format)
-
-if HAVE_RADIX and HAVE_FORMAT:
-    # PARSE FORMAT RADIX
-
-    def _parse_format_radix(name, data, radix, format):
-        if isinstance(data, str):
-            data = data.encode('ascii')
-        if not isinstance(data, (bytes, bytearray)):
-            raise TypeError("Must parse from bytes.")
-        if not isinstance(radix, c_uint8):
-            radix = c_uint8(radix)
-        if not isinstance(format, NumberFormat):
-            format = NumberFormat(format)
-        cb = getattr(LIB, name)
-        first = _to_u8_ptr(data)
-        last = _to_u8_ptr(_to_address(first) + len(data))
-        result = cb(first, last, radix, format)
-        return result.into()
-
-    # COMPLETE PARSE FORMAT RADIX
-
-    LIB.lexical_atoi8_format_radix.restype = ResultI8
-    LIB.lexical_atoi16_format_radix.restype = ResultI16
-    LIB.lexical_atoi32_format_radix.restype = ResultI32
-    LIB.lexical_atoi64_format_radix.restype = ResultI64
-    LIB.lexical_atoisize_format_radix.restype = ResultIsize
-    LIB.lexical_atou8_format_radix.restype = ResultU8
-    LIB.lexical_atou16_format_radix.restype = ResultU16
-    LIB.lexical_atou32_format_radix.restype = ResultU32
-    LIB.lexical_atou64_format_radix.restype = ResultU64
-    LIB.lexical_atousize_format_radix.restype = ResultUsize
-    LIB.lexical_atof32_format_radix.restype = ResultF32
-    LIB.lexical_atof64_format_radix.restype = ResultF64
-
-    def atoi8_format_radix(data, radix, format):
-        '''Parse 8-bit signed integer from bytes.'''
-        return _parse_format_radix('lexical_atoi8_format_radix', data, radix, format)
-
-    def atoi16_format_radix(data, radix, format):
-        '''Parse 16-bit signed integer from bytes.'''
-        return _parse_format_radix('lexical_atoi16_format_radix', data, radix, format)
-
-    def atoi32_format_radix(data, radix, format):
-        '''Parse 32-bit signed integer from bytes.'''
-        return _parse_format_radix('lexical_atoi32_format_radix', data, radix, format)
-
-    def atoi64_format_radix(data, radix, format):
-        '''Parse 64-bit signed integer from bytes.'''
-        return _parse_format_radix('lexical_atoi64_format_radix', data, radix, format)
-
-    def atoisize_format_radix(data, radix, format):
-        '''Parse ssize_t from bytes.'''
-        return _parse_format_radix('lexical_atoisize_format_radix', data, radix, format)
-
-    def atou8_format_radix(data, radix, format):
-        '''Parse 8-bit unsigned integer from bytes.'''
-        return _parse_format_radix('lexical_atou8_format_radix', data, radix, format)
-
-    def atou16_format_radix(data, radix, format):
-        '''Parse 16-bit unsigned integer from bytes.'''
-        return _parse_format_radix('lexical_atou16_format_radix', data, radix, format)
-
-    def atou32_format_radix(data, radix, format):
-        '''Parse 32-bit unsigned integer from bytes.'''
-        return _parse_format_radix('lexical_atou32_format_radix', data, radix, format)
-
-    def atou64_format_radix(data, radix, format):
-        '''Parse 64-bit unsigned integer from bytes.'''
-        return _parse_format_radix('lexical_atou64_format_radix', data, radix, format)
-
-    def atousize_format_radix(data, radix, format):
-        '''Parse size_t from bytes.'''
-        return _parse_format_radix('lexical_atousize_format_radix', data, radix, format)
-
-    def atof32_format_radix(data, radix, format):
-        '''Parse 32-bit float from bytes.'''
-        return _parse_format_radix('lexical_atof32_format_radix', data, radix, format)
-
-    def atof64_format_radix(data, radix, format):
-        '''Parse 64-bit float from bytes.'''
-        return _parse_format_radix('lexical_atof64_format_radix', data, radix, format)
-
-    # COMPLETE PARSE LOSSY FORMAT RADIX
-
-    LIB.lexical_atof32_lossy_format_radix.restype = ResultF32
-    LIB.lexical_atof64_lossy_format_radix.restype = ResultF64
-
-    def atof32_lossy_format_radix(data, radix, format):
-        '''Lossily parse 32-bit float from bytes.'''
-        return _parse_format_radix('lexical_atof32_lossy_format_radix', data, radix, format)
-
-    def atof64_lossy_format_radix(data, radix, format):
-        '''Lossily parse 64-bit float from bytes.'''
-        return _parse_format_radix('lexical_atof64_lossy_format_radix', data, radix, format)
-
-    # PARTIAL PARSE FORMAT RADIX
-
-    LIB.lexical_atoi8_partial_format_radix.restype = PartialResultI8
-    LIB.lexical_atoi16_partial_format_radix.restype = PartialResultI16
-    LIB.lexical_atoi32_partial_format_radix.restype = PartialResultI32
-    LIB.lexical_atoi64_partial_format_radix.restype = PartialResultI64
-    LIB.lexical_atoisize_partial_format_radix.restype = PartialResultIsize
-    LIB.lexical_atou8_partial_format_radix.restype = PartialResultU8
-    LIB.lexical_atou16_partial_format_radix.restype = PartialResultU16
-    LIB.lexical_atou32_partial_format_radix.restype = PartialResultU32
-    LIB.lexical_atou64_partial_format_radix.restype = PartialResultU64
-    LIB.lexical_atousize_partial_format_radix.restype = PartialResultUsize
-    LIB.lexical_atof32_partial_format_radix.restype = PartialResultF32
-    LIB.lexical_atof64_partial_format_radix.restype = PartialResultF64
-
-    def atoi8_partial_format_radix(data, radix, format):
-        '''Parse 8-bit signed integer and the number of processed bytes from input data.'''
-        return _parse_format_radix('lexical_atoi8_partial_format_radix', data, radix, format)
-
-    def atoi16_partial_format_radix(data, radix, format):
-        '''Parse 16-bit signed integer and the number of processed bytes from input data.'''
-        return _parse_format_radix('lexical_atoi16_partial_format_radix', data, radix, format)
-
-    def atoi32_partial_format_radix(data, radix, format):
-        '''Parse 32-bit signed integer and the number of processed bytes from input data.'''
-        return _parse_format_radix('lexical_atoi32_partial_format_radix', data, radix, format)
-
-    def atoi64_partial_format_radix(data, radix, format):
-        '''Parse 64-bit signed integer and the number of processed bytes from input data.'''
-        return _parse_format_radix('lexical_atoi64_partial_format_radix', data, radix, format)
-
-    def atoisize_partial_format_radix(data, radix, format):
-        '''Parse ssize_t and the number of processed bytes from input data.'''
-        return _parse_format_radix('lexical_atoisize_partial_format_radix', data, radix, format)
-
-    def atou8_partial_format_radix(data, radix, format):
-        '''Parse 8-bit unsigned integer and the number of processed bytes from input data.'''
-        return _parse_format_radix('lexical_atou8_partial_format_radix', data, radix, format)
-
-    def atou16_partial_format_radix(data, radix, format):
-        '''Parse 16-bit unsigned integer and the number of processed bytes from input data.'''
-        return _parse_format_radix('lexical_atou16_partial_format_radix', data, radix, format)
-
-    def atou32_partial_format_radix(data, radix, format):
-        '''Parse 32-bit unsigned integer and the number of processed bytes from input data.'''
-        return _parse_format_radix('lexical_atou32_partial_format_radix', data, radix, format)
-
-    def atou64_partial_format_radix(data, radix, format):
-        '''Parse 64-bit unsigned integer and the number of processed bytes from input data.'''
-        return _parse_format_radix('lexical_atou64_partial_format_radix', data, radix, format)
-
-    def atousize_partial_format_radix(data, radix, format):
-        '''Parse size_t and the number of processed bytes from input data.'''
-        return _parse_format_radix('lexical_atousize_partial_format_radix', data, radix, format)
-
-    def atof32_partial_format_radix(data, radix, format):
-        '''Parse 32-bit float and the number of processed bytes from bytes.'''
-        return _parse_format_radix('lexical_atof32_partial_format_radix', data, radix, format)
-
-    def atof64_partial_format_radix(data, radix, format):
-        '''Parse 64-bit float and the number of processed bytes from bytes.'''
-        return _parse_format_radix('lexical_atof64_partial_format_radix', data, radix, format)
-
-    # PARTIAL PARSE LOSSY FORMAT RADIX
-
-    LIB.lexical_atof32_partial_lossy_format_radix.restype = PartialResultF32
-    LIB.lexical_atof64_partial_lossy_format_radix.restype = PartialResultF64
-
-    def atof32_partial_lossy_format_radix(data, radix, format):
-        '''Lossily parse 32-bit float and the number of processed bytes from input data.'''
-        return _parse_format_radix('lexical_atof32_partial_lossy_format_radix', data, radix, format)
-
-    def atof64_partial_lossy_format_radix(data, radix, format):
-        '''Lossily parse 64-bit float and the number of processed bytes from input data.'''
-        return _parse_format_radix('lexical_atof64_partial_lossy_format_radix', data, radix, format)
+# TODO(ahuszagh)
+#   Need options.
+
+# TODO(ahuszagh) Restore from here.
+#if HAVE_RADIX:
+#    # PARSE RADIX
+#
+#    def _parse_radix(name, data, radix):
+#        if isinstance(data, str):
+#            data = data.encode('ascii')
+#        if not isinstance(data, (bytes, bytearray)):
+#            raise TypeError("Must parse from bytes.")
+#        if not isinstance(radix, c_uint8):
+#            radix = c_uint8(radix)
+#        cb = getattr(LIB, name)
+#        first = _to_u8_ptr(data)
+#        last = _to_u8_ptr(_to_address(first) + len(data))
+#        result = cb(first, last, radix)
+#        return result.into()
+#
+#    # COMPLETE PARSE RADIX
+#
+#    LIB.lexical_atoi8_radix.restype = ResultI8
+#    LIB.lexical_atoi16_radix.restype = ResultI16
+#    LIB.lexical_atoi32_radix.restype = ResultI32
+#    LIB.lexical_atoi64_radix.restype = ResultI64
+#    LIB.lexical_atoisize_radix.restype = ResultIsize
+#    LIB.lexical_atou8_radix.restype = ResultU8
+#    LIB.lexical_atou16_radix.restype = ResultU16
+#    LIB.lexical_atou32_radix.restype = ResultU32
+#    LIB.lexical_atou64_radix.restype = ResultU64
+#    LIB.lexical_atousize_radix.restype = ResultUsize
+#    LIB.lexical_atof32_radix.restype = ResultF32
+#    LIB.lexical_atof64_radix.restype = ResultF64
+#
+#    def atoi8_radix(data, radix):
+#        '''Parse 8-bit signed integer from bytes.'''
+#        return _parse_radix('lexical_atoi8_radix', data, radix)
+#
+#    def atoi16_radix(data, radix):
+#        '''Parse 16-bit signed integer from bytes.'''
+#        return _parse_radix('lexical_atoi16_radix', data, radix)
+#
+#    def atoi32_radix(data, radix):
+#        '''Parse 32-bit signed integer from bytes.'''
+#        return _parse_radix('lexical_atoi32_radix', data, radix)
+#
+#    def atoi64_radix(data, radix):
+#        '''Parse 64-bit signed integer from bytes.'''
+#        return _parse_radix('lexical_atoi64_radix', data, radix)
+#
+#    def atoisize_radix(data, radix):
+#        '''Parse ssize_t from bytes.'''
+#        return _parse_radix('lexical_atoisize_radix', data, radix)
+#
+#    def atou8_radix(data, radix):
+#        '''Parse 8-bit unsigned integer from bytes.'''
+#        return _parse_radix('lexical_atou8_radix', data, radix)
+#
+#    def atou16_radix(data, radix):
+#        '''Parse 16-bit unsigned integer from bytes.'''
+#        return _parse_radix('lexical_atou16_radix', data, radix)
+#
+#    def atou32_radix(data, radix):
+#        '''Parse 32-bit unsigned integer from bytes.'''
+#        return _parse_radix('lexical_atou32_radix', data, radix)
+#
+#    def atou64_radix(data, radix):
+#        '''Parse 64-bit unsigned integer from bytes.'''
+#        return _parse_radix('lexical_atou64_radix', data, radix)
+#
+#    def atousize_radix(data, radix):
+#        '''Parse size_t from bytes.'''
+#        return _parse_radix('lexical_atousize_radix', data, radix)
+#
+#    def atof32_radix(data, radix):
+#        '''Parse 32-bit float from bytes.'''
+#        return _parse_radix('lexical_atof32_radix', data, radix)
+#
+#    def atof64_radix(data, radix):
+#        '''Parse 64-bit float from bytes.'''
+#        return _parse_radix('lexical_atof64_radix', data, radix)
+#
+#    # COMPLETE PARSE LOSSY RADIX
+#
+#    LIB.lexical_atof32_lossy_radix.restype = ResultF32
+#    LIB.lexical_atof64_lossy_radix.restype = ResultF64
+#
+#    def atof32_lossy_radix(data, radix):
+#        '''Lossily parse 32-bit float from bytes.'''
+#        return _parse_radix('lexical_atof32_lossy_radix', data, radix)
+#
+#    def atof64_lossy_radix(data, radix):
+#        '''Lossily parse 64-bit float from bytes.'''
+#        return _parse_radix('lexical_atof64_lossy_radix', data, radix)
+#
+#    # PARTIAL PARSE RADIX
+#
+#    LIB.lexical_atoi8_partial_radix.restype = PartialResultI8
+#    LIB.lexical_atoi16_partial_radix.restype = PartialResultI16
+#    LIB.lexical_atoi32_partial_radix.restype = PartialResultI32
+#    LIB.lexical_atoi64_partial_radix.restype = PartialResultI64
+#    LIB.lexical_atoisize_partial_radix.restype = PartialResultIsize
+#    LIB.lexical_atou8_partial_radix.restype = PartialResultU8
+#    LIB.lexical_atou16_partial_radix.restype = PartialResultU16
+#    LIB.lexical_atou32_partial_radix.restype = PartialResultU32
+#    LIB.lexical_atou64_partial_radix.restype = PartialResultU64
+#    LIB.lexical_atousize_partial_radix.restype = PartialResultUsize
+#    LIB.lexical_atof32_partial_radix.restype = PartialResultF32
+#    LIB.lexical_atof64_partial_radix.restype = PartialResultF64
+#
+#    def atoi8_partial_radix(data, radix):
+#        '''Parse 8-bit signed integer and the number of processed bytes from input data.'''
+#        return _parse_radix('lexical_atoi8_partial_radix', data, radix)
+#
+#    def atoi16_partial_radix(data, radix):
+#        '''Parse 16-bit signed integer and the number of processed bytes from input data.'''
+#        return _parse_radix('lexical_atoi16_partial_radix', data, radix)
+#
+#    def atoi32_partial_radix(data, radix):
+#        '''Parse 32-bit signed integer and the number of processed bytes from input data.'''
+#        return _parse_radix('lexical_atoi32_partial_radix', data, radix)
+#
+#    def atoi64_partial_radix(data, radix):
+#        '''Parse 64-bit signed integer and the number of processed bytes from input data.'''
+#        return _parse_radix('lexical_atoi64_partial_radix', data, radix)
+#
+#    def atoisize_partial_radix(data, radix):
+#        '''Parse ssize_t and the number of processed bytes from input data.'''
+#        return _parse_radix('lexical_atoisize_partial_radix', data, radix)
+#
+#    def atou8_partial_radix(data, radix):
+#        '''Parse 8-bit unsigned integer and the number of processed bytes from input data.'''
+#        return _parse_radix('lexical_atou8_partial_radix', data, radix)
+#
+#    def atou16_partial_radix(data, radix):
+#        '''Parse 16-bit unsigned integer and the number of processed bytes from input data.'''
+#        return _parse_radix('lexical_atou16_partial_radix', data, radix)
+#
+#    def atou32_partial_radix(data, radix):
+#        '''Parse 32-bit unsigned integer and the number of processed bytes from input data.'''
+#        return _parse_radix('lexical_atou32_partial_radix', data, radix)
+#
+#    def atou64_partial_radix(data, radix):
+#        '''Parse 64-bit unsigned integer and the number of processed bytes from input data.'''
+#        return _parse_radix('lexical_atou64_partial_radix', data, radix)
+#
+#    def atousize_partial_radix(data, radix):
+#        '''Parse size_t and the number of processed bytes from input data.'''
+#        return _parse_radix('lexical_atousize_partial_radix', data, radix)
+#
+#    def atof32_partial_radix(data, radix):
+#        '''Parse 32-bit float and the number of processed bytes from bytes.'''
+#        return _parse_radix('lexical_atof32_partial_radix', data, radix)
+#
+#    def atof64_partial_radix(data, radix):
+#        '''Parse 64-bit float and the number of processed bytes from bytes.'''
+#        return _parse_radix('lexical_atof64_partial_radix', data, radix)
+#
+#    # PARTIAL PARSE LOSSY RADIX
+#
+#    LIB.lexical_atof32_partial_lossy_radix.restype = PartialResultF32
+#    LIB.lexical_atof64_partial_lossy_radix.restype = PartialResultF64
+#
+#    def atof32_partial_lossy_radix(data, radix):
+#        '''Lossily parse 32-bit float and the number of processed bytes from input data.'''
+#        return _parse_radix('lexical_atof32_partial_lossy_radix', data, radix)
+#
+#    def atof64_partial_lossy_radix(data, radix):
+#        '''Lossily parse 64-bit float and the number of processed bytes from input data.'''
+#        return _parse_radix('lexical_atof64_partial_lossy_radix', data, radix)
+#
+## PARSE FORMAT
+#
+#if HAVE_FORMAT:
+#    def _parse_format(name, data, format):
+#        if isinstance(data, str):
+#            data = data.encode('ascii')
+#        if not isinstance(data, (bytes, bytearray)):
+#            raise TypeError("Must parse from bytes.")
+#        if not isinstance(format, NumberFormat):
+#            format = NumberFormat(format)
+#        cb = getattr(LIB, name)
+#        first = _to_u8_ptr(data)
+#        last = _to_u8_ptr(_to_address(first) + len(data))
+#        result = cb(first, last, format)
+#        return result.into()
+#
+#    # COMPLETE PARSE FORMAT
+#
+#    LIB.lexical_atoi8_format.restype = ResultI8
+#    LIB.lexical_atoi16_format.restype = ResultI16
+#    LIB.lexical_atoi32_format.restype = ResultI32
+#    LIB.lexical_atoi64_format.restype = ResultI64
+#    LIB.lexical_atoisize_format.restype = ResultIsize
+#    LIB.lexical_atou8_format.restype = ResultU8
+#    LIB.lexical_atou16_format.restype = ResultU16
+#    LIB.lexical_atou32_format.restype = ResultU32
+#    LIB.lexical_atou64_format.restype = ResultU64
+#    LIB.lexical_atousize_format.restype = ResultUsize
+#    LIB.lexical_atof32_format.restype = ResultF32
+#    LIB.lexical_atof64_format.restype = ResultF64
+#
+#    def atoi8_format(data, format):
+#        '''Parse 8-bit signed integer from input data.'''
+#        return _parse_format('lexical_atoi8_format', data, format)
+#
+#    def atoi16_format(data, format):
+#        '''Parse 16-bit signed integer from input data.'''
+#        return _parse_format('lexical_atoi16_format', data, format)
+#
+#    def atoi32_format(data, format):
+#        '''Parse 32-bit signed integer from input data.'''
+#        return _parse_format('lexical_atoi32_format', data, format)
+#
+#    def atoi64_format(data, format):
+#        '''Parse 64-bit signed integer from input data.'''
+#        return _parse_format('lexical_atoi64_format', data, format)
+#
+#    def atoisize_format(data, format):
+#        '''Parse ssize_t from input data.'''
+#        return _parse_format('lexical_atoisize_format', data, format)
+#
+#    def atou8_format(data, format):
+#        '''Parse 8-bit unsigned integer from input data.'''
+#        return _parse_format('lexical_atou8_format', data, format)
+#
+#    def atou16_format(data, format):
+#        '''Parse 16-bit unsigned integer from input data.'''
+#        return _parse_format('lexical_atou16_format', data, format)
+#
+#    def atou32_format(data, format):
+#        '''Parse 32-bit unsigned integer from input data.'''
+#        return _parse_format('lexical_atou32_format', data, format)
+#
+#    def atou64_format(data, format):
+#        '''Parse 64-bit unsigned integer from input data.'''
+#        return _parse_format('lexical_atou64_format', data, format)
+#
+#    def atousize_format(data, format):
+#        '''Parse size_t from input data.'''
+#        return _parse_format('lexical_atousize_format', data, format)
+#
+#    def atof32_format(data, format):
+#        '''Parse 32-bit float from input data.'''
+#        return _parse_format('lexical_atof32_format', data, format)
+#
+#    def atof64_format(data, format):
+#        '''Parse 64-bit float from input data.'''
+#        return _parse_format('lexical_atof64_format', data, format)
+#
+#    # COMPLETE PARSE LOSSY FORMAT
+#
+#    LIB.lexical_atof32_lossy_format.restype = ResultF32
+#    LIB.lexical_atof64_lossy_format.restype = ResultF64
+#
+#    def atof32_lossy_format(data, format):
+#        '''Lossily parse 32-bit float from input data.'''
+#        return _parse_format('lexical_atof32_lossy_format', data, format)
+#
+#    def atof64_lossy_format(data, format):
+#        '''Lossily parse 64-bit float from input data.'''
+#        return _parse_format('lexical_atof64_lossy_format', data, format)
+#
+#    # PARTIAL PARSE FORMAT
+#
+#    LIB.lexical_atoi8_partial_format.restype = PartialResultI8
+#    LIB.lexical_atoi16_partial_format.restype = PartialResultI16
+#    LIB.lexical_atoi32_partial_format.restype = PartialResultI32
+#    LIB.lexical_atoi64_partial_format.restype = PartialResultI64
+#    LIB.lexical_atoisize_partial_format.restype = PartialResultIsize
+#    LIB.lexical_atou8_partial_format.restype = PartialResultU8
+#    LIB.lexical_atou16_partial_format.restype = PartialResultU16
+#    LIB.lexical_atou32_partial_format.restype = PartialResultU32
+#    LIB.lexical_atou64_partial_format.restype = PartialResultU64
+#    LIB.lexical_atousize_partial_format.restype = PartialResultUsize
+#    LIB.lexical_atof32_partial_format.restype = PartialResultF32
+#    LIB.lexical_atof64_partial_format.restype = PartialResultF64
+#
+#    def atoi8_partial_format(data, format):
+#        '''Parse 8-bit signed integer and the number of processed bytes from input data.'''
+#        return _parse_format('lexical_atoi8_partial_format', data, format)
+#
+#    def atoi16_partial_format(data, format):
+#        '''Parse 16-bit signed integer and the number of processed bytes from input data.'''
+#        return _parse_format('lexical_atoi16_partial_format', data, format)
+#
+#    def atoi32_partial_format(data, format):
+#        '''Parse 32-bit signed integer and the number of processed bytes from input data.'''
+#        return _parse_format('lexical_atoi32_partial_format', data, format)
+#
+#    def atoi64_partial_format(data, format):
+#        '''Parse 64-bit signed integer and the number of processed bytes from input data.'''
+#        return _parse_format('lexical_atoi64_partial_format', data, format)
+#
+#    def atoisize_partial_format(data, format):
+#        '''Parse ssize_t and the number of processed bytes from input data.'''
+#        return _parse_format('lexical_atoisize_partial_format', data, format)
+#
+#    def atou8_partial_format(data, format):
+#        '''Parse 8-bit unsigned integer and the number of processed bytes from input data.'''
+#        return _parse_format('lexical_atou8_partial_format', data, format)
+#
+#    def atou16_partial_format(data, format):
+#        '''Parse 16-bit unsigned integer and the number of processed bytes from input data.'''
+#        return _parse_format('lexical_atou16_partial_format', data, format)
+#
+#    def atou32_partial_format(data, format):
+#        '''Parse 32-bit unsigned integer and the number of processed bytes from input data.'''
+#        return _parse_format('lexical_atou32_partial_format', data, format)
+#
+#    def atou64_partial_format(data, format):
+#        '''Parse 64-bit unsigned integer and the number of processed bytes from input data.'''
+#        return _parse_format('lexical_atou64_partial_format', data, format)
+#
+#    def atousize_partial_format(data, format):
+#        '''Parse size_t and the number of processed bytes from input data.'''
+#        return _parse_format('lexical_atousize_partial_format', data, format)
+#
+#    def atof32_partial_format(data, format):
+#        '''Parse 32-bit float and the number of processed bytes from bytes.'''
+#        return _parse_format('lexical_atof32_partial_format', data, format)
+#
+#    def atof64_partial_format(data, format):
+#        '''Parse 64-bit float and the number of processed bytes from bytes.'''
+#        return _parse_format('lexical_atof64_partial_format', data, format)
+#
+#    # PARTIAL PARSE LOSSY FORMAT
+#
+#    LIB.lexical_atof32_partial_lossy_format.restype = PartialResultF32
+#    LIB.lexical_atof64_partial_lossy_format.restype = PartialResultF64
+#
+#    def atof32_partial_lossy_format(data, format):
+#        '''Lossily parse 32-bit float and the number of processed bytes from input data.'''
+#        return _parse_format('lexical_atof32_partial_lossy_format', data, format)
+#
+#    def atof64_partial_lossy_format(data, format):
+#        '''Lossily parse 64-bit float and the number of processed bytes from input data.'''
+#        return _parse_format('lexical_atof64_partial_lossy_format', data, format)
+#
+#if HAVE_RADIX and HAVE_FORMAT:
+#    # PARSE FORMAT RADIX
+#
+#    def _parse_format_radix(name, data, radix, format):
+#        if isinstance(data, str):
+#            data = data.encode('ascii')
+#        if not isinstance(data, (bytes, bytearray)):
+#            raise TypeError("Must parse from bytes.")
+#        if not isinstance(radix, c_uint8):
+#            radix = c_uint8(radix)
+#        if not isinstance(format, NumberFormat):
+#            format = NumberFormat(format)
+#        cb = getattr(LIB, name)
+#        first = _to_u8_ptr(data)
+#        last = _to_u8_ptr(_to_address(first) + len(data))
+#        result = cb(first, last, radix, format)
+#        return result.into()
+#
+#    # COMPLETE PARSE FORMAT RADIX
+#
+#    LIB.lexical_atoi8_format_radix.restype = ResultI8
+#    LIB.lexical_atoi16_format_radix.restype = ResultI16
+#    LIB.lexical_atoi32_format_radix.restype = ResultI32
+#    LIB.lexical_atoi64_format_radix.restype = ResultI64
+#    LIB.lexical_atoisize_format_radix.restype = ResultIsize
+#    LIB.lexical_atou8_format_radix.restype = ResultU8
+#    LIB.lexical_atou16_format_radix.restype = ResultU16
+#    LIB.lexical_atou32_format_radix.restype = ResultU32
+#    LIB.lexical_atou64_format_radix.restype = ResultU64
+#    LIB.lexical_atousize_format_radix.restype = ResultUsize
+#    LIB.lexical_atof32_format_radix.restype = ResultF32
+#    LIB.lexical_atof64_format_radix.restype = ResultF64
+#
+#    def atoi8_format_radix(data, radix, format):
+#        '''Parse 8-bit signed integer from bytes.'''
+#        return _parse_format_radix('lexical_atoi8_format_radix', data, radix, format)
+#
+#    def atoi16_format_radix(data, radix, format):
+#        '''Parse 16-bit signed integer from bytes.'''
+#        return _parse_format_radix('lexical_atoi16_format_radix', data, radix, format)
+#
+#    def atoi32_format_radix(data, radix, format):
+#        '''Parse 32-bit signed integer from bytes.'''
+#        return _parse_format_radix('lexical_atoi32_format_radix', data, radix, format)
+#
+#    def atoi64_format_radix(data, radix, format):
+#        '''Parse 64-bit signed integer from bytes.'''
+#        return _parse_format_radix('lexical_atoi64_format_radix', data, radix, format)
+#
+#    def atoisize_format_radix(data, radix, format):
+#        '''Parse ssize_t from bytes.'''
+#        return _parse_format_radix('lexical_atoisize_format_radix', data, radix, format)
+#
+#    def atou8_format_radix(data, radix, format):
+#        '''Parse 8-bit unsigned integer from bytes.'''
+#        return _parse_format_radix('lexical_atou8_format_radix', data, radix, format)
+#
+#    def atou16_format_radix(data, radix, format):
+#        '''Parse 16-bit unsigned integer from bytes.'''
+#        return _parse_format_radix('lexical_atou16_format_radix', data, radix, format)
+#
+#    def atou32_format_radix(data, radix, format):
+#        '''Parse 32-bit unsigned integer from bytes.'''
+#        return _parse_format_radix('lexical_atou32_format_radix', data, radix, format)
+#
+#    def atou64_format_radix(data, radix, format):
+#        '''Parse 64-bit unsigned integer from bytes.'''
+#        return _parse_format_radix('lexical_atou64_format_radix', data, radix, format)
+#
+#    def atousize_format_radix(data, radix, format):
+#        '''Parse size_t from bytes.'''
+#        return _parse_format_radix('lexical_atousize_format_radix', data, radix, format)
+#
+#    def atof32_format_radix(data, radix, format):
+#        '''Parse 32-bit float from bytes.'''
+#        return _parse_format_radix('lexical_atof32_format_radix', data, radix, format)
+#
+#    def atof64_format_radix(data, radix, format):
+#        '''Parse 64-bit float from bytes.'''
+#        return _parse_format_radix('lexical_atof64_format_radix', data, radix, format)
+#
+#    # COMPLETE PARSE LOSSY FORMAT RADIX
+#
+#    LIB.lexical_atof32_lossy_format_radix.restype = ResultF32
+#    LIB.lexical_atof64_lossy_format_radix.restype = ResultF64
+#
+#    def atof32_lossy_format_radix(data, radix, format):
+#        '''Lossily parse 32-bit float from bytes.'''
+#        return _parse_format_radix('lexical_atof32_lossy_format_radix', data, radix, format)
+#
+#    def atof64_lossy_format_radix(data, radix, format):
+#        '''Lossily parse 64-bit float from bytes.'''
+#        return _parse_format_radix('lexical_atof64_lossy_format_radix', data, radix, format)
+#
+#    # PARTIAL PARSE FORMAT RADIX
+#
+#    LIB.lexical_atoi8_partial_format_radix.restype = PartialResultI8
+#    LIB.lexical_atoi16_partial_format_radix.restype = PartialResultI16
+#    LIB.lexical_atoi32_partial_format_radix.restype = PartialResultI32
+#    LIB.lexical_atoi64_partial_format_radix.restype = PartialResultI64
+#    LIB.lexical_atoisize_partial_format_radix.restype = PartialResultIsize
+#    LIB.lexical_atou8_partial_format_radix.restype = PartialResultU8
+#    LIB.lexical_atou16_partial_format_radix.restype = PartialResultU16
+#    LIB.lexical_atou32_partial_format_radix.restype = PartialResultU32
+#    LIB.lexical_atou64_partial_format_radix.restype = PartialResultU64
+#    LIB.lexical_atousize_partial_format_radix.restype = PartialResultUsize
+#    LIB.lexical_atof32_partial_format_radix.restype = PartialResultF32
+#    LIB.lexical_atof64_partial_format_radix.restype = PartialResultF64
+#
+#    def atoi8_partial_format_radix(data, radix, format):
+#        '''Parse 8-bit signed integer and the number of processed bytes from input data.'''
+#        return _parse_format_radix('lexical_atoi8_partial_format_radix', data, radix, format)
+#
+#    def atoi16_partial_format_radix(data, radix, format):
+#        '''Parse 16-bit signed integer and the number of processed bytes from input data.'''
+#        return _parse_format_radix('lexical_atoi16_partial_format_radix', data, radix, format)
+#
+#    def atoi32_partial_format_radix(data, radix, format):
+#        '''Parse 32-bit signed integer and the number of processed bytes from input data.'''
+#        return _parse_format_radix('lexical_atoi32_partial_format_radix', data, radix, format)
+#
+#    def atoi64_partial_format_radix(data, radix, format):
+#        '''Parse 64-bit signed integer and the number of processed bytes from input data.'''
+#        return _parse_format_radix('lexical_atoi64_partial_format_radix', data, radix, format)
+#
+#    def atoisize_partial_format_radix(data, radix, format):
+#        '''Parse ssize_t and the number of processed bytes from input data.'''
+#        return _parse_format_radix('lexical_atoisize_partial_format_radix', data, radix, format)
+#
+#    def atou8_partial_format_radix(data, radix, format):
+#        '''Parse 8-bit unsigned integer and the number of processed bytes from input data.'''
+#        return _parse_format_radix('lexical_atou8_partial_format_radix', data, radix, format)
+#
+#    def atou16_partial_format_radix(data, radix, format):
+#        '''Parse 16-bit unsigned integer and the number of processed bytes from input data.'''
+#        return _parse_format_radix('lexical_atou16_partial_format_radix', data, radix, format)
+#
+#    def atou32_partial_format_radix(data, radix, format):
+#        '''Parse 32-bit unsigned integer and the number of processed bytes from input data.'''
+#        return _parse_format_radix('lexical_atou32_partial_format_radix', data, radix, format)
+#
+#    def atou64_partial_format_radix(data, radix, format):
+#        '''Parse 64-bit unsigned integer and the number of processed bytes from input data.'''
+#        return _parse_format_radix('lexical_atou64_partial_format_radix', data, radix, format)
+#
+#    def atousize_partial_format_radix(data, radix, format):
+#        '''Parse size_t and the number of processed bytes from input data.'''
+#        return _parse_format_radix('lexical_atousize_partial_format_radix', data, radix, format)
+#
+#    def atof32_partial_format_radix(data, radix, format):
+#        '''Parse 32-bit float and the number of processed bytes from bytes.'''
+#        return _parse_format_radix('lexical_atof32_partial_format_radix', data, radix, format)
+#
+#    def atof64_partial_format_radix(data, radix, format):
+#        '''Parse 64-bit float and the number of processed bytes from bytes.'''
+#        return _parse_format_radix('lexical_atof64_partial_format_radix', data, radix, format)
+#
+#    # PARTIAL PARSE LOSSY FORMAT RADIX
+#
+#    LIB.lexical_atof32_partial_lossy_format_radix.restype = PartialResultF32
+#    LIB.lexical_atof64_partial_lossy_format_radix.restype = PartialResultF64
+#
+#    def atof32_partial_lossy_format_radix(data, radix, format):
+#        '''Lossily parse 32-bit float and the number of processed bytes from input data.'''
+#        return _parse_format_radix('lexical_atof32_partial_lossy_format_radix', data, radix, format)
+#
+#    def atof64_partial_lossy_format_radix(data, radix, format):
+#        '''Lossily parse 64-bit float and the number of processed bytes from input data.'''
+#        return _parse_format_radix('lexical_atof64_partial_lossy_format_radix', data, radix, format)
