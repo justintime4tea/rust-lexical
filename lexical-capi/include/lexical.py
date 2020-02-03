@@ -173,9 +173,9 @@ def _from_range(ptr, length):
 # FEATURES
 # --------
 
-HAVE_FORMAT = hasattr(LIB, 'lexical_parse_float_options_builder_format')
-HAVE_RADIX = hasattr(LIB, 'lexical_parse_float_options_builder_radix')
-HAVE_ROUNDING = hasattr(LIB, 'lexical_parse_float_options_builder_rounding')
+HAVE_FORMAT = hasattr(LIB, 'LEXICAL_HAVE_FORMAT')
+HAVE_RADIX = hasattr(LIB, 'LEXICAL_HAVE_RADIX')
+HAVE_ROUNDING = hasattr(LIB, 'LEXICAL_HAVE_ROUNDING')
 
 class RoundingKind(Structure):
     '''Immutable wrapper around enumerations for float rounding type.'''
@@ -604,85 +604,85 @@ if HAVE_FORMAT:
             return LIB.lexical_number_format_build(self)
 
         def digit_separator(self, digit_separator):
-            return LIB.lexical_number_format_builder_digit_separator(self, _to_c_ubyte(digit_separator))
+            self._digit_separator = _to_c_ubyte(digit_separator)
 
         def required_integer_digits(self, required_integer_digits):
-            return LIB.lexical_number_format_builder_required_integer_digits(self, _to_type(required_integer_digits, c_bool))
+            self._required_integer_digits = _to_type(required_integer_digits, c_bool)
 
         def required_fraction_digits(self, required_fraction_digits):
-            return LIB.lexical_number_format_builder_required_fraction_digits(self, _to_type(required_fraction_digits, c_bool))
+            self._required_fraction_digits = _to_type(required_fraction_digits, c_bool)
 
         def required_exponent_digits(self, required_exponent_digits):
-            return LIB.lexical_number_format_builder_required_exponent_digits(self, _to_type(required_exponent_digits, c_bool))
+            self._required_exponent_digits = _to_type(required_exponent_digits, c_bool)
 
         def no_positive_mantissa_sign(self, no_positive_mantissa_sign):
-            return LIB.lexical_number_format_builder_no_positive_mantissa_sign(self, _to_type(no_positive_mantissa_sign, c_bool))
+            self._no_positive_mantissa_sign = _to_type(no_positive_mantissa_sign, c_bool)
 
         def required_mantissa_sign(self, required_mantissa_sign):
-            return LIB.lexical_number_format_builder_required_mantissa_sign(self, _to_type(required_mantissa_sign, c_bool))
+            self._required_mantissa_sign = _to_type(required_mantissa_sign, c_bool)
 
         def no_exponent_notation(self, no_exponent_notation):
-            return LIB.lexical_number_format_builder_no_exponent_notation(self, _to_type(no_exponent_notation, c_bool))
+            self._no_exponent_notation = _to_type(no_exponent_notation, c_bool)
 
         def no_positive_exponent_sign(self, no_positive_exponent_sign):
-            return LIB.lexical_number_format_builder_no_positive_exponent_sign(self, _to_type(no_positive_exponent_sign, c_bool))
+            self._no_positive_exponent_sign = _to_type(no_positive_exponent_sign, c_bool)
 
         def required_exponent_sign(self, required_exponent_sign):
-            return LIB.lexical_number_format_builder_required_exponent_sign(self, _to_type(required_exponent_sign, c_bool))
+            self._required_exponent_sign = _to_type(required_exponent_sign, c_bool)
 
         def no_exponent_without_fraction(self, no_exponent_without_fraction):
-            return LIB.lexical_number_format_builder_no_exponent_without_fraction(self, _to_type(no_exponent_without_fraction, c_bool))
+            self._no_exponent_without_fraction = _to_type(no_exponent_without_fraction, c_bool)
 
         def no_special(self, no_special):
-            return LIB.lexical_number_format_builder_no_special(self, _to_type(no_special, c_bool))
+            self._no_special = _to_type(no_special, c_bool)
 
         def case_sensitive_special(self, case_sensitive_special):
-            return LIB.lexical_number_format_builder_case_sensitive_special(self, _to_type(case_sensitive_special, c_bool))
+            self._case_sensitive_special = _to_type(case_sensitive_special, c_bool)
 
         def no_integer_leading_zeros(self, no_integer_leading_zeros):
-            return LIB.lexical_number_format_builder_no_integer_leading_zeros(self, _to_type(no_integer_leading_zeros, c_bool))
+            self._no_integer_leading_zeros = _to_type(no_integer_leading_zeros, c_bool)
 
         def no_float_leading_zeros(self, no_float_leading_zeros):
-            return LIB.lexical_number_format_builder_no_float_leading_zeros(self, _to_type(no_float_leading_zeros, c_bool))
+            self._no_float_leading_zeros = _to_type(no_float_leading_zeros, c_bool)
 
         def integer_internal_digit_separator(self, integer_internal_digit_separator):
-            return LIB.lexical_number_format_builder_integer_internal_digit_separator(self, _to_type(integer_internal_digit_separator, c_bool))
+            self._integer_internal_digit_separator = _to_type(integer_internal_digit_separator, c_bool)
 
         def fraction_internal_digit_separator(self, fraction_internal_digit_separator):
-            return LIB.lexical_number_format_builder_fraction_internal_digit_separator(self, _to_type(fraction_internal_digit_separator, c_bool))
+            self._fraction_internal_digit_separator = _to_type(fraction_internal_digit_separator, c_bool)
 
         def exponent_internal_digit_separator(self, exponent_internal_digit_separator):
-            return LIB.lexical_number_format_builder_exponent_internal_digit_separator(self, _to_type(exponent_internal_digit_separator, c_bool))
+            self._exponent_internal_digit_separator = _to_type(exponent_internal_digit_separator, c_bool)
 
         def integer_leading_digit_separator(self, integer_leading_digit_separator):
-            return LIB.lexical_number_format_builder_integer_leading_digit_separator(self, _to_type(integer_leading_digit_separator, c_bool))
+            self._integer_leading_digit_separator = _to_type(integer_leading_digit_separator, c_bool)
 
         def fraction_leading_digit_separator(self, fraction_leading_digit_separator):
-            return LIB.lexical_number_format_builder_fraction_leading_digit_separator(self, _to_type(fraction_leading_digit_separator, c_bool))
+            self._fraction_leading_digit_separator = _to_type(fraction_leading_digit_separator, c_bool)
 
         def exponent_leading_digit_separator(self, exponent_leading_digit_separator):
-            return LIB.lexical_number_format_builder_exponent_leading_digit_separator(self, _to_type(exponent_leading_digit_separator, c_bool))
+            self._exponent_leading_digit_separator = _to_type(exponent_leading_digit_separator, c_bool)
 
         def integer_trailing_digit_separator(self, integer_trailing_digit_separator):
-            return LIB.lexical_number_format_builder_integer_trailing_digit_separator(self, _to_type(integer_trailing_digit_separator, c_bool))
+            self._integer_trailing_digit_separator = _to_type(integer_trailing_digit_separator, c_bool)
 
         def fraction_trailing_digit_separator(self, fraction_trailing_digit_separator):
-            return LIB.lexical_number_format_builder_fraction_trailing_digit_separator(self, _to_type(fraction_trailing_digit_separator, c_bool))
+            self._fraction_trailing_digit_separator = _to_type(fraction_trailing_digit_separator, c_bool)
 
         def exponent_trailing_digit_separator(self, exponent_trailing_digit_separator):
-            return LIB.lexical_number_format_builder_exponent_trailing_digit_separator(self, _to_type(exponent_trailing_digit_separator, c_bool))
+            self._exponent_trailing_digit_separator = _to_type(exponent_trailing_digit_separator, c_bool)
 
         def integer_consecutive_digit_separator(self, integer_consecutive_digit_separator):
-            return LIB.lexical_number_format_builder_integer_consecutive_digit_separator(self, _to_type(integer_consecutive_digit_separator, c_bool))
+            self._integer_consecutive_digit_separator = _to_type(integer_consecutive_digit_separator, c_bool)
 
         def fraction_consecutive_digit_separator(self, fraction_consecutive_digit_separator):
-            return LIB.lexical_number_format_builder_fraction_consecutive_digit_separator(self, _to_type(fraction_consecutive_digit_separator, c_bool))
+            self._fraction_consecutive_digit_separator = _to_type(fraction_consecutive_digit_separator, c_bool)
 
         def exponent_consecutive_digit_separator(self, exponent_consecutive_digit_separator):
-            return LIB.lexical_number_format_builder_exponent_consecutive_digit_separator(self, _to_type(exponent_consecutive_digit_separator, c_bool))
+            self._exponent_consecutive_digit_separator = _to_type(exponent_consecutive_digit_separator, c_bool)
 
         def special_digit_separator(self, special_digit_separator):
-            return LIB.lexical_number_format_builder_special_digit_separator(self, _to_type(special_digit_separator, c_bool))
+            self._special_digit_separator = _to_type(special_digit_separator, c_bool)
 
 else:
     class _NumberFormatBuilder(Structure):
@@ -693,6 +693,11 @@ else:
         def build(self):
             return LIB.lexical_number_format_build(self)
 
+
+# TODO(ahuszagh)
+#   Remove all the unnecessary C-calls. Should be easy.
+#   All the builder fields should just assign the value.
+#       Only `build` should actually call something internal.
 
 class NumberFormatBuilder:
     '''Wrapper around _NumberFormatBuilder'''
@@ -705,144 +710,116 @@ class NumberFormatBuilder:
 
     if HAVE_FORMAT:
         def digit_separator(self, digit_separator):
-            self.builder = self.builder.digit_separator(digit_separator)
+            self.builder.digit_separator(digit_separator)
             return self
 
         def required_integer_digits(self, required_integer_digits):
-            self.builder = self.builder.required_integer_digits(required_integer_digits)
+            self.builder.required_integer_digits(required_integer_digits)
             return self
 
         def required_fraction_digits(self, required_fraction_digits):
-            self.builder = self.builder.required_fraction_digits(required_fraction_digits)
+            self.builder.required_fraction_digits(required_fraction_digits)
             return self
 
         def required_exponent_digits(self, required_exponent_digits):
-            self.builder = self.builder.required_exponent_digits(required_exponent_digits)
+            self.builder.required_exponent_digits(required_exponent_digits)
             return self
 
         def no_positive_mantissa_sign(self, no_positive_mantissa_sign):
-            self.builder = self.builder.no_positive_mantissa_sign(no_positive_mantissa_sign)
+            self.builder.no_positive_mantissa_sign(no_positive_mantissa_sign)
             return self
 
         def required_mantissa_sign(self, required_mantissa_sign):
-            self.builder = self.builder.required_mantissa_sign(required_mantissa_sign)
+            self.builder.required_mantissa_sign(required_mantissa_sign)
             return self
 
         def no_exponent_notation(self, no_exponent_notation):
-            self.builder = self.builder.no_exponent_notation(no_exponent_notation)
+            self.builder.no_exponent_notation(no_exponent_notation)
             return self
 
         def no_positive_exponent_sign(self, no_positive_exponent_sign):
-            self.builder = self.builder.no_positive_exponent_sign(no_positive_exponent_sign)
+            self.builder.no_positive_exponent_sign(no_positive_exponent_sign)
             return self
 
         def required_exponent_sign(self, required_exponent_sign):
-            self.builder = self.builder.required_exponent_sign(required_exponent_sign)
+            self.builder.required_exponent_sign(required_exponent_sign)
             return self
 
         def no_exponent_without_fraction(self, no_exponent_without_fraction):
-            self.builder = self.builder.no_exponent_without_fraction(no_exponent_without_fraction)
+            self.builder.no_exponent_without_fraction(no_exponent_without_fraction)
             return self
 
         def no_special(self, no_special):
-            self.builder = self.builder.no_special(no_special)
+            self.builder.no_special(no_special)
             return self
 
         def case_sensitive_special(self, case_sensitive_special):
-            self.builder = self.builder.case_sensitive_special(case_sensitive_special)
+            self.builder.case_sensitive_special(case_sensitive_special)
             return self
 
         def no_integer_leading_zeros(self, no_integer_leading_zeros):
-            self.builder = self.builder.no_integer_leading_zeros(no_integer_leading_zeros)
+            self.builder.no_integer_leading_zeros(no_integer_leading_zeros)
             return self
 
         def no_float_leading_zeros(self, no_float_leading_zeros):
-            self.builder = self.builder.no_float_leading_zeros(no_float_leading_zeros)
+            self.builder.no_float_leading_zeros(no_float_leading_zeros)
             return self
 
         def integer_internal_digit_separator(self, integer_internal_digit_separator):
-            self.builder = self.builder.integer_internal_digit_separator(integer_internal_digit_separator)
+            self.builder.integer_internal_digit_separator(integer_internal_digit_separator)
             return self
 
         def fraction_internal_digit_separator(self, fraction_internal_digit_separator):
-            self.builder = self.builder.fraction_internal_digit_separator(fraction_internal_digit_separator)
+            self.builder.fraction_internal_digit_separator(fraction_internal_digit_separator)
             return self
 
         def exponent_internal_digit_separator(self, exponent_internal_digit_separator):
-            self.builder = self.builder.exponent_internal_digit_separator(exponent_internal_digit_separator)
+            self.builder.exponent_internal_digit_separator(exponent_internal_digit_separator)
             return self
 
         def integer_leading_digit_separator(self, integer_leading_digit_separator):
-            self.builder = self.builder.integer_leading_digit_separator(integer_leading_digit_separator)
+            self.builder.integer_leading_digit_separator(integer_leading_digit_separator)
             return self
 
         def fraction_leading_digit_separator(self, fraction_leading_digit_separator):
-            self.builder = self.builder.fraction_leading_digit_separator(fraction_leading_digit_separator)
+            self.builder.fraction_leading_digit_separator(fraction_leading_digit_separator)
             return self
 
         def exponent_leading_digit_separator(self, exponent_leading_digit_separator):
-            self.builder = self.builder.exponent_leading_digit_separator(exponent_leading_digit_separator)
+            self.builder.exponent_leading_digit_separator(exponent_leading_digit_separator)
             return self
 
         def integer_trailing_digit_separator(self, integer_trailing_digit_separator):
-            self.builder = self.builder.integer_trailing_digit_separator(integer_trailing_digit_separator)
+            self.builder.integer_trailing_digit_separator(integer_trailing_digit_separator)
             return self
 
         def fraction_trailing_digit_separator(self, fraction_trailing_digit_separator):
-            self.builder = self.builder.fraction_trailing_digit_separator(fraction_trailing_digit_separator)
+            self.builder.fraction_trailing_digit_separator(fraction_trailing_digit_separator)
             return self
 
         def exponent_trailing_digit_separator(self, exponent_trailing_digit_separator):
-            self.builder = self.builder.exponent_trailing_digit_separator(exponent_trailing_digit_separator)
+            self.builder.exponent_trailing_digit_separator(exponent_trailing_digit_separator)
             return self
 
         def integer_consecutive_digit_separator(self, integer_consecutive_digit_separator):
-            self.builder = self.builder.integer_consecutive_digit_separator(integer_consecutive_digit_separator)
+            self.builder.integer_consecutive_digit_separator(integer_consecutive_digit_separator)
             return self
 
         def fraction_consecutive_digit_separator(self, fraction_consecutive_digit_separator):
-            self.builder = self.builder.fraction_consecutive_digit_separator(fraction_consecutive_digit_separator)
+            self.builder.fraction_consecutive_digit_separator(fraction_consecutive_digit_separator)
             return self
 
         def exponent_consecutive_digit_separator(self, exponent_consecutive_digit_separator):
-            self.builder = self.builder.exponent_consecutive_digit_separator(exponent_consecutive_digit_separator)
+            self.builder.exponent_consecutive_digit_separator(exponent_consecutive_digit_separator)
             return self
 
         def special_digit_separator(self, special_digit_separator):
-            self.builder = self.builder.special_digit_separator(special_digit_separator)
+            self.builder.special_digit_separator(special_digit_separator)
             return self
 
 _OptionNumberFormat = _option(NumberFormat, "_OptionNumberFormat")
 LIB.lexical_number_format_builder.restype = _NumberFormatBuilder
 LIB.lexical_number_format_build.restype = _OptionNumberFormat
-if HAVE_FORMAT:
-    LIB.lexical_number_format_builder_digit_separator.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_required_integer_digits.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_required_fraction_digits.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_required_exponent_digits.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_no_positive_mantissa_sign.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_required_mantissa_sign.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_no_exponent_notation.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_no_positive_exponent_sign.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_required_exponent_sign.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_no_exponent_without_fraction.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_no_special.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_case_sensitive_special.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_no_integer_leading_zeros.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_no_float_leading_zeros.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_integer_internal_digit_separator.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_fraction_internal_digit_separator.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_exponent_internal_digit_separator.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_integer_leading_digit_separator.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_fraction_leading_digit_separator.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_exponent_leading_digit_separator.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_integer_trailing_digit_separator.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_fraction_trailing_digit_separator.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_exponent_trailing_digit_separator.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_integer_consecutive_digit_separator.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_fraction_consecutive_digit_separator.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_exponent_consecutive_digit_separator.restype = _NumberFormatBuilder
-    LIB.lexical_number_format_builder_special_digit_separator.restype = _NumberFormatBuilder
 
 if HAVE_FORMAT:
     LIB.lexical_number_format_permissive.restype = _OptionNumberFormat
@@ -1770,7 +1747,7 @@ def _set_exponent_char(builder, exponent_char, callback):
     return callback(builder, _to_c_ubyte(exponent_char))
 
 def _set_format(builder, format, callback):
-    return callback(builder, _to_type(format, NumberFormat))
+    return callback(builder, )
 
 def _set_lossy(builder, lossy, callback):
     return callback(builder, _to_type(lossy, c_bool))
@@ -1800,11 +1777,11 @@ class _ParseIntegerOptionsBuilder(Structure):
 
     if HAVE_RADIX:
         def radix(self, radix):
-            return _set_radix(self, radix, LIB.lexical_parse_integer_options_builder_radix)
+            self._radix = _to_type(radix, c_uint8)
 
     if HAVE_FORMAT:
         def format(self, format):
-            return _set_format(self, format, LIB.lexical_parse_integer_options_builder_format)
+            self._format = _to_type(format, NumberFormat)
 
 
 class ParseIntegerOptionsBuilder:
@@ -1818,12 +1795,12 @@ class ParseIntegerOptionsBuilder:
 
     if HAVE_RADIX:
         def radix(self, radix):
-            self.builder = self.builder.radix(radix)
+            self.builder.radix(radix)
             return self
 
     if HAVE_FORMAT:
         def format(self, format):
-            self.builder = self.builder.format(format)
+            self.builder.format(format)
             return self
 
 
@@ -1864,10 +1841,6 @@ class ParseIntegerOptions(Structure):
 _OptionParseIntegerOptions = _option(ParseIntegerOptions, '_OptionParseIntegerOptions')
 LIB.lexical_parse_integer_options_builder.restype = _ParseIntegerOptionsBuilder
 LIB.lexical_parse_integer_options_build.restype = _OptionParseIntegerOptions
-if HAVE_RADIX:
-    LIB.lexical_parse_integer_options_builder_radix.restype = _ParseIntegerOptionsBuilder
-if HAVE_FORMAT:
-    LIB.lexical_parse_integer_options_builder_format.restype = _ParseIntegerOptionsBuilder
 
 # PARSE FLOAT OPTIONS
 
@@ -1890,31 +1863,31 @@ class _ParseFloatOptionsBuilder(Structure):
         return LIB.lexical_parse_float_options_build(self)
 
     def lossy(self, lossy):
-        return _set_lossy(self, lossy, LIB.lexical_parse_float_options_builder_lossy)
+        self._lossy = _to_type(lossy, c_bool)
 
     def exponent_char(self, exponent_char):
-        return _set_exponent_char(self, exponent_char, LIB.lexical_parse_float_options_builder_exponent_char)
+        self._exponent_char = _to_c_ubyte(exponent_char)
 
     def nan_string(self, nan_string):
-        return _set_string(self, nan_string, LIB.lexical_parse_float_options_builder_nan_string)
+        self._nan_string_ptr, self._nan_string_length = _to_string(nan_string)
 
     def inf_string(self, inf_string):
-        return _set_string(self, inf_string, LIB.lexical_parse_float_options_builder_inf_string)
+        self._inf_string_ptr, self._inf_string_length = _to_string(inf_string)
 
     def infinity_string(self, infinity_string):
-        return _set_string(self, infinity_string, LIB.lexical_parse_float_options_builder_infinity_string)
+        self._infinity_string_ptr, self._infinity_string_length = _to_string(infinity_string)
 
     if HAVE_RADIX:
         def radix(self, radix):
-            return _set_radix(self, radix, LIB.lexical_parse_float_options_builder_radix)
+            self._radix = _to_type(radix, c_uint8)
 
     if HAVE_FORMAT:
         def format(self, format):
-            return _set_format(self, format, LIB.lexical_parse_float_options_builder_format)
+            self._format = _to_type(format, NumberFormat)
 
     if HAVE_ROUNDING:
         def rounding(self, rounding):
-            return _set_rounding(self, rounding, LIB.lexical_parse_float_options_builder_rounding)
+            self._rounding = _to_type(rounding, RoundingKind)
 
 class ParseFloatOptionsBuilder:
     '''Wrapper around _ParseFloatOptionsBuilder.'''
@@ -1935,47 +1908,47 @@ class ParseFloatOptionsBuilder:
         return result
 
     def lossy(self, lossy):
-        self.builder = self.builder.lossy(lossy)
+        self.builder.lossy(lossy)
         return self
 
     def exponent_char(self, exponent_char):
-        self.builder = self.builder.exponent_char(exponent_char)
+        self.builder.exponent_char(exponent_char)
         return self
 
     def nan_string(self, nan_string):
         if isinstance(nan_string, str):
             nan_string = nan_string.encode('ascii')
         self._nan_string = nan_string
-        self.builder = self.builder.nan_string(nan_string)
+        self.builder.nan_string(nan_string)
         return self
 
     def inf_string(self, inf_string):
         if isinstance(inf_string, str):
             inf_string = inf_string.encode('ascii')
         self._inf_string = inf_string
-        self.builder = self.builder.inf_string(inf_string)
+        self.builder.inf_string(inf_string)
         return self
 
     def infinity_string(self, infinity_string):
         if isinstance(infinity_string, str):
             infinity_string = infinity_string.encode('ascii')
         self._infinity_string = infinity_string
-        self.builder = self.builder.infinity_string(infinity_string)
+        self.builder.infinity_string(infinity_string)
         return self
 
     if HAVE_RADIX:
         def radix(self, radix):
-            self.builder = self.builder.radix(radix)
+            self.builder.radix(radix)
             return self
 
     if HAVE_FORMAT:
         def format(self, format):
-            self.builder = self.builder.format(format)
+            self.builder.format(format)
             return self
 
     if HAVE_ROUNDING:
         def rounding(self, rounding):
-            self.builder = self.builder.rounding(rounding)
+            self.builder.rounding(rounding)
             return self
 
 class _ParseFloatOptions(Structure):
@@ -2061,17 +2034,6 @@ class ParseFloatOptions:
 _OptionParseFloatOptions = _option(_ParseFloatOptions, '_OptionParseFloatOptions')
 LIB.lexical_parse_float_options_builder.restype = _ParseFloatOptionsBuilder
 LIB.lexical_parse_float_options_build.restype = _OptionParseFloatOptions
-LIB.lexical_parse_float_options_builder_lossy.restype = _ParseFloatOptionsBuilder
-LIB.lexical_parse_float_options_builder_exponent_char.restype = _ParseFloatOptionsBuilder
-LIB.lexical_parse_float_options_builder_nan_string.restype = _ParseFloatOptionsBuilder
-LIB.lexical_parse_float_options_builder_inf_string.restype = _ParseFloatOptionsBuilder
-LIB.lexical_parse_float_options_builder_infinity_string.restype = _ParseFloatOptionsBuilder
-if HAVE_RADIX:
-    LIB.lexical_parse_float_options_builder_radix.restype = _ParseFloatOptionsBuilder
-if HAVE_FORMAT:
-    LIB.lexical_parse_float_options_builder_format.restype = _ParseFloatOptionsBuilder
-if HAVE_ROUNDING:
-    LIB.lexical_parse_float_options_builder_rounding.restype = _ParseFloatOptionsBuilder
 
 # WRITE INTEGER OPTIONS
 
@@ -2085,7 +2047,7 @@ class _WriteIntegerOptionsBuilder(Structure):
 
     if HAVE_RADIX:
         def radix(self, radix):
-            return _set_radix(self, radix, LIB.lexical_write_integer_options_builder_radix)
+            self._radix = _to_type(radix, c_uint8)
 
 
 class WriteIntegerOptionsBuilder:
@@ -2099,7 +2061,7 @@ class WriteIntegerOptionsBuilder:
 
     if HAVE_RADIX:
         def radix(self, radix):
-            self.builder = self.builder.radix(radix)
+            self.builder.radix(radix)
             return self
 
 class WriteIntegerOptions(Structure):
@@ -2133,8 +2095,6 @@ class WriteIntegerOptions(Structure):
 _OptionWriteIntegerOptions = _option(WriteIntegerOptions, '_OptionWriteIntegerOptions')
 LIB.lexical_write_integer_options_builder.restype = _WriteIntegerOptionsBuilder
 LIB.lexical_write_integer_options_build.restype = _OptionWriteIntegerOptions
-if HAVE_RADIX:
-    LIB.lexical_write_integer_options_builder_radix.restype = _WriteIntegerOptionsBuilder
 
 # WRITE FLOAT OPTIONS
 
@@ -2153,20 +2113,20 @@ class _WriteFloatOptionsBuilder(Structure):
         return LIB.lexical_write_float_options_build(self)
 
     def exponent_char(self, exponent_char):
-        return _set_exponent_char(self, exponent_char, LIB.lexical_write_float_options_builder_exponent_char)
+        self._exponent_char = _to_c_ubyte(exponent_char)
 
     def trim_floats(self, trim_floats):
-        return _set_trim_floats(self, trim_floats, LIB.lexical_write_float_options_builder_trim_floats)
+        self._trim_floats = _to_type(trim_floats, c_bool)
 
     def nan_string(self, nan_string):
-        return _set_string(self, nan_string, LIB.lexical_write_float_options_builder_nan_string)
+        self._nan_string_ptr, self._nan_string_length = _to_string(nan_string)
 
     def inf_string(self, inf_string):
-        return _set_string(self, inf_string, LIB.lexical_write_float_options_builder_inf_string)
+        self._inf_string_ptr, self._inf_string_length = _to_string(inf_string)
 
     if HAVE_RADIX:
         def radix(self, radix):
-            return _set_radix(self, radix, LIB.lexical_write_float_options_builder_radix)
+            self._radix = _to_type(radix, c_uint8)
 
 class WriteFloatOptionsBuilder:
     '''Wrapper around _WriteFloatOptionsBuilder.'''
@@ -2185,30 +2145,30 @@ class WriteFloatOptionsBuilder:
         return result
 
     def exponent_char(self, exponent_char):
-        self.builder = self.builder.exponent_char(exponent_char)
+        self.builder.exponent_char(exponent_char)
         return self
 
     def trim_floats(self, trim_floats):
-        self.builder = self.builder.trim_floats(trim_floats)
+        self.builder.trim_floats(trim_floats)
         return self
 
     def nan_string(self, nan_string):
         if isinstance(nan_string, str):
             nan_string = nan_string.encode('ascii')
         self._nan_string = nan_string
-        self.builder = self.builder.nan_string(nan_string)
+        self.builder.nan_string(nan_string)
         return self
 
     def inf_string(self, inf_string):
         if isinstance(inf_string, str):
             inf_string = inf_string.encode('ascii')
         self._inf_string = inf_string
-        self.builder = self.builder.inf_string(inf_string)
+        self.builder.inf_string(inf_string)
         return self
 
     if HAVE_RADIX:
         def radix(self, radix):
-            self.builder = self.builder.radix(radix)
+            self.builder.radix(radix)
             return self
 
 class _WriteFloatOptions(Structure):
@@ -2275,12 +2235,6 @@ class WriteFloatOptions:
 _OptionWriteFloatOptions = _option(_WriteFloatOptions, '_OptionWriteFloatOptions')
 LIB.lexical_write_float_options_builder.restype = _WriteFloatOptionsBuilder
 LIB.lexical_write_float_options_build.restype = _OptionWriteFloatOptions
-LIB.lexical_write_float_options_builder_exponent_char.restype = _WriteFloatOptionsBuilder
-LIB.lexical_write_float_options_builder_trim_floats.restype = _WriteFloatOptionsBuilder
-LIB.lexical_write_float_options_builder_nan_string.restype = _WriteFloatOptionsBuilder
-LIB.lexical_write_float_options_builder_inf_string.restype = _WriteFloatOptionsBuilder
-if HAVE_RADIX:
-    LIB.lexical_write_float_options_builder_radix.restype = _WriteFloatOptionsBuilder
 
 # RESULT TAG
 

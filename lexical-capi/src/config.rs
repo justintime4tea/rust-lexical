@@ -3,6 +3,26 @@
 use lexical_core;
 use lexical_core::Number;
 
+// FEATURES
+
+/// Format feature detection.
+#[cfg(feature = "format")]
+#[doc(hidden)]
+#[no_mangle]
+pub static LEXICAL_HAVE_FORMAT: bool = true;
+
+/// Radix feature detection.
+#[cfg(feature = "radix")]
+#[doc(hidden)]
+#[no_mangle]
+pub static LEXICAL_HAVE_RADIX: bool = true;
+
+/// Rounding feature detection.
+#[cfg(feature = "rounding")]
+#[doc(hidden)]
+#[no_mangle]
+pub static LEXICAL_HAVE_ROUNDING: bool = true;
+
 // CONSTANTS
 
 /// Maximum number of bytes required to serialize an `i8` value to string.
