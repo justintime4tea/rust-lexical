@@ -1,6 +1,6 @@
 # CONFIG
 cmake_minimum_required(VERSION 2.6)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project(lexical_test)
 enable_testing()
@@ -31,39 +31,33 @@ add_executable(lexical_c_test
     test_c.cc
 )
 
-# TODO(ahuszagh) Restore soon.
-#add_executable(lexical_cpp_test
-#    test_cc.cc
-#)
+add_executable(lexical_cpp_test
+    test_cc.cc
+)
 
 # DEFINITIONS
 if(HAVE_FORMAT)
     target_compile_definitions(lexical_c_test PRIVATE HAVE_FORMAT=1)
-    # TODO(ahuszagh) Restore soon.
-    #target_compile_definitions(lexical_cpp_test PRIVATE HAVE_FORMAT=1)
+    target_compile_definitions(lexical_cpp_test PRIVATE HAVE_FORMAT=1)
 endif()
 
 if(HAVE_RADIX)
     target_compile_definitions(lexical_c_test PRIVATE HAVE_RADIX=1)
-    # TODO(ahuszagh) Restore soon.
-    #target_compile_definitions(lexical_cpp_test PRIVATE HAVE_RADIX=1)
+    target_compile_definitions(lexical_cpp_test PRIVATE HAVE_RADIX=1)
 endif()
 
 if(HAVE_ROUNDING)
     target_compile_definitions(lexical_c_test PRIVATE HAVE_ROUNDING=1)
-    # TODO(ahuszagh) Restore soon.
-    #target_compile_definitions(lexical_cpp_test PRIVATE HAVE_ROUNDING=1)
+    target_compile_definitions(lexical_cpp_test PRIVATE HAVE_ROUNDING=1)
 endif()
 
 # INCLUDE
 target_include_directories(lexical_c_test PRIVATE "${PROJECT_SOURCE_DIR}/../include")
-# TODO(ahuszagh) Restore soon.
-#target_include_directories(lexical_cpp_test PRIVATE "${PROJECT_SOURCE_DIR}/../include")
+target_include_directories(lexical_cpp_test PRIVATE "${PROJECT_SOURCE_DIR}/../include")
 
 # LINK
 target_link_libraries(lexical_c_test lexical gtest gtest_main ${CMAKE_THREAD_LIBS_INIT})
-# TODO(ahuszagh) Restore soon.
-#target_link_libraries(lexical_cpp_test lexical gtest gtest_main ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(lexical_cpp_test lexical gtest gtest_main ${CMAKE_THREAD_LIBS_INIT})
 
 # RUN
 add_test(
@@ -71,8 +65,7 @@ add_test(
     COMMAND lexical_c_test
 )
 
-# TODO(ahuszagh) Restore soon.
-#add_test(
-#    NAME lexical_cpp_test
-#    COMMAND lexical_cpp_test
-#)
+add_test(
+    NAME lexical_cpp_test
+    COMMAND lexical_cpp_test
+)

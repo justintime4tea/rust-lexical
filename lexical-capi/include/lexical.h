@@ -46,8 +46,9 @@ extern "C" {
 #include <stdint.h>
 
 // Features must be enabled through the following macro definitions:
-//  1. HAVE_RADIX
-//  2. HAVE_ROUNDING
+//  1. HAVE_FORMAT
+//  2. HAVE_RADIX
+//  3. HAVE_ROUNDING
 
 // STATIC ASSERT
 // -------------
