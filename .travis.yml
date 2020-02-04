@@ -11,6 +11,7 @@ addons:
     update: true
     sources:
     - deadsnakes
+    - ubuntu-toolchain-r-test
 
 matrix:
   include:
@@ -118,14 +119,21 @@ before_install:
   - rustup self update
 
 install:
-  # Build essential is already installed, so we just need Python3.6+ and Googletest.
-  - if [ ! -z $ENABLE_FFI_TESTS ]; then sudo apt-get install python3.6 -y ; fi
-  - if [ ! -z $ENABLE_FFI_TESTS ]; then sh ci/install_gtest.sh ; fi
+  # Build essential is already installed, so we just need GCC-7, Python3.6+ and Googletest.
+  - if [ ! -z $ENABLE_FFI_TESTS ]; then
+      sudo apt-get install gcc-7 g++-7 -y;
+      sudo apt-get install python3.6 -y;
+      sh ci/install_gtest.sh;
+    fi
   # Install rust target and source the correct environment.
   - sh ci/install_rust.sh
   - source ~/.cargo/env || true
 
 script:
+  - if [ ! -z $ENABLE_FFI_TESTS ]; then
+      export CC=gcc-7;
+      export CXX=g++-7;
+    fi
   - bash ci/script.sh
 
 after_script: set +e
