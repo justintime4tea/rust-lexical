@@ -595,7 +595,7 @@ mod tests {
 
         // Nearest, tie-even
         let options = ParseFloatOptions::builder()
-            .radix(radix)
+            .radix(2)
             .rounding(RoundingKind::NearestTieEven)
             .build()
             .unwrap();
@@ -606,7 +606,7 @@ mod tests {
 
         // Nearest, tie-away-zero
         let options = ParseFloatOptions::builder()
-            .radix(radix)
+            .radix(2)
             .rounding(RoundingKind::NearestTieAwayZero)
             .build()
             .unwrap();
@@ -617,7 +617,7 @@ mod tests {
 
         // Toward positive infinity
         let options = ParseFloatOptions::builder()
-            .radix(radix)
+            .radix(2)
             .rounding(RoundingKind::TowardPositiveInfinity)
             .build()
             .unwrap();
@@ -628,7 +628,7 @@ mod tests {
 
         // Toward negative infinity
         let options = ParseFloatOptions::builder()
-            .radix(radix)
+            .radix(2)
             .rounding(RoundingKind::TowardNegativeInfinity)
             .build()
             .unwrap();
@@ -639,7 +639,7 @@ mod tests {
 
         // Toward zero
         let options = ParseFloatOptions::builder()
-            .radix(radix)
+            .radix(2)
             .rounding(RoundingKind::TowardZero)
             .build()
             .unwrap();

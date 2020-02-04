@@ -2,7 +2,6 @@ extern crate criterion;
 extern crate lexical_core;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use lexical_core::parse as lexical_parse;
 
 // BENCH GENERATORS
 
@@ -10,11 +9,9 @@ use lexical_core::parse as lexical_parse;
 macro_rules! lexical_generator {
     ($name:ident, $data:ident, $t:ty) => {
         fn $name(criterion: &mut Criterion) {
-            criterion.bench_function(stringify!($name), |b| {
-                b.iter(|| {
-                    $data.iter().for_each(|x| {
-                        black_box(lexical_parse::<$t>(x.as_bytes()).unwrap());
-                    })
+            criterion.bench_function(stringify!($name), |b| b.iter(|| {
+                $data.iter().for_each(|x| {
+                    black_box(lexical_core::parse::<$t>(x.as_bytes()).unwrap());
                 })
             });
         }

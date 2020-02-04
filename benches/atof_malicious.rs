@@ -4,6 +4,7 @@ extern crate criterion;
 extern crate lexical_core;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use lexical_core::{Buildable, Builder};
 
 // BENCH GENERATORS
 

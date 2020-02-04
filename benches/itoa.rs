@@ -3,8 +3,6 @@ extern crate itoa;
 extern crate lexical_core;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use itoa::write as itoa_write;
-use lexical_core::write as lexical_write;
 
 // CHAIN RANDOM
 
@@ -107,11 +105,9 @@ macro_rules! lexical_generator {
     ($name:ident, $iter:expr) => {
         fn $name(criterion: &mut Criterion) {
             let mut buffer: [u8; 256] = [b'0'; 256];
-            criterion.bench_function(stringify!($name), |b| {
-                b.iter(|| {
-                    $iter.for_each(|x| {
-                        black_box(lexical_write(*x, &mut buffer));
-                    })
+            criterion.bench_function(stringify!($name), |b| b.iter(|| {
+                $iter.for_each(|x| {
+                    black_box(lexical_core::write(*x, &mut buffer));
                 })
             });
         }
@@ -123,15 +119,11 @@ macro_rules! itoa_generator {
     ($name:ident, $iter:expr) => {
         fn $name(criterion: &mut Criterion) {
             let mut buffer = vec![b'0'; 256];
-            criterion.bench_function(stringify!($name), |b| {
-                b.iter(|| {
-                    $iter.for_each(|x| {
-                        itoa_write(&mut buffer, *x).unwrap();
-                        black_box(&buffer);
-                        unsafe {
-                            buffer.set_len(0);
-                        } // Way faster than Vec::clear().
-                    })
+            criterion.bench_function(stringify!($name), |b| b.iter(|| {
+                $iter.for_each(|x| {
+                    itoa::write(&mut buffer, *x).unwrap();
+                    black_box(&buffer);
+                    unsafe { buffer.set_len(0); } // Way faster than Vec::clear().
                 })
             });
         }
