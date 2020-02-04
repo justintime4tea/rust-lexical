@@ -1067,7 +1067,7 @@ lexical_option(lexical_number_format);
     #define lexical_intersects(x, y) ((x & y) != 0)
 
     // Get the flag bits from the compiled float format.
-    inline uint64_t lexical_number_format_flags(lexical_number_format format)
+    inline lexical_number_format lexical_number_format_flags(lexical_number_format format)
     {
         return format & lexical_flag_mask;
     }

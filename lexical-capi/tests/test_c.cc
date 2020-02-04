@@ -37,24 +37,6 @@
 // HELPERS
 // -------
 
-// TODO(ahuszagh) Check later...
-//// C++ wrapper for get_*_string.
-//#define lexical_get_string(cb)                                                  \
-//    uint8_t* ptr;                                                               \
-//    size_t size;                                                                \
-//    if (::cb(&ptr, &size) != 0) {                                               \
-//        throw std::runtime_error("Unexpected runtime error.");                  \
-//    }                                                                           \
-//    auto value = std::string(reinterpret_cast<char*>(ptr), size)
-//
-//// C++ wrapper for set_*_string.
-//#define lexical_set_string(cb)                                                  \
-//    auto* ptr = reinterpret_cast<uint8_t const*>(value.data());                 \
-//    auto size = value.length();                                                 \
-//    if (::cb(ptr, size) != 0) {                                                 \
-//        throw std::runtime_error("Unexpected runtime error.");                  \
-//    }
-
 inline lexical_i8_result result_ok(lexical_i8 value)
 {
     // Initialize the union.
@@ -191,84 +173,6 @@ lexical_is_error(invalid_positive_exponent_sign);
 lexical_is_error(missing_exponent_sign);
 lexical_is_error(exponent_without_fraction);
 lexical_is_error(invalid_leading_zeros);
-
-// TODO(ahuszagh) Remove these...
-//// CONFIG TESTS
-//// ------------
-//
-//TEST(test_lexical_get_exponent_default_char, config_tests)
-//{
-//    EXPECT_EQ(lexical_get_exponent_default_char(), 'e');
-//}
-//
-//TEST(test_lexical_set_exponent_default_char, config_tests)
-//{
-//    lexical_set_exponent_default_char('e');
-//}
-//
-//#ifdef HAVE_RADIX
-//
-//TEST(test_lexical_get_exponent_backup_char, config_tests)
-//{
-//    EXPECT_EQ(lexical_get_exponent_backup_char(), '^');
-//}
-//
-//TEST(test_lexical_set_exponent_backup_char, config_tests)
-//{
-//    lexical_set_exponent_backup_char('^');
-//}
-//
-//#endif  // HAVE_RADIX
-//
-//#ifdef HAVE_ROUNDING
-//
-//TEST(test_lexical_get_float_rounding, config_tests)
-//{
-//    EXPECT_EQ(lexical_get_float_rounding(), lexical_nearest_tie_even);
-//}
-//
-//TEST(test_lexical_set_float_rounding, config_tests)
-//{
-//    lexical_set_float_rounding(lexical_nearest_tie_even);
-//}
-//
-//#endif  // HAVE_ROUNDING
-//
-//TEST(test_get_nan_string, config_tests)
-//{
-//    lexical_get_string(lexical_get_nan_string);
-//    EXPECT_EQ(value, "NaN");
-//}
-//
-//TEST(test_set_nan_string, config_tests)
-//{
-//    std::string value = "NaN";
-//    lexical_set_string(lexical_set_nan_string);
-//}
-//
-//TEST(test_get_inf_string, config_tests)
-//{
-//    lexical_get_string(lexical_get_inf_string);
-//    EXPECT_EQ(value, "inf");
-//}
-//
-//TEST(test_set_inf_string, config_tests)
-//{
-//    std::string value = "inf";
-//    lexical_set_string(lexical_set_inf_string);
-//}
-//
-//TEST(test_get_infinity_string, config_tests)
-//{
-//    lexical_get_string(lexical_get_infinity_string);
-//    EXPECT_EQ(value, "infinity");
-//}
-//
-//TEST(test_set_infinity_string, config_tests)
-//{
-//    std::string value = "infinity";
-//    lexical_set_string(lexical_set_infinity_string);
-//}
 
 // CONSTANT TESTS
 
@@ -460,7 +364,7 @@ TEST(number_format, builder_tests)
 #endif  // HAVE_FORMAT
 
     lexical_number_format_option option = lexical_number_format_build(builder);
-    EXPECT_TRUE(lexical_number_format_option_is_some(&option));
+    ASSERT_TRUE(lexical_number_format_option_is_some(&option));
 
     lexical_number_format format = lexical_number_format_option_unwrap(option);
 #ifdef HAVE_FORMAT

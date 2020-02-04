@@ -130,6 +130,9 @@ pub trait FromLexical: Number {
     fn from_lexical_partial_radix(bytes: &[u8], radix: u8) -> Result<(Self, usize)>;
 }
 
+// TODO(ahuszagh) Need to add exponent_char when applicable for the deprecated
+// methods. (Lmao, fuck).
+
 // Implement FromLexical for numeric type.
 macro_rules! from_lexical {
     (
@@ -172,6 +175,7 @@ macro_rules! from_lexical {
             {
                 let options = <$options>::builder()
                     .radix(radix)
+                    .exponent_char(exponent_notation_char(radix as u32))
                     .build()
                     .expect("Numerical base must be from 2-36.");
                 to_complete!($parse_with_options, bytes, &options)
@@ -183,6 +187,7 @@ macro_rules! from_lexical {
             {
                 let options = <$options>::builder()
                     .radix(radix)
+                    .exponent_char(exponent_notation_char(radix as u32))
                     .build()
                     .expect("Numerical base must be from 2-36.");
                 $parse_with_options(bytes, &options)
@@ -219,6 +224,7 @@ macro_rules! from_lexical {
                 let options = <$options>::builder()
                     .format(format)
                     .radix(radix)
+                    .exponent_char(exponent_notation_char(radix as u32))
                     .build()
                     .expect("Invalid NumberFormat or radix");
                 to_complete!($parse_with_options, bytes, &options)
@@ -231,6 +237,7 @@ macro_rules! from_lexical {
                 let options = <$options>::builder()
                     .format(format)
                     .radix(radix)
+                    .exponent_char(exponent_notation_char(radix as u32))
                     .build()
                     .expect("Invalid NumberFormat or radix");
                 $parse_with_options(bytes, &options)
@@ -364,6 +371,7 @@ macro_rules! from_lexical_lossy {
                 let options = <$options>::builder()
                     .lossy(true)
                     .radix(radix)
+                    .exponent_char(exponent_notation_char(radix as u32))
                     .build()
                     .expect("Numerical base must be from 2-36.");
                 to_complete!($parse_with_options, bytes, &options)
@@ -376,6 +384,7 @@ macro_rules! from_lexical_lossy {
                 let options = <$options>::builder()
                     .lossy(true)
                     .radix(radix)
+                    .exponent_char(exponent_notation_char(radix as u32))
                     .build()
                     .expect("Numerical base must be from 2-36.");
                 $parse_with_options(bytes, &options)
@@ -415,6 +424,7 @@ macro_rules! from_lexical_lossy {
                     .lossy(true)
                     .format(format)
                     .radix(radix)
+                    .exponent_char(exponent_notation_char(radix as u32))
                     .build()
                     .expect("Invalid NumberFormat or radix.");
                 to_complete!($parse_with_options, bytes, &options)
@@ -428,6 +438,7 @@ macro_rules! from_lexical_lossy {
                     .lossy(true)
                     .format(format)
                     .radix(radix)
+                    .exponent_char(exponent_notation_char(radix as u32))
                     .build()
                     .expect("Invalid NumberFormat or radix.");
                 $parse_with_options(bytes, &options)
@@ -756,6 +767,7 @@ macro_rules! to_lexical {
             {
                 let options = <$options>::builder()
                     .radix(radix)
+                    .exponent_char(exponent_notation_char(radix as u32))
                     .build()
                     .expect("Numerical base must be from 2-36.");
                 assert_buffer!(radix, bytes, $type);

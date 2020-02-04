@@ -159,160 +159,6 @@ lexical_partial_result_error(missing_exponent_sign);
 lexical_partial_result_error(exponent_without_fraction);
 lexical_partial_result_error(invalid_leading_zeros);
 
-// TODO(ahuszagh) Remove
-//// CONFIG TESTS
-//// ------------
-//
-//TEST(test_get_exponent_default_char, config_tests)
-//{
-//    EXPECT_EQ(get_exponent_default_char(), 'e');
-//}
-//
-//TEST(test_set_exponent_default_char, config_tests)
-//{
-//    set_exponent_default_char('e');
-//}
-//
-//#ifdef HAVE_RADIX
-//    TEST(test_get_exponent_backup_char, config_tests)
-//    {
-//        EXPECT_EQ(get_exponent_backup_char(), '^');
-//    }
-//
-//    TEST(test_set_exponent_backup_char, config_tests)
-//    {
-//        set_exponent_backup_char('^');
-//    }
-//#endif  // HAVE_RADIX
-//
-//#ifdef HAVE_ROUNDING
-//    TEST(test_get_float_rounding, config_tests)
-//    {
-//        EXPECT_EQ(get_float_rounding(), rounding_kind::nearest_tie_even);
-//    }
-//
-//    TEST(test_set_float_rounding, config_tests)
-//    {
-//        set_float_rounding(rounding_kind::nearest_tie_even);
-//    }
-//#endif  // HAVE_ROUNDING
-//
-//#ifdef HAVE_FORMAT
-//    TEST(number_format_compile, config_tests)
-//    {
-//        bool required_integer_digits = false;
-//        bool required_fraction_digits = false;
-//        bool required_exponent_digits = false;
-//        bool no_positive_mantissa_sign = false;
-//        bool required_mantissa_sign = false;
-//        bool no_exponent_notation = false;
-//        bool no_positive_exponent_sign = false;
-//        bool required_exponent_sign = false;
-//        bool no_exponent_without_fraction = false;
-//        bool no_special = true;
-//        bool case_sensitive_special = false;
-//        bool no_integer_leading_zeros = false;
-//        bool no_float_leading_zeros = false;
-//        bool integer_internal_digit_separator = true;
-//        bool fraction_internal_digit_separator = false;
-//        bool exponent_internal_digit_separator = false;
-//        bool integer_leading_digit_separator = false;
-//        bool fraction_leading_digit_separator = false;
-//        bool exponent_leading_digit_separator = false;
-//        bool integer_trailing_digit_separator = false;
-//        bool fraction_trailing_digit_separator = false;
-//        bool exponent_trailing_digit_separator = false;
-//        bool integer_consecutive_digit_separator = false;
-//        bool fraction_consecutive_digit_separator = false;
-//        bool exponent_consecutive_digit_separator = false;
-//        bool special_digit_separator = false;
-//        auto format = number_format_compile(
-//            '_',
-//            required_integer_digits,
-//            required_fraction_digits,
-//            required_exponent_digits,
-//            no_positive_mantissa_sign,
-//            required_mantissa_sign,
-//            no_exponent_notation,
-//            no_positive_exponent_sign,
-//            required_exponent_sign,
-//            no_exponent_without_fraction,
-//            no_special,
-//            no_integer_leading_zeros,
-//            no_float_leading_zeros,
-//            case_sensitive_special,
-//            integer_internal_digit_separator,
-//            fraction_internal_digit_separator,
-//            exponent_internal_digit_separator,
-//            integer_leading_digit_separator,
-//            fraction_leading_digit_separator,
-//            exponent_leading_digit_separator,
-//            integer_trailing_digit_separator,
-//            fraction_trailing_digit_separator,
-//            exponent_trailing_digit_separator,
-//            integer_consecutive_digit_separator,
-//            fraction_consecutive_digit_separator,
-//            exponent_consecutive_digit_separator,
-//            special_digit_separator
-//        ).unwrap();
-//        EXPECT_EQ(number_format_digit_separator(format), '_');
-//        EXPECT_TRUE(number_format_no_special(format));
-//        EXPECT_TRUE(number_format_integer_internal_digit_separator(format));
-//        EXPECT_FALSE(number_format_special_digit_separator(format));
-//    }
-//
-//    TEST(number_format_permissive, config_tests)
-//    {
-//        auto format = number_format_permissive().unwrap();
-//        EXPECT_EQ(number_format_flags(format), 0);
-//        EXPECT_EQ(number_format_digit_separator(format), '\x00');
-//    }
-//
-//    TEST(number_format_standard, config_tests)
-//    {
-//        auto format = number_format_standard().unwrap();
-//        EXPECT_EQ(format, number_format::required_exponent_digits);
-//        EXPECT_EQ(number_format_digit_separator(format), '\x00');
-//    }
-//
-//    TEST(number_format_ignore, config_tests)
-//    {
-//        auto format = number_format_ignore('_').unwrap();
-//        EXPECT_EQ(number_format_flags(format), uint64_t(number_format::ignore));
-//        EXPECT_EQ(number_format_digit_separator(format), '_');
-//    }
-//#endif  // HAVE_FORMAT
-//
-//TEST(test_get_nan_string, config_tests)
-//{
-//    EXPECT_EQ(get_nan_string(), "NaN");
-//}
-//
-//TEST(test_set_nan_string, config_tests)
-//{
-//    set_nan_string("NaN");
-//}
-//
-//TEST(test_get_inf_string, config_tests)
-//{
-//    EXPECT_EQ(get_inf_string(), "inf");
-//}
-//
-//TEST(test_set_inf_string, config_tests)
-//{
-//    set_inf_string("inf");
-//}
-//
-//TEST(test_get_infinity_string, config_tests)
-//{
-//    EXPECT_EQ(get_infinity_string(), "infinity");
-//}
-//
-//TEST(test_set_infinity_string, config_tests)
-//{
-//    set_infinity_string("infinity");
-//}
-
 // CONSTANT TESTS
 
 TEST(test_size, constant_tests)
@@ -467,6 +313,320 @@ TEST(test_is_invalid_leading_zeros, error_tests)
     EXPECT_TRUE(invalid_leading_zeros.is_invalid_leading_zeros());
 }
 
+// NUMBER FORMAT TESTS
+
+TEST(number_format, builder_tests)
+{
+    auto builder = number_format::builder();
+#ifdef HAVE_FORMAT
+     builder
+        .digit_separator(uint8_t('_'))
+        .required_integer_digits(false)
+        .required_fraction_digits(false)
+        .required_exponent_digits(false)
+        .no_positive_mantissa_sign(false)
+        .required_mantissa_sign(false)
+        .no_exponent_notation(false)
+        .no_positive_exponent_sign(false)
+        .required_exponent_sign(false)
+        .no_exponent_without_fraction(false)
+        .no_special(false)
+        .case_sensitive_special(false)
+        .no_integer_leading_zeros(false)
+        .no_float_leading_zeros(false)
+        .integer_internal_digit_separator(false)
+        .fraction_internal_digit_separator(false)
+        .exponent_internal_digit_separator(false)
+        .integer_leading_digit_separator(false)
+        .fraction_leading_digit_separator(false)
+        .exponent_leading_digit_separator(false)
+        .integer_trailing_digit_separator(false)
+        .fraction_trailing_digit_separator(false)
+        .exponent_trailing_digit_separator(false)
+        .integer_consecutive_digit_separator(false)
+        .fraction_consecutive_digit_separator(false)
+        .exponent_consecutive_digit_separator(false)
+        .special_digit_separator(false);
+#endif  // HAVE_FORMAT
+
+    auto option = builder.build();
+    ASSERT_TRUE(option.is_some());
+
+    auto format = option.unwrap();
+#ifdef HAVE_FORMAT
+    EXPECT_EQ(format.digit_separator(), uint8_t('\x00'));
+    EXPECT_EQ(format.flags(), format);
+    EXPECT_EQ(format.has_required_integer_digits(), false);
+    EXPECT_EQ(format.has_required_fraction_digits(), false);
+    EXPECT_EQ(format.has_required_exponent_digits(), false);
+    EXPECT_EQ(format.has_no_positive_mantissa_sign(), false);
+    EXPECT_EQ(format.has_required_mantissa_sign(), false);
+    EXPECT_EQ(format.has_no_exponent_notation(), false);
+    EXPECT_EQ(format.has_no_positive_exponent_sign(), false);
+    EXPECT_EQ(format.has_required_exponent_sign(), false);
+    EXPECT_EQ(format.has_no_exponent_without_fraction(), false);
+    EXPECT_EQ(format.has_no_special(), false);
+    EXPECT_EQ(format.has_case_sensitive_special(), false);
+    EXPECT_EQ(format.has_no_integer_leading_zeros(), false);
+    EXPECT_EQ(format.has_no_float_leading_zeros(), false);
+    EXPECT_EQ(format.has_integer_internal_digit_separator(), false);
+    EXPECT_EQ(format.has_fraction_internal_digit_separator(), false);
+    EXPECT_EQ(format.has_exponent_internal_digit_separator(), false);
+    EXPECT_EQ(format.has_integer_leading_digit_separator(), false);
+    EXPECT_EQ(format.has_fraction_leading_digit_separator(), false);
+    EXPECT_EQ(format.has_exponent_leading_digit_separator(), false);
+    EXPECT_EQ(format.has_integer_trailing_digit_separator(), false);
+    EXPECT_EQ(format.has_fraction_trailing_digit_separator(), false);
+    EXPECT_EQ(format.has_exponent_trailing_digit_separator(), false);
+    EXPECT_EQ(format.has_integer_consecutive_digit_separator(), false);
+    EXPECT_EQ(format.has_fraction_consecutive_digit_separator(), false);
+    EXPECT_EQ(format.has_exponent_consecutive_digit_separator(), false);
+    EXPECT_EQ(format.has_special_digit_separator(), false);
+#endif  // HAVE_FORMAT
+}
+
+TEST(number_format, permissive_tests)
+{
+#ifdef HAVE_FORMAT
+    auto format = number_format::permissive().unwrap();
+    EXPECT_EQ(format.digit_separator(), uint8_t('\x00'));
+    EXPECT_EQ(format.flags(), format);
+#endif  // HAVE_FORMAT
+}
+
+TEST(number_format, standard_tests)
+{
+#ifdef HAVE_FORMAT
+    auto format = number_format::standard().unwrap();
+    EXPECT_EQ(format.digit_separator(), uint8_t('\x00'));
+    EXPECT_EQ(format.flags(), number_format::rust_string);
+#endif  // HAVE_FORMAT
+}
+
+TEST(number_format, ignore_tests)
+{
+#ifdef HAVE_FORMAT
+    auto format = number_format::ignore(uint8_t('_')).unwrap();
+    EXPECT_EQ(format.digit_separator(), uint8_t('_'));
+    EXPECT_EQ(format.flags(), number_format::digit_separator_flag_mask);
+#endif  // HAVE_FORMAT
+}
+
+TEST(number_format, constant_tests)
+{
+#ifdef HAVE_FORMAT
+    number_format constants[] = {
+        number_format::rust_literal,
+        number_format::rust_string,
+        number_format::rust_string_strict,
+        number_format::python_literal,
+        number_format::python_string,
+        number_format::cxx17_literal,
+        number_format::cxx17_string,
+        number_format::cxx14_literal,
+        number_format::cxx14_string,
+        number_format::cxx11_literal,
+        number_format::cxx11_string,
+        number_format::cxx03_literal,
+        number_format::cxx03_string,
+        number_format::cxx98_literal,
+        number_format::cxx98_string,
+        number_format::c18_literal,
+        number_format::c18_string,
+        number_format::c11_literal,
+        number_format::c11_string,
+        number_format::c99_literal,
+        number_format::c99_string,
+        number_format::c90_literal,
+        number_format::c90_string,
+        number_format::c89_literal,
+        number_format::c89_string,
+        number_format::ruby_literal,
+        number_format::ruby_string,
+        number_format::swift_literal,
+        number_format::swift_string,
+        number_format::go_literal,
+        number_format::go_string,
+        number_format::haskell_literal,
+        number_format::haskell_string,
+        number_format::javascript_literal,
+        number_format::javascript_string,
+        number_format::perl_literal,
+        number_format::perl_string,
+        number_format::php_literal,
+        number_format::php_string,
+        number_format::java_literal,
+        number_format::java_string,
+        number_format::r_literal,
+        number_format::r_string,
+        number_format::kotlin_literal,
+        number_format::kotlin_string,
+        number_format::julia_literal,
+        number_format::julia_string,
+        number_format::csharp7_literal,
+        number_format::csharp7_string,
+        number_format::csharp6_literal,
+        number_format::csharp6_string,
+        number_format::csharp5_literal,
+        number_format::csharp5_string,
+        number_format::csharp4_literal,
+        number_format::csharp4_string,
+        number_format::csharp3_literal,
+        number_format::csharp3_string,
+        number_format::csharp2_literal,
+        number_format::csharp2_string,
+        number_format::csharp1_literal,
+        number_format::csharp1_string,
+        number_format::kawa_literal,
+        number_format::kawa_string,
+        number_format::gambitc_literal,
+        number_format::gambitc_string,
+        number_format::guile_literal,
+        number_format::guile_string,
+        number_format::clojure_literal,
+        number_format::clojure_string,
+        number_format::erlang_literal,
+        number_format::erlang_string,
+        number_format::elm_literal,
+        number_format::elm_string,
+        number_format::scala_literal,
+        number_format::scala_string,
+        number_format::elixir_literal,
+        number_format::elixir_string,
+        number_format::fortran_literal,
+        number_format::fortran_string,
+        number_format::d_literal,
+        number_format::d_string,
+        number_format::coffeescript_literal,
+        number_format::coffeescript_string,
+        number_format::cobol_literal,
+        number_format::cobol_string,
+        number_format::fsharp_literal,
+        number_format::fsharp_string,
+        number_format::vb_literal,
+        number_format::vb_string,
+        number_format::ocaml_literal,
+        number_format::ocaml_string,
+        number_format::objectivec_literal,
+        number_format::objectivec_string,
+        number_format::reasonml_literal,
+        number_format::reasonml_string,
+        number_format::octave_literal,
+        number_format::octave_string,
+        number_format::matlab_literal,
+        number_format::matlab_string,
+        number_format::zig_literal,
+        number_format::zig_string,
+        number_format::sage_literal,
+        number_format::sage_string,
+        number_format::json,
+        number_format::toml,
+        number_format::yaml,
+        number_format::xml,
+        number_format::sqlite,
+        number_format::postgresql,
+        number_format::mysql,
+        number_format::mongodb
+    };
+    // Just insure we can compile them.
+    for (number_format value: constants);
+#endif  // HAVE_FORMAT
+}
+
+// PARSE INTEGER OPTIONS TESTS
+
+TEST(parse_integer_options, builder_tests)
+{
+    auto builder = parse_integer_options::builder();
+#ifdef  HAVE_RADIX
+    builder.radix(2);
+#endif  // HAVE_RADIX
+#ifdef  HAVE_FORMAT
+    builder.format(number_format::json);
+#endif  // HAVE_FORMAT
+
+    auto option = builder.build();
+    ASSERT_TRUE(option.is_some());
+    auto options = option.unwrap();
+    // Ignore the fields, we just want to ensure it compiles.
+}
+
+// PARSE FLOAT OPTIONS TESTS
+
+TEST(parse_float_options, builder_tests)
+{
+    constexpr std::string_view nan_string = "NAN";
+    constexpr std::string_view inf_string = "INF";
+    constexpr std::string_view infinity_string = "INFINITY";
+
+    auto builder = parse_float_options::builder();
+    builder
+        .lossy(true)
+        .exponent_char(uint8_t('e'))
+        .nan_string(nan_string)
+        .inf_string(inf_string)
+        .infinity_string(infinity_string);
+#ifdef  HAVE_RADIX
+    builder.radix(2);
+#endif  // HAVE_RADIX
+#ifdef  HAVE_FORMAT
+    builder.format(number_format::json);
+#endif  // HAVE_FORMAT
+#ifdef  HAVE_ROUNDING
+    builder.rounding(rounding_kind::toward_zero);
+#endif  // HAVE_ROUNDING
+
+    auto option = builder.build();
+    ASSERT_TRUE(option.is_some());
+    auto options = option.unwrap();
+    EXPECT_EQ(options.lossy(), true);
+    EXPECT_EQ(options.exponent_char(), uint8_t('e'));
+    EXPECT_EQ(options.nan_string(), nan_string);
+    EXPECT_EQ(options.inf_string(), inf_string);
+    EXPECT_EQ(options.infinity_string(), infinity_string);
+}
+
+// WRITE INTEGER OPTIONS TESTS
+
+TEST(write_integer_options, builder_tests)
+{
+    auto builder = write_integer_options::builder();
+#ifdef  HAVE_RADIX
+    builder.radix(2);
+#endif  // HAVE_RADIX
+
+    auto option = builder.build();
+    ASSERT_TRUE(option.is_some());
+    auto options = option.unwrap();
+    // Ignore the fields, we just want to ensure it compiles.
+}
+
+// WRITE FLOAT OPTIONS TESTS
+
+TEST(write_float_options, builder_tests)
+{
+    constexpr std::string_view nan_string = "NAN";
+    constexpr std::string_view inf_string = "INF";
+
+    auto builder = write_float_options::builder();
+    builder
+        .exponent_char(uint8_t('e'))
+        .trim_floats(true)
+        .nan_string(nan_string)
+        .inf_string(inf_string);
+#ifdef  HAVE_RADIX
+    builder.radix(2);
+#endif  // HAVE_RADIX
+
+    auto option = builder.build();
+    ASSERT_TRUE(option.is_some());
+    auto options = option.unwrap();
+    EXPECT_EQ(options.exponent_char(), uint8_t('e'));
+    EXPECT_EQ(options.trim_floats(), true);
+    EXPECT_EQ(options.nan_string(), nan_string);
+    EXPECT_EQ(options.inf_string(), inf_string);
+}
+
 // RESULT TESTS
 
 TEST(result, result_tests)
@@ -581,488 +741,361 @@ TEST(partial_result, partial_result_tests)
     EXPECT_TRUE(invalid_leading_zeros.err().is_invalid_leading_zeros());
 }
 
-// TODO(ahuszagh) Restore.
-//// TO STRING TESTS
-//
-//#define TO_STRING_TEST(t)                                                       \
-//    EXPECT_EQ("10", to_string<t>(10))
-//
-//#define TO_STRING_FLOAT_TEST(t)                                                 \
-//    EXPECT_EQ("10.5", to_string<t>(10.5))
-//
-//TEST(to_string, api_tests)
-//{
-//    TO_STRING_TEST(u8);
-//    TO_STRING_TEST(u16);
-//    TO_STRING_TEST(u32);
-//    TO_STRING_TEST(u64);
-//    TO_STRING_TEST(usize);
-//    TO_STRING_TEST(i8);
-//    TO_STRING_TEST(i16);
-//    TO_STRING_TEST(i32);
-//    TO_STRING_TEST(i64);
-//    TO_STRING_TEST(isize);
-//    TO_STRING_FLOAT_TEST(f32);
-//    TO_STRING_FLOAT_TEST(f64);
-//}
-//
-//#ifdef HAVE_RADIX
-//    #define TO_STRING_RADIX_TEST(t)                                             \
-//        EXPECT_EQ("1010", to_string_radix<t>(10, 2));                           \
-//        EXPECT_EQ("A", to_string_radix<t>(10, 16));                             \
-//        EXPECT_EQ("10", to_string_radix<t>(10, 10))
-//
-//    #define TO_STRING_RADIX_FLOAT_TEST(t)                                       \
-//        EXPECT_EQ("1010.1", to_string_radix<t>(10.5, 2));                       \
-//        EXPECT_EQ("A.8", to_string_radix<t>(10.5, 16));                         \
-//        EXPECT_EQ("10.5", to_string_radix<t>(10.5, 10))
-//
-//    TEST(to_string_radix, api_tests)
-//    {
-//        TO_STRING_RADIX_TEST(u8);
-//        TO_STRING_RADIX_TEST(u16);
-//        TO_STRING_RADIX_TEST(u32);
-//        TO_STRING_RADIX_TEST(u64);
-//        TO_STRING_RADIX_TEST(usize);
-//        TO_STRING_RADIX_TEST(i8);
-//        TO_STRING_RADIX_TEST(i16);
-//        TO_STRING_RADIX_TEST(i32);
-//        TO_STRING_RADIX_TEST(i64);
-//        TO_STRING_RADIX_TEST(isize);
-//        TO_STRING_RADIX_FLOAT_TEST(f32);
-//        TO_STRING_RADIX_FLOAT_TEST(f64);
-//    }
-//#endif  // HAVE_RADIX
-//
-//// PARSE TESTS
-//
-//#define PARSE_TEST(t)                                                           \
-//    EXPECT_EQ(result_ok<t>(10), parse<t>("10"));                                \
-//    EXPECT_EQ(result_invalid_digit<t>(2), parse<t>("10a"));                     \
-//    EXPECT_EQ(result_empty<t>(0), parse<t>(""))
-//
-//#define PARSE_FLOAT_TEST(t)                                                     \
-//    PARSE_TEST(t);                                                              \
-//    EXPECT_EQ(result_ok<t>(10.5), parse<t>("10.5"));                            \
-//    EXPECT_EQ(result_ok<t>(10e5), parse<t>("10e5"));                            \
-//    EXPECT_EQ(result_empty_mantissa<t>(0), parse<t>("."));                      \
-//    EXPECT_EQ(result_empty_mantissa<t>(0), parse<t>("e5"));                     \
-//    EXPECT_EQ(result_empty_exponent<t>(3), parse<t>("10e+"))
-//
-//TEST(parse, api_tests)
-//{
-//    PARSE_TEST(u8);
-//    PARSE_TEST(u16);
-//    PARSE_TEST(u32);
-//    PARSE_TEST(u64);
-//    PARSE_TEST(usize);
-//    PARSE_TEST(i8);
-//    PARSE_TEST(i16);
-//    PARSE_TEST(i32);
-//    PARSE_TEST(i64);
-//    PARSE_TEST(isize);
-//    PARSE_FLOAT_TEST(f32);
-//    PARSE_FLOAT_TEST(f64);
-//}
-//
-//#ifdef HAVE_RADIX
-//    #define PARSE_RADIX_TEST(t)                                                 \
-//        EXPECT_EQ(result_ok<t>(10), parse_radix<t>("1010", 2));                 \
-//        EXPECT_EQ(result_ok<t>(10), parse_radix<t>("10", 10));                  \
-//        EXPECT_EQ(result_ok<t>(10), parse_radix<t>("A", 16));                   \
-//        EXPECT_EQ(result_invalid_digit<t>(4), parse_radix<t>("10102", 2));      \
-//        EXPECT_EQ(result_invalid_digit<t>(2), parse_radix<t>("10a", 10));       \
-//        EXPECT_EQ(result_invalid_digit<t>(1), parse_radix<t>("AG", 16));        \
-//        EXPECT_EQ(result_empty<t>(0), parse_radix<t>("", 10))
-//
-//    #define PARSE_RADIX_FLOAT_TEST(t)                                           \
-//        PARSE_RADIX_TEST(t);                                                    \
-//        EXPECT_EQ(result_ok<t>(10.5), parse_radix<t>("1010.1", 2));             \
-//        EXPECT_EQ(result_ok<t>(10.5), parse_radix<t>("10.5", 10));              \
-//        EXPECT_EQ(result_ok<t>(10.5), parse_radix<t>("A.8", 16));               \
-//        EXPECT_EQ(result_empty_mantissa<t>(0), parse_radix<t>(".", 10));        \
-//        EXPECT_EQ(result_empty_mantissa<t>(0), parse_radix<t>("e5", 10));       \
-//        EXPECT_EQ(result_empty_exponent<t>(3), parse_radix<t>("10e+", 10))
-//
-//    TEST(parse_radix, api_tests)
-//    {
-//        PARSE_RADIX_TEST(u8);
-//        PARSE_RADIX_TEST(u16);
-//        PARSE_RADIX_TEST(u32);
-//        PARSE_RADIX_TEST(u64);
-//        PARSE_RADIX_TEST(usize);
-//        PARSE_RADIX_TEST(i8);
-//        PARSE_RADIX_TEST(i16);
-//        PARSE_RADIX_TEST(i32);
-//        PARSE_RADIX_TEST(i64);
-//        PARSE_RADIX_TEST(isize);
-//        PARSE_RADIX_FLOAT_TEST(f32);
-//        PARSE_RADIX_FLOAT_TEST(f64);
-//    }
-//#endif  // HAVE_RADIX
-//
-//#ifdef HAVE_FORMAT
-//    const number_format FORMAT = number_format::standard;
-//
-//    #define PARSE_FORMAT_TEST(t)                                                \
-//        EXPECT_EQ(result_ok<t>(10), parse_format<t>("10", FORMAT));             \
-//        EXPECT_EQ(result_invalid_digit<t>(2), parse_format<t>("10a", FORMAT));  \
-//        EXPECT_EQ(result_empty<t>(0), parse_format<t>("", FORMAT))
-//
-//    #define PARSE_FORMAT_FLOAT_TEST(t)                                          \
-//        PARSE_FORMAT_TEST(t);                                                   \
-//        EXPECT_EQ(result_ok<t>(10.5), parse_format<t>("10.5", FORMAT));         \
-//        EXPECT_EQ(result_ok<t>(10e5), parse_format<t>("10e5", FORMAT));         \
-//        EXPECT_EQ(result_empty_mantissa<t>(0), parse_format<t>(".", FORMAT));   \
-//        EXPECT_EQ(result_empty_mantissa<t>(0), parse_format<t>("e5", FORMAT));  \
-//        EXPECT_EQ(result_empty_exponent<t>(3), parse_format<t>("10e+", FORMAT))
-//
-//    TEST(parse_format, api_tests)
-//    {
-//        PARSE_FORMAT_TEST(u8);
-//        PARSE_FORMAT_TEST(u16);
-//        PARSE_FORMAT_TEST(u32);
-//        PARSE_FORMAT_TEST(u64);
-//        PARSE_FORMAT_TEST(usize);
-//        PARSE_FORMAT_TEST(i8);
-//        PARSE_FORMAT_TEST(i16);
-//        PARSE_FORMAT_TEST(i32);
-//        PARSE_FORMAT_TEST(i64);
-//        PARSE_FORMAT_TEST(isize);
-//        PARSE_FORMAT_FLOAT_TEST(f32);
-//        PARSE_FORMAT_FLOAT_TEST(f64);
-//    }
-//
-//    #ifdef HAVE_RADIX
-//        #define PARSE_FORMAT_RADIX_TEST(t)                                                      \
-//            EXPECT_EQ(result_ok<t>(10), parse_format_radix<t>("1010", 2, FORMAT));              \
-//            EXPECT_EQ(result_ok<t>(10), parse_format_radix<t>("10", 10, FORMAT));               \
-//            EXPECT_EQ(result_ok<t>(10), parse_format_radix<t>("A", 16, FORMAT));                \
-//            EXPECT_EQ(result_invalid_digit<t>(4), parse_format_radix<t>("10102", 2, FORMAT));   \
-//            EXPECT_EQ(result_invalid_digit<t>(2), parse_format_radix<t>("10a", 10, FORMAT));    \
-//            EXPECT_EQ(result_invalid_digit<t>(1), parse_format_radix<t>("AG", 16, FORMAT));     \
-//            EXPECT_EQ(result_empty<t>(0), parse_format_radix<t>("", 10, FORMAT))
-//
-//        #define PARSE_FORMAT_RADIX_FLOAT_TEST(t)                                                \
-//            PARSE_FORMAT_RADIX_TEST(t);                                                         \
-//            EXPECT_EQ(result_ok<t>(10.5), parse_format_radix<t>("1010.1", 2, FORMAT));          \
-//            EXPECT_EQ(result_ok<t>(10.5), parse_format_radix<t>("10.5", 10, FORMAT));           \
-//            EXPECT_EQ(result_ok<t>(10.5), parse_format_radix<t>("A.8", 16, FORMAT));            \
-//            EXPECT_EQ(result_empty_mantissa<t>(0), parse_format_radix<t>(".", 10, FORMAT));     \
-//            EXPECT_EQ(result_empty_mantissa<t>(0), parse_format_radix<t>("e5", 10, FORMAT));    \
-//            EXPECT_EQ(result_empty_exponent<t>(3), parse_format_radix<t>("10e+", 10, FORMAT))
-//
-//        TEST(parse_format_radix, api_tests)
-//        {
-//            PARSE_FORMAT_RADIX_TEST(u8);
-//            PARSE_FORMAT_RADIX_TEST(u16);
-//            PARSE_FORMAT_RADIX_TEST(u32);
-//            PARSE_FORMAT_RADIX_TEST(u64);
-//            PARSE_FORMAT_RADIX_TEST(usize);
-//            PARSE_FORMAT_RADIX_TEST(i8);
-//            PARSE_FORMAT_RADIX_TEST(i16);
-//            PARSE_FORMAT_RADIX_TEST(i32);
-//            PARSE_FORMAT_RADIX_TEST(i64);
-//            PARSE_FORMAT_RADIX_TEST(isize);
-//            PARSE_FORMAT_RADIX_FLOAT_TEST(f32);
-//            PARSE_FORMAT_RADIX_FLOAT_TEST(f64);
-//        }
-//    #endif  // HAVE_RADIX
-//#endif  // HAVE_FORMAT
-//
-//#define PARSE_PARTIAL_TEST(t)                                                   \
-//    EXPECT_EQ(partial_result_ok<t>(10, 2), parse_partial<t>("10"));             \
-//    EXPECT_EQ(partial_result_ok<t>(10, 2), parse_partial<t>("10a"));            \
-//    EXPECT_EQ(partial_result_empty<t>(0), parse_partial<t>(""))
-//
-//#define PARSE_PARTIAL_FLOAT_TEST(t)                                             \
-//    PARSE_PARTIAL_TEST(t);                                                      \
-//    EXPECT_EQ(partial_result_ok<t>(10.5, 4), parse_partial<t>("10.5"));         \
-//    EXPECT_EQ(partial_result_ok<t>(10e5, 4), parse_partial<t>("10e5"));         \
-//    EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial<t>("."));      \
-//    EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial<t>("e5"));     \
-//    EXPECT_EQ(partial_result_empty_exponent<t>(3), parse_partial<t>("10e+"))
-//
-//TEST(parse_partial, api_tests)
-//{
-//    PARSE_PARTIAL_TEST(u8);
-//    PARSE_PARTIAL_TEST(u16);
-//    PARSE_PARTIAL_TEST(u32);
-//    PARSE_PARTIAL_TEST(u64);
-//    PARSE_PARTIAL_TEST(usize);
-//    PARSE_PARTIAL_TEST(i8);
-//    PARSE_PARTIAL_TEST(i16);
-//    PARSE_PARTIAL_TEST(i32);
-//    PARSE_PARTIAL_TEST(i64);
-//    PARSE_PARTIAL_TEST(isize);
-//    PARSE_PARTIAL_FLOAT_TEST(f32);
-//    PARSE_PARTIAL_FLOAT_TEST(f64);
-//}
-//
-//#ifdef HAVE_RADIX
-//    #define PARSE_PARTIAL_RADIX_TEST(t)                                                     \
-//        EXPECT_EQ(partial_result_ok<t>(10, 4), parse_partial_radix<t>("1010", 2));          \
-//        EXPECT_EQ(partial_result_ok<t>(10, 2), parse_partial_radix<t>("10", 10));           \
-//        EXPECT_EQ(partial_result_ok<t>(10, 1), parse_partial_radix<t>("A", 16));            \
-//        EXPECT_EQ(partial_result_ok<t>(10, 4), parse_partial_radix<t>("10102", 2));         \
-//        EXPECT_EQ(partial_result_ok<t>(10, 2), parse_partial_radix<t>("10a", 10));          \
-//        EXPECT_EQ(partial_result_ok<t>(10, 1), parse_partial_radix<t>("AG", 16));           \
-//        EXPECT_EQ(partial_result_empty<t>(0), parse_partial_radix<t>("", 10))
-//
-//    #define PARSE_PARTIAL_RADIX_FLOAT_TEST(t)                                               \
-//        PARSE_PARTIAL_RADIX_TEST(t);                                                        \
-//        EXPECT_EQ(partial_result_ok<t>(10.5, 6), parse_partial_radix<t>("1010.1", 2));      \
-//        EXPECT_EQ(partial_result_ok<t>(10.5, 4), parse_partial_radix<t>("10.5", 10));       \
-//        EXPECT_EQ(partial_result_ok<t>(10.5, 3), parse_partial_radix<t>("A.8", 16));        \
-//        EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial_radix<t>(".", 10));    \
-//        EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial_radix<t>("e5", 10));   \
-//        EXPECT_EQ(partial_result_empty_exponent<t>(3), parse_partial_radix<t>("10e+", 10))
-//
-//    TEST(parse_partial_radix, api_tests)
-//    {
-//        PARSE_PARTIAL_RADIX_TEST(u8);
-//        PARSE_PARTIAL_RADIX_TEST(u16);
-//        PARSE_PARTIAL_RADIX_TEST(u32);
-//        PARSE_PARTIAL_RADIX_TEST(u64);
-//        PARSE_PARTIAL_RADIX_TEST(usize);
-//        PARSE_PARTIAL_RADIX_TEST(i8);
-//        PARSE_PARTIAL_RADIX_TEST(i16);
-//        PARSE_PARTIAL_RADIX_TEST(i32);
-//        PARSE_PARTIAL_RADIX_TEST(i64);
-//        PARSE_PARTIAL_RADIX_TEST(isize);
-//        PARSE_PARTIAL_RADIX_FLOAT_TEST(f32);
-//        PARSE_PARTIAL_RADIX_FLOAT_TEST(f64);
-//    }
-//#endif  // HAVE_RADIX
-//
-//#ifdef HAVE_FORMAT
-//    #define PARSE_PARTIAL_FORMAT_TEST(t)                                                        \
-//        EXPECT_EQ(partial_result_ok<t>(10, 2), parse_partial_format<t>("10", FORMAT));          \
-//        EXPECT_EQ(partial_result_ok<t>(10, 2), parse_partial_format<t>("10a", FORMAT));         \
-//        EXPECT_EQ(partial_result_empty<t>(0), parse_partial_format<t>("", FORMAT))
-//
-//    #define PARSE_PARTIAL_FORMAT_FLOAT_TEST(t)                                                  \
-//        PARSE_PARTIAL_FORMAT_TEST(t);                                                           \
-//        EXPECT_EQ(partial_result_ok<t>(10.5, 4), parse_partial_format<t>("10.5", FORMAT));      \
-//        EXPECT_EQ(partial_result_ok<t>(10e5, 4), parse_partial_format<t>("10e5", FORMAT));      \
-//        EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial_format<t>(".", FORMAT));   \
-//        EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial_format<t>("e5", FORMAT));  \
-//        EXPECT_EQ(partial_result_empty_exponent<t>(3), parse_partial_format<t>("10e+", FORMAT))
-//
-//    TEST(parse_partial_format, api_tests)
-//    {
-//        PARSE_PARTIAL_FORMAT_TEST(u8);
-//        PARSE_PARTIAL_FORMAT_TEST(u16);
-//        PARSE_PARTIAL_FORMAT_TEST(u32);
-//        PARSE_PARTIAL_FORMAT_TEST(u64);
-//        PARSE_PARTIAL_FORMAT_TEST(usize);
-//        PARSE_PARTIAL_FORMAT_TEST(i8);
-//        PARSE_PARTIAL_FORMAT_TEST(i16);
-//        PARSE_PARTIAL_FORMAT_TEST(i32);
-//        PARSE_PARTIAL_FORMAT_TEST(i64);
-//        PARSE_PARTIAL_FORMAT_TEST(isize);
-//        PARSE_PARTIAL_FORMAT_FLOAT_TEST(f32);
-//        PARSE_PARTIAL_FORMAT_FLOAT_TEST(f64);
-//    }
-//    #ifdef HAVE_RADIX
-//        #define PARSE_PARTIAL_FORMAT_RADIX_TEST(t)                                                              \
-//            EXPECT_EQ(partial_result_ok<t>(10, 4), parse_partial_format_radix<t>("1010", 2, FORMAT));           \
-//            EXPECT_EQ(partial_result_ok<t>(10, 2), parse_partial_format_radix<t>("10", 10, FORMAT));            \
-//            EXPECT_EQ(partial_result_ok<t>(10, 1), parse_partial_format_radix<t>("A", 16, FORMAT));             \
-//            EXPECT_EQ(partial_result_ok<t>(10, 4), parse_partial_format_radix<t>("10102", 2, FORMAT));          \
-//            EXPECT_EQ(partial_result_ok<t>(10, 2), parse_partial_format_radix<t>("10a", 10, FORMAT));           \
-//            EXPECT_EQ(partial_result_ok<t>(10, 1), parse_partial_format_radix<t>("AG", 16, FORMAT));            \
-//            EXPECT_EQ(partial_result_empty<t>(0), parse_partial_format_radix<t>("", 10, FORMAT))
-//
-//        #define PARSE_PARTIAL_FORMAT_RADIX_FLOAT_TEST(t)                                                        \
-//            PARSE_PARTIAL_FORMAT_RADIX_TEST(t);                                                                 \
-//            EXPECT_EQ(partial_result_ok<t>(10.5, 6), parse_partial_format_radix<t>("1010.1", 2, FORMAT));       \
-//            EXPECT_EQ(partial_result_ok<t>(10.5, 4), parse_partial_format_radix<t>("10.5", 10, FORMAT));        \
-//            EXPECT_EQ(partial_result_ok<t>(10.5, 3), parse_partial_format_radix<t>("A.8", 16, FORMAT));         \
-//            EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial_format_radix<t>(".", 10, FORMAT));     \
-//            EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial_format_radix<t>("e5", 10, FORMAT));    \
-//            EXPECT_EQ(partial_result_empty_exponent<t>(3), parse_partial_format_radix<t>("10e+", 10, FORMAT))
-//
-//        TEST(parse_partial_format_radix, api_tests)
-//        {
-//            PARSE_PARTIAL_FORMAT_RADIX_TEST(u8);
-//            PARSE_PARTIAL_FORMAT_RADIX_TEST(u16);
-//            PARSE_PARTIAL_FORMAT_RADIX_TEST(u32);
-//            PARSE_PARTIAL_FORMAT_RADIX_TEST(u64);
-//            PARSE_PARTIAL_FORMAT_RADIX_TEST(usize);
-//            PARSE_PARTIAL_FORMAT_RADIX_TEST(i8);
-//            PARSE_PARTIAL_FORMAT_RADIX_TEST(i16);
-//            PARSE_PARTIAL_FORMAT_RADIX_TEST(i32);
-//            PARSE_PARTIAL_FORMAT_RADIX_TEST(i64);
-//            PARSE_PARTIAL_FORMAT_RADIX_TEST(isize);
-//            PARSE_PARTIAL_FORMAT_RADIX_FLOAT_TEST(f32);
-//            PARSE_PARTIAL_FORMAT_RADIX_FLOAT_TEST(f64);
-//        }
-//    #endif  // HAVE_RADIX
-//#endif  // HAVE_FORMAT
-//
-//// PARSE LOSSY TESTS
-//
-//#define PARSE_LOSSY_TEST(t)                                                     \
-//    EXPECT_EQ(result_ok<t>(10), parse_lossy<t>("10"));                          \
-//    EXPECT_EQ(result_invalid_digit<t>(2), parse_lossy<t>("10a"));               \
-//    EXPECT_EQ(result_empty<t>(0), parse_lossy<t>(""))
-//
-//#define PARSE_LOSSY_FLOAT_TEST(t)                                               \
-//    PARSE_LOSSY_TEST(t);                                                        \
-//    EXPECT_EQ(result_ok<t>(10.5), parse_lossy<t>("10.5"));                      \
-//    EXPECT_EQ(result_ok<t>(10e5), parse_lossy<t>("10e5"));                      \
-//    EXPECT_EQ(result_empty_mantissa<t>(0), parse_lossy<t>("."));                \
-//    EXPECT_EQ(result_empty_mantissa<t>(0), parse_lossy<t>("e5"));               \
-//    EXPECT_EQ(result_empty_exponent<t>(3), parse_lossy<t>("10e+"))
-//
-//TEST(parse_lossy, api_tests)
-//{
-//    PARSE_LOSSY_FLOAT_TEST(f32);
-//    PARSE_LOSSY_FLOAT_TEST(f64);
-//}
-//
-//#ifdef HAVE_RADIX
-//    #define PARSE_LOSSY_RADIX_TEST(t)                                               \
-//        EXPECT_EQ(result_ok<t>(10), parse_lossy_radix<t>("10", 10));                \
-//        EXPECT_EQ(result_invalid_digit<t>(2), parse_lossy_radix<t>("10a", 10));     \
-//        EXPECT_EQ(result_empty<t>(0), parse_lossy_radix<t>("", 10))
-//
-//    #define PARSE_LOSSY_RADIX_FLOAT_TEST(t)                                         \
-//        PARSE_LOSSY_TEST(t);                                                        \
-//        EXPECT_EQ(result_ok<t>(10.5), parse_lossy_radix<t>("10.5", 10));            \
-//        EXPECT_EQ(result_ok<t>(10e5), parse_lossy_radix<t>("10e5", 10));            \
-//        EXPECT_EQ(result_empty_mantissa<t>(0), parse_lossy_radix<t>(".", 10));      \
-//        EXPECT_EQ(result_empty_mantissa<t>(0), parse_lossy_radix<t>("e5", 10));     \
-//        EXPECT_EQ(result_empty_exponent<t>(3), parse_lossy_radix<t>("10e+", 10))
-//
-//    TEST(parse_lossy_radix, api_tests)
-//    {
-//        PARSE_LOSSY_RADIX_FLOAT_TEST(f32);
-//        PARSE_LOSSY_RADIX_FLOAT_TEST(f64);
-//    }
-//#endif  // HAVE_RADIX
-//
-//#ifdef HAVE_FORMAT
-//    #define PARSE_LOSSY_FORMAT_TEST(t)                                                  \
-//        EXPECT_EQ(result_ok<t>(10), parse_lossy_format<t>("10", FORMAT));               \
-//        EXPECT_EQ(result_invalid_digit<t>(2), parse_lossy_format<t>("10a", FORMAT));    \
-//        EXPECT_EQ(result_empty<t>(0), parse_lossy_format<t>("", FORMAT))
-//
-//    #define PARSE_LOSSY_FORMAT_FLOAT_TEST(t)                                            \
-//        PARSE_LOSSY_FORMAT_TEST(t);                                                     \
-//        EXPECT_EQ(result_ok<t>(10.5), parse_lossy_format<t>("10.5", FORMAT));           \
-//        EXPECT_EQ(result_ok<t>(10e5), parse_lossy_format<t>("10e5", FORMAT));           \
-//        EXPECT_EQ(result_empty_mantissa<t>(0), parse_lossy_format<t>(".", FORMAT));     \
-//        EXPECT_EQ(result_empty_mantissa<t>(0), parse_lossy_format<t>("e5", FORMAT));    \
-//        EXPECT_EQ(result_empty_exponent<t>(3), parse_lossy_format<t>("10e+", FORMAT))
-//
-//    TEST(parse_lossy_format, api_tests)
-//    {
-//        PARSE_LOSSY_FORMAT_FLOAT_TEST(f32);
-//        PARSE_LOSSY_FORMAT_FLOAT_TEST(f64);
-//    }
-//
-//    #ifdef HAVE_RADIX
-//        #define PARSE_LOSSY_FORMAT_RADIX_TEST(t)                                                    \
-//            EXPECT_EQ(result_ok<t>(10), parse_lossy_format_radix<t>("10", 10, FORMAT));             \
-//            EXPECT_EQ(result_invalid_digit<t>(2), parse_lossy_format_radix<t>("10a", 10, FORMAT));  \
-//            EXPECT_EQ(result_empty<t>(0), parse_lossy_format_radix<t>("", 10, FORMAT))
-//
-//        #define PARSE_LOSSY_FORMAT_RADIX_FLOAT_TEST(t)                                              \
-//            PARSE_LOSSY_FORMAT_TEST(t);                                                             \
-//            EXPECT_EQ(result_ok<t>(10.5), parse_lossy_format_radix<t>("10.5", 10, FORMAT));         \
-//            EXPECT_EQ(result_ok<t>(10e5), parse_lossy_format_radix<t>("10e5", 10, FORMAT));         \
-//            EXPECT_EQ(result_empty_mantissa<t>(0), parse_lossy_format_radix<t>(".", 10, FORMAT));   \
-//            EXPECT_EQ(result_empty_mantissa<t>(0), parse_lossy_format_radix<t>("e5", 10, FORMAT));  \
-//            EXPECT_EQ(result_empty_exponent<t>(3), parse_lossy_format_radix<t>("10e+", 10, FORMAT))
-//
-//        TEST(parse_lossy_format_radix, api_tests)
-//        {
-//            PARSE_LOSSY_FORMAT_RADIX_FLOAT_TEST(f32);
-//            PARSE_LOSSY_FORMAT_RADIX_FLOAT_TEST(f64);
-//        }
-//    #endif // HAVE_RADIX
-//#endif  // HAVE_FORMAT
-//
-//#define PARSE_PARTIAL_LOSSY_TEST(t)                                                         \
-//    EXPECT_EQ(partial_result_ok<t>(10, 2), parse_partial_lossy<t>("10"));                   \
-//    EXPECT_EQ(partial_result_ok<t>(10, 2), parse_partial_lossy<t>("10a"));                  \
-//    EXPECT_EQ(partial_result_empty<t>(0), parse_partial_lossy<t>(""))
-//
-//#define PARSE_PARTIAL_LOSSY_FLOAT_TEST(t)                                                   \
-//    PARSE_PARTIAL_LOSSY_TEST(t);                                                            \
-//    EXPECT_EQ(partial_result_ok<t>(10.5, 4), parse_partial_lossy<t>("10.5"));               \
-//    EXPECT_EQ(partial_result_ok<t>(10e5, 4), parse_partial_lossy<t>("10e5"));               \
-//    EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial_lossy<t>("."));            \
-//    EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial_lossy<t>("e5"));           \
-//    EXPECT_EQ(partial_result_empty_exponent<t>(3), parse_partial_lossy<t>("10e+"))
-//
-//TEST(parse_partial_lossy, api_tests)
-//{
-//    PARSE_PARTIAL_LOSSY_FLOAT_TEST(f32);
-//    PARSE_PARTIAL_LOSSY_FLOAT_TEST(f64);
-//}
-//
-//#ifdef HAVE_RADIX
-//    #define PARSE_PARTIAL_LOSSY_RADIX_TEST(t)                                                   \
-//        EXPECT_EQ(partial_result_ok<t>(10, 2), parse_partial_lossy_radix<t>("10", 10));         \
-//        EXPECT_EQ(partial_result_ok<t>(10, 2), parse_partial_lossy_radix<t>("10a", 10));        \
-//        EXPECT_EQ(partial_result_empty<t>(0), parse_partial_lossy_radix<t>("", 10))
-//
-//    #define PARSE_PARTIAL_LOSSY_RADIX_FLOAT_TEST(t)                                             \
-//        PARSE_PARTIAL_LOSSY_RADIX_TEST(t);                                                      \
-//        EXPECT_EQ(partial_result_ok<t>(10.5, 4), parse_partial_lossy_radix<t>("10.5", 10));     \
-//        EXPECT_EQ(partial_result_ok<t>(10e5, 4), parse_partial_lossy_radix<t>("10e5", 10));     \
-//        EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial_lossy_radix<t>(".", 10));  \
-//        EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial_lossy_radix<t>("e5", 10)); \
-//        EXPECT_EQ(partial_result_empty_exponent<t>(3), parse_partial_lossy_radix<t>("10e+", 10))
-//
-//    TEST(parse_partial_lossy_radix, api_tests)
-//    {
-//        PARSE_PARTIAL_LOSSY_RADIX_FLOAT_TEST(f32);
-//        PARSE_PARTIAL_LOSSY_RADIX_FLOAT_TEST(f64);
-//    }
-//#endif // HAVE_RADIX
-//
-//#if HAVE_FORMAT
-//    #define PARSE_PARTIAL_LOSSY_FORMAT_TEST(t)                                                          \
-//        EXPECT_EQ(partial_result_ok<t>(10, 2), parse_partial_lossy_format<t>("10", FORMAT));            \
-//        EXPECT_EQ(partial_result_ok<t>(10, 2), parse_partial_lossy_format<t>("10a", FORMAT));           \
-//        EXPECT_EQ(partial_result_empty<t>(0), parse_partial_lossy_format<t>("", FORMAT))
-//
-//    #define PARSE_PARTIAL_LOSSY_FORMAT_FLOAT_TEST(t)                                                    \
-//        PARSE_PARTIAL_LOSSY_FORMAT_TEST(t);                                                             \
-//        EXPECT_EQ(partial_result_ok<t>(10.5, 4), parse_partial_lossy_format<t>("10.5", FORMAT));        \
-//        EXPECT_EQ(partial_result_ok<t>(10e5, 4), parse_partial_lossy_format<t>("10e5", FORMAT));        \
-//        EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial_lossy_format<t>(".", FORMAT));     \
-//        EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial_lossy_format<t>("e5", FORMAT));    \
-//        EXPECT_EQ(partial_result_empty_exponent<t>(3), parse_partial_lossy_format<t>("10e+", FORMAT))
-//
-//    TEST(parse_partial_lossy_format, api_tests)
-//    {
-//        PARSE_PARTIAL_LOSSY_FORMAT_FLOAT_TEST(f32);
-//        PARSE_PARTIAL_LOSSY_FORMAT_FLOAT_TEST(f64);
-//    }
-//
-//    #ifdef HAVE_RADIX
-//        #define PARSE_PARTIAL_LOSSY_FORMAT_RADIX_TEST(t)                                                            \
-//            EXPECT_EQ(partial_result_ok<t>(10, 2), parse_partial_lossy_format_radix<t>("10", 10, FORMAT));          \
-//            EXPECT_EQ(partial_result_ok<t>(10, 2), parse_partial_lossy_format_radix<t>("10a", 10, FORMAT));         \
-//            EXPECT_EQ(partial_result_empty<t>(0), parse_partial_lossy_format_radix<t>("", 10, FORMAT))
-//
-//        #define PARSE_PARTIAL_LOSSY_FORMAT_RADIX_FLOAT_TEST(t)                                                      \
-//            PARSE_PARTIAL_LOSSY_FORMAT_RADIX_TEST(t);                                                               \
-//            EXPECT_EQ(partial_result_ok<t>(10.5, 4), parse_partial_lossy_format_radix<t>("10.5", 10, FORMAT));      \
-//            EXPECT_EQ(partial_result_ok<t>(10e5, 4), parse_partial_lossy_format_radix<t>("10e5", 10, FORMAT));      \
-//            EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial_lossy_format_radix<t>(".", 10, FORMAT));   \
-//            EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial_lossy_format_radix<t>("e5", 10, FORMAT));  \
-//            EXPECT_EQ(partial_result_empty_exponent<t>(3), parse_partial_lossy_format_radix<t>("10e+", 10, FORMAT))
-//
-//        TEST(parse_partial_lossy_format_radix, api_tests)
-//        {
-//            PARSE_PARTIAL_LOSSY_FORMAT_RADIX_FLOAT_TEST(f32);
-//            PARSE_PARTIAL_LOSSY_FORMAT_RADIX_FLOAT_TEST(f64);
-//        }
-//    #endif  // HAVE_RADIX
-//#endif  // HAVE_FORMAT
+// TO STRING TESTS
+
+#define TO_STRING_TEST(t)                                                       \
+    EXPECT_EQ("10", to_string<t>(10))
+
+#define TO_STRING_FLOAT_TEST(t)                                                 \
+    EXPECT_EQ("10.5", to_string<t>(10.5))
+
+TEST(to_string, api_tests)
+{
+    TO_STRING_TEST(u8);
+    TO_STRING_TEST(u16);
+    TO_STRING_TEST(u32);
+    TO_STRING_TEST(u64);
+    TO_STRING_TEST(usize);
+    TO_STRING_TEST(i8);
+    TO_STRING_TEST(i16);
+    TO_STRING_TEST(i32);
+    TO_STRING_TEST(i64);
+    TO_STRING_TEST(isize);
+    TO_STRING_FLOAT_TEST(f32);
+    TO_STRING_FLOAT_TEST(f64);
+}
+
+#define TO_STRING_OPTIONS_TEST(t, value, options)                               \
+    EXPECT_EQ(value, to_string_with_options<t>(10, options))
+
+#define TO_STRING_OPTIONS_FLOAT_TEST(t, value, options)                         \
+    EXPECT_EQ(value, to_string_with_options<t>(10.5, options))
+
+TEST(to_string_with_options, api_tests)
+{
+    auto integer_options = write_integer_options::builder()
+        .build()
+        .unwrap();
+    TO_STRING_OPTIONS_TEST(u8, "10", integer_options);
+    TO_STRING_OPTIONS_TEST(u16, "10", integer_options);
+    TO_STRING_OPTIONS_TEST(u32, "10", integer_options);
+    TO_STRING_OPTIONS_TEST(u64, "10", integer_options);
+    TO_STRING_OPTIONS_TEST(usize, "10", integer_options);
+    TO_STRING_OPTIONS_TEST(i8, "10", integer_options);
+    TO_STRING_OPTIONS_TEST(i16, "10", integer_options);
+    TO_STRING_OPTIONS_TEST(i32, "10", integer_options);
+    TO_STRING_OPTIONS_TEST(i64, "10", integer_options);
+    TO_STRING_OPTIONS_TEST(isize, "10", integer_options);
+
+    auto float_options = write_float_options::builder()
+        .build()
+        .unwrap();
+    TO_STRING_OPTIONS_FLOAT_TEST(f32, "10.5", float_options);
+    TO_STRING_OPTIONS_FLOAT_TEST(f64, "10.5", float_options);
+
+#ifdef HAVE_RADIX
+    integer_options = write_integer_options::binary();
+    TO_STRING_OPTIONS_TEST(u8, "1010", integer_options);
+    TO_STRING_OPTIONS_TEST(u16, "1010", integer_options);
+    TO_STRING_OPTIONS_TEST(u32, "1010", integer_options);
+    TO_STRING_OPTIONS_TEST(u64, "1010", integer_options);
+    TO_STRING_OPTIONS_TEST(usize, "1010", integer_options);
+    TO_STRING_OPTIONS_TEST(i8, "1010", integer_options);
+    TO_STRING_OPTIONS_TEST(i16, "1010", integer_options);
+    TO_STRING_OPTIONS_TEST(i32, "1010", integer_options);
+    TO_STRING_OPTIONS_TEST(i64, "1010", integer_options);
+    TO_STRING_OPTIONS_TEST(isize, "1010", integer_options);
+
+    integer_options = write_integer_options::decimal();
+    TO_STRING_OPTIONS_TEST(u8, "10", integer_options);
+    TO_STRING_OPTIONS_TEST(u16, "10", integer_options);
+    TO_STRING_OPTIONS_TEST(u32, "10", integer_options);
+    TO_STRING_OPTIONS_TEST(u64, "10", integer_options);
+    TO_STRING_OPTIONS_TEST(usize, "10", integer_options);
+    TO_STRING_OPTIONS_TEST(i8, "10", integer_options);
+    TO_STRING_OPTIONS_TEST(i16, "10", integer_options);
+    TO_STRING_OPTIONS_TEST(i32, "10", integer_options);
+    TO_STRING_OPTIONS_TEST(i64, "10", integer_options);
+    TO_STRING_OPTIONS_TEST(isize, "10", integer_options);
+
+    integer_options = write_integer_options::hexadecimal();
+    TO_STRING_OPTIONS_TEST(u8, "A", integer_options);
+    TO_STRING_OPTIONS_TEST(u16, "A", integer_options);
+    TO_STRING_OPTIONS_TEST(u32, "A", integer_options);
+    TO_STRING_OPTIONS_TEST(u64, "A", integer_options);
+    TO_STRING_OPTIONS_TEST(usize, "A", integer_options);
+    TO_STRING_OPTIONS_TEST(i8, "A", integer_options);
+    TO_STRING_OPTIONS_TEST(i16, "A", integer_options);
+    TO_STRING_OPTIONS_TEST(i32, "A", integer_options);
+    TO_STRING_OPTIONS_TEST(i64, "A", integer_options);
+    TO_STRING_OPTIONS_TEST(isize, "A", integer_options);
+
+    float_options = write_float_options::binary();
+    TO_STRING_OPTIONS_FLOAT_TEST(f32, "1010.1", float_options);
+    TO_STRING_OPTIONS_FLOAT_TEST(f64, "1010.1", float_options);
+
+    float_options = write_float_options::decimal();
+    TO_STRING_OPTIONS_FLOAT_TEST(f32, "10.5", float_options);
+    TO_STRING_OPTIONS_FLOAT_TEST(f64, "10.5", float_options);
+
+    float_options = write_float_options::hexadecimal();
+    TO_STRING_OPTIONS_FLOAT_TEST(f32, "A.8", float_options);
+    TO_STRING_OPTIONS_FLOAT_TEST(f64, "A.8", float_options);
+#endif  // HAVE_RADIX
+}
+
+// PARSE TESTS
+
+#define PARSE_TEST(t)                                                           \
+    EXPECT_EQ(result_ok<t>(10), parse<t>("10"));                                \
+    EXPECT_EQ(result_invalid_digit<t>(2), parse<t>("10a"));                     \
+    EXPECT_EQ(result_empty<t>(0), parse<t>(""))
+
+#define PARSE_FLOAT_TEST(t)                                                     \
+    PARSE_TEST(t);                                                              \
+    EXPECT_EQ(result_ok<t>(10.5), parse<t>("10.5"));                            \
+    EXPECT_EQ(result_ok<t>(10e5), parse<t>("10e5"));                            \
+    EXPECT_EQ(result_empty_mantissa<t>(0), parse<t>("."));                      \
+    EXPECT_EQ(result_empty_mantissa<t>(0), parse<t>("e5"));                     \
+    EXPECT_EQ(result_empty_exponent<t>(3), parse<t>("10e+"))
+
+TEST(parse, api_tests)
+{
+    PARSE_TEST(u8);
+    PARSE_TEST(u16);
+    PARSE_TEST(u32);
+    PARSE_TEST(u64);
+    PARSE_TEST(usize);
+    PARSE_TEST(i8);
+    PARSE_TEST(i16);
+    PARSE_TEST(i32);
+    PARSE_TEST(i64);
+    PARSE_TEST(isize);
+    PARSE_FLOAT_TEST(f32);
+    PARSE_FLOAT_TEST(f64);
+}
+
+#define PARSE_OPTIONS_TEST(t, options, str1, str2)                                  \
+    EXPECT_EQ(result_ok<t>(10), parse_with_options<t>(str1, options));              \
+    EXPECT_TRUE(parse_with_options<t>(str2, options).is_err());                     \
+    EXPECT_EQ(result_empty<t>(0), parse_with_options<t>("", options))
+
+#define PARSE_OPTIONS_FLOAT_TEST(t, options, str1, str2, str3, str4)                \
+    PARSE_OPTIONS_TEST(t, options, str1, str2);                                     \
+    EXPECT_EQ(result_ok<t>(10.5), parse_with_options<t>(str3, options));            \
+    EXPECT_EQ(result_ok<t>(10e5), parse_with_options<t>(str4, options));            \
+    EXPECT_EQ(result_empty_mantissa<t>(0), parse_with_options<t>(".", options));
+
+TEST(parse_with_options, api_tests)
+{
+    auto integer_options = parse_integer_options::builder()
+        .build()
+        .unwrap();
+    PARSE_OPTIONS_TEST(u8, integer_options, "10", "10a");
+    PARSE_OPTIONS_TEST(u16, integer_options, "10", "10a");
+    PARSE_OPTIONS_TEST(u32, integer_options, "10", "10a");
+    PARSE_OPTIONS_TEST(u64, integer_options, "10", "10a");
+    PARSE_OPTIONS_TEST(usize, integer_options, "10", "10a");
+    PARSE_OPTIONS_TEST(i8, integer_options, "10", "10a");
+    PARSE_OPTIONS_TEST(i16, integer_options, "10", "10a");
+    PARSE_OPTIONS_TEST(i32, integer_options, "10", "10a");
+    PARSE_OPTIONS_TEST(i64, integer_options, "10", "10a");
+    PARSE_OPTIONS_TEST(isize, integer_options, "10", "10a");
+
+    auto float_options = parse_float_options::builder()
+        .build()
+        .unwrap();
+    PARSE_OPTIONS_FLOAT_TEST(f32, float_options, "10", "10a", "10.5", "10e5");
+    PARSE_OPTIONS_FLOAT_TEST(f64, float_options, "10", "10a", "10.5", "10e5");
+
+#ifdef HAVE_RADIX
+    integer_options = parse_integer_options::binary();
+    PARSE_OPTIONS_TEST(u8, integer_options, "1010", "10102");
+    PARSE_OPTIONS_TEST(u16, integer_options, "1010", "10102");
+    PARSE_OPTIONS_TEST(u32, integer_options, "1010", "10102");
+    PARSE_OPTIONS_TEST(u64, integer_options, "1010", "10102");
+    PARSE_OPTIONS_TEST(usize, integer_options, "1010", "10102");
+    PARSE_OPTIONS_TEST(i8, integer_options, "1010", "10102");
+    PARSE_OPTIONS_TEST(i16, integer_options, "1010", "10102");
+    PARSE_OPTIONS_TEST(i32, integer_options, "1010", "10102");
+    PARSE_OPTIONS_TEST(i64, integer_options, "1010", "10102");
+    PARSE_OPTIONS_TEST(isize, integer_options, "1010", "10102");
+
+    integer_options = parse_integer_options::decimal();
+    PARSE_OPTIONS_TEST(u8, integer_options, "10", "10a");
+    PARSE_OPTIONS_TEST(u16, integer_options, "10", "10a");
+    PARSE_OPTIONS_TEST(u32, integer_options, "10", "10a");
+    PARSE_OPTIONS_TEST(u64, integer_options, "10", "10a");
+    PARSE_OPTIONS_TEST(usize, integer_options, "10", "10a");
+    PARSE_OPTIONS_TEST(i8, integer_options, "10", "10a");
+    PARSE_OPTIONS_TEST(i16, integer_options, "10", "10a");
+    PARSE_OPTIONS_TEST(i32, integer_options, "10", "10a");
+    PARSE_OPTIONS_TEST(i64, integer_options, "10", "10a");
+    PARSE_OPTIONS_TEST(isize, integer_options, "10", "10a");
+
+    integer_options = parse_integer_options::hexadecimal();
+    PARSE_OPTIONS_TEST(u8, integer_options, "A", "AG");
+    PARSE_OPTIONS_TEST(u16, integer_options, "A", "AG");
+    PARSE_OPTIONS_TEST(u32, integer_options, "A", "AG");
+    PARSE_OPTIONS_TEST(u64, integer_options, "A", "AG");
+    PARSE_OPTIONS_TEST(usize, integer_options, "A", "AG");
+    PARSE_OPTIONS_TEST(i8, integer_options, "A", "AG");
+    PARSE_OPTIONS_TEST(i16, integer_options, "A", "AG");
+    PARSE_OPTIONS_TEST(i32, integer_options, "A", "AG");
+    PARSE_OPTIONS_TEST(i64, integer_options, "A", "AG");
+    PARSE_OPTIONS_TEST(isize, integer_options, "A", "AG");
+
+    float_options = parse_float_options::binary();
+    PARSE_OPTIONS_FLOAT_TEST(f32, float_options, "1010", "10102", "1010.1", "11110100001001000000");
+    PARSE_OPTIONS_FLOAT_TEST(f64, float_options, "1010", "10102", "1010.1", "11110100001001000000");
+
+    float_options = parse_float_options::decimal();
+    PARSE_OPTIONS_FLOAT_TEST(f32, float_options, "10", "10a", "10.5", "10e5");
+    PARSE_OPTIONS_FLOAT_TEST(f64, float_options, "10", "10a", "10.5", "10e5");
+
+    float_options = parse_float_options::hexadecimal();
+    PARSE_OPTIONS_FLOAT_TEST(f32, float_options, "A", "AG", "A.8", "f4240");
+    PARSE_OPTIONS_FLOAT_TEST(f64, float_options, "A", "AG", "A.8", "f4240");
+#endif  // HAVE_RADIX
+
+#ifdef HAVE_FORMAT
+    integer_options = parse_integer_options::builder()
+        .format(number_format::fsharp_string)
+        .build()
+        .unwrap();
+    PARSE_OPTIONS_TEST(u8, integer_options, "1_0", "1_0a");
+
+    float_options = parse_float_options::builder()
+        .format(number_format::fsharp_string)
+        .build()
+        .unwrap();
+    PARSE_OPTIONS_FLOAT_TEST(f32, float_options, "1_0", "1_0a", "1_0.5_0", "1_0e5");
+#endif  // HAVE_FORMAT
+}
+
+#define PARSE_PARTIAL_TEST(t)                                                   \
+    EXPECT_EQ(partial_result_ok<t>(10, 2), parse_partial<t>("10"));             \
+    EXPECT_EQ(partial_result_ok<t>(10, 2), parse_partial<t>("10a"));            \
+    EXPECT_EQ(partial_result_empty<t>(0), parse_partial<t>(""))
+
+#define PARSE_PARTIAL_FLOAT_TEST(t)                                             \
+    PARSE_PARTIAL_TEST(t);                                                      \
+    EXPECT_EQ(partial_result_ok<t>(10.5, 4), parse_partial<t>("10.5"));         \
+    EXPECT_EQ(partial_result_ok<t>(10e5, 4), parse_partial<t>("10e5"));         \
+    EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial<t>("."));      \
+    EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial<t>("e5"));     \
+    EXPECT_EQ(partial_result_empty_exponent<t>(3), parse_partial<t>("10e+"))
+
+TEST(parse_partial, api_tests)
+{
+    PARSE_PARTIAL_TEST(u8);
+    PARSE_PARTIAL_TEST(u16);
+    PARSE_PARTIAL_TEST(u32);
+    PARSE_PARTIAL_TEST(u64);
+    PARSE_PARTIAL_TEST(usize);
+    PARSE_PARTIAL_TEST(i8);
+    PARSE_PARTIAL_TEST(i16);
+    PARSE_PARTIAL_TEST(i32);
+    PARSE_PARTIAL_TEST(i64);
+    PARSE_PARTIAL_TEST(isize);
+    PARSE_PARTIAL_FLOAT_TEST(f32);
+    PARSE_PARTIAL_FLOAT_TEST(f64);
+}
+
+#define PARSE_PARTIAL_OPTIONS_TEST(t, options, str1, str2)                                              \
+    EXPECT_EQ(partial_result_ok<t>(10, strlen(str1)), parse_partial_with_options<t>(str1, options));    \
+    EXPECT_EQ(partial_result_ok<t>(10, strlen(str2)-1), parse_partial_with_options<t>(str2, options));  \
+    EXPECT_EQ(partial_result_empty<t>(0), parse_partial_with_options<t>("", options))
+
+#define PARSE_PARTIAL_OPTIONS_FLOAT_TEST(t, options, str1, str2, str3, str4)                            \
+    PARSE_PARTIAL_OPTIONS_TEST(t, options, str1, str2);                                                 \
+    EXPECT_EQ(partial_result_ok<t>(10.5, strlen(str3)), parse_partial_with_options<t>(str3, options));  \
+    EXPECT_EQ(partial_result_ok<t>(10e5, strlen(str4)), parse_partial_with_options<t>(str4, options));  \
+    EXPECT_EQ(partial_result_empty_mantissa<t>(0), parse_partial_with_options<t>(".", options));
+
+TEST(parse_partial_with_options, api_tests)
+{
+    auto integer_options = parse_integer_options::builder()
+        .build()
+        .unwrap();
+    PARSE_PARTIAL_OPTIONS_TEST(u8, integer_options, "10", "10a");
+    PARSE_PARTIAL_OPTIONS_TEST(u16, integer_options, "10", "10a");
+    PARSE_PARTIAL_OPTIONS_TEST(u32, integer_options, "10", "10a");
+    PARSE_PARTIAL_OPTIONS_TEST(u64, integer_options, "10", "10a");
+    PARSE_PARTIAL_OPTIONS_TEST(usize, integer_options, "10", "10a");
+    PARSE_PARTIAL_OPTIONS_TEST(i8, integer_options, "10", "10a");
+    PARSE_PARTIAL_OPTIONS_TEST(i16, integer_options, "10", "10a");
+    PARSE_PARTIAL_OPTIONS_TEST(i32, integer_options, "10", "10a");
+    PARSE_PARTIAL_OPTIONS_TEST(i64, integer_options, "10", "10a");
+    PARSE_PARTIAL_OPTIONS_TEST(isize, integer_options, "10", "10a");
+
+    auto float_options = parse_float_options::builder()
+        .build()
+        .unwrap();
+    PARSE_PARTIAL_OPTIONS_FLOAT_TEST(f32, float_options, "10", "10a", "10.5", "10e5");
+    PARSE_PARTIAL_OPTIONS_FLOAT_TEST(f64, float_options, "10", "10a", "10.5", "10e5");
+
+#ifdef HAVE_RADIX
+    integer_options = parse_integer_options::binary();
+    PARSE_PARTIAL_OPTIONS_TEST(u8, integer_options, "1010", "10102");
+    PARSE_PARTIAL_OPTIONS_TEST(u16, integer_options, "1010", "10102");
+    PARSE_PARTIAL_OPTIONS_TEST(u32, integer_options, "1010", "10102");
+    PARSE_PARTIAL_OPTIONS_TEST(u64, integer_options, "1010", "10102");
+    PARSE_PARTIAL_OPTIONS_TEST(usize, integer_options, "1010", "10102");
+    PARSE_PARTIAL_OPTIONS_TEST(i8, integer_options, "1010", "10102");
+    PARSE_PARTIAL_OPTIONS_TEST(i16, integer_options, "1010", "10102");
+    PARSE_PARTIAL_OPTIONS_TEST(i32, integer_options, "1010", "10102");
+    PARSE_PARTIAL_OPTIONS_TEST(i64, integer_options, "1010", "10102");
+    PARSE_PARTIAL_OPTIONS_TEST(isize, integer_options, "1010", "10102");
+
+    integer_options = parse_integer_options::decimal();
+    PARSE_PARTIAL_OPTIONS_TEST(u8, integer_options, "10", "10a");
+    PARSE_PARTIAL_OPTIONS_TEST(u16, integer_options, "10", "10a");
+    PARSE_PARTIAL_OPTIONS_TEST(u32, integer_options, "10", "10a");
+    PARSE_PARTIAL_OPTIONS_TEST(u64, integer_options, "10", "10a");
+    PARSE_PARTIAL_OPTIONS_TEST(usize, integer_options, "10", "10a");
+    PARSE_PARTIAL_OPTIONS_TEST(i8, integer_options, "10", "10a");
+    PARSE_PARTIAL_OPTIONS_TEST(i16, integer_options, "10", "10a");
+    PARSE_PARTIAL_OPTIONS_TEST(i32, integer_options, "10", "10a");
+    PARSE_PARTIAL_OPTIONS_TEST(i64, integer_options, "10", "10a");
+    PARSE_PARTIAL_OPTIONS_TEST(isize, integer_options, "10", "10a");
+
+    integer_options = parse_integer_options::hexadecimal();
+    PARSE_PARTIAL_OPTIONS_TEST(u8, integer_options, "A", "AG");
+    PARSE_PARTIAL_OPTIONS_TEST(u16, integer_options, "A", "AG");
+    PARSE_PARTIAL_OPTIONS_TEST(u32, integer_options, "A", "AG");
+    PARSE_PARTIAL_OPTIONS_TEST(u64, integer_options, "A", "AG");
+    PARSE_PARTIAL_OPTIONS_TEST(usize, integer_options, "A", "AG");
+    PARSE_PARTIAL_OPTIONS_TEST(i8, integer_options, "A", "AG");
+    PARSE_PARTIAL_OPTIONS_TEST(i16, integer_options, "A", "AG");
+    PARSE_PARTIAL_OPTIONS_TEST(i32, integer_options, "A", "AG");
+    PARSE_PARTIAL_OPTIONS_TEST(i64, integer_options, "A", "AG");
+    PARSE_PARTIAL_OPTIONS_TEST(isize, integer_options, "A", "AG");
+
+    float_options = parse_float_options::binary();
+    PARSE_PARTIAL_OPTIONS_FLOAT_TEST(f32, float_options, "1010", "10102", "1010.1", "11110100001001000000");
+    PARSE_PARTIAL_OPTIONS_FLOAT_TEST(f64, float_options, "1010", "10102", "1010.1", "11110100001001000000");
+
+    float_options = parse_float_options::decimal();
+    PARSE_PARTIAL_OPTIONS_FLOAT_TEST(f32, float_options, "10", "10a", "10.5", "10e5");
+    PARSE_PARTIAL_OPTIONS_FLOAT_TEST(f64, float_options, "10", "10a", "10.5", "10e5");
+
+    float_options = parse_float_options::hexadecimal();
+    PARSE_PARTIAL_OPTIONS_FLOAT_TEST(f32, float_options, "A", "AG", "A.8", "f4240");
+    PARSE_PARTIAL_OPTIONS_FLOAT_TEST(f64, float_options, "A", "AG", "A.8", "f4240");
+#endif  // HAVE_RADIX
+
+#ifdef HAVE_FORMAT
+    integer_options = parse_integer_options::builder()
+        .format(number_format::fsharp_string)
+        .build()
+        .unwrap();
+    PARSE_PARTIAL_OPTIONS_TEST(u8, integer_options, "1_0", "1_0a");
+
+    float_options = parse_float_options::builder()
+        .format(number_format::fsharp_string)
+        .build()
+        .unwrap();
+    PARSE_PARTIAL_OPTIONS_FLOAT_TEST(f32, float_options, "1_0", "1_0a", "1_0.5_0", "1_0e5");
+#endif  // HAVE_FORMAT
+}

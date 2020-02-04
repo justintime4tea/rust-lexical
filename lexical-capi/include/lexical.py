@@ -399,12 +399,12 @@ class NumberFormat(Structure):
 
         @property
         def flags(self):
-            '''Get the flag bits from the compiled float format.'''
+            '''Get the flag bits from the compiled number format.'''
             return self._flags
 
         @property
         def digit_separator(self):
-            '''Get the digit separator from the compiled float format.'''
+            '''Get the digit separator from the compiled number format.'''
             return self._digit_separator
 
         @property
@@ -687,11 +687,6 @@ else:
         def build(self):
             return LIB.lexical_number_format_build(self)
 
-
-# TODO(ahuszagh)
-#   Remove all the unnecessary C-calls. Should be easy.
-#   All the builder fields should just assign the value.
-#       Only `build` should actually call something internal.
 
 class NumberFormatBuilder:
     '''Wrapper around _NumberFormatBuilder'''

@@ -171,6 +171,16 @@ impl ParseIntegerOptionsBuilder {
     }
 
     #[inline(always)]
+    #[cfg(feature = "radix")]
+    #[deprecated(
+        since = "0.8.0",
+        note = "Will be removed with 1.0. For backwards compatibility in radix API calls."
+    )]
+    pub(crate) fn exponent_char(self, _: u8) -> Self {
+        self
+    }
+
+    #[inline(always)]
     #[cfg(feature = "format")]
     pub fn format(mut self, format: NumberFormat) -> Self {
         self.format = format;
@@ -552,6 +562,16 @@ impl WriteIntegerOptionsBuilder {
     #[cfg(feature = "radix")]
     pub fn radix(mut self, radix: u8) -> Self {
         self.radix = radix;
+        self
+    }
+
+    #[inline(always)]
+    #[cfg(feature = "radix")]
+    #[deprecated(
+        since = "0.8.0",
+        note = "Will be removed with 1.0. For backwards compatibility in radix API calls."
+    )]
+    pub(crate) fn exponent_char(self, _: u8) -> Self {
         self
     }
 }

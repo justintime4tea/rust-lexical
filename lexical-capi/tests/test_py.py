@@ -226,6 +226,24 @@ class NumberFormatTests(unittest.TestCase):
             self.assertEqual(format.exponent_consecutive_digit_separator, False)
             self.assertEqual(format.special_digit_separator, False)
 
+    def test_permissive(self):
+        if lexical.HAVE_FORMAT:
+            format = lexical.NumberFormat.permissive()
+            self.assertEqual(format.digit_separator, '\x00')
+            self.assertEqual(format.flags, lexical.NumberFormatFlags(0))
+
+    def test_standard(self):
+        if lexical.HAVE_FORMAT:
+            format = lexical.NumberFormat.standard()
+            self.assertEqual(format.digit_separator, '\x00')
+            self.assertEqual(format.flags, lexical.NumberFormat.RustString.flags)
+
+    def test_ignore(self):
+        if lexical.HAVE_FORMAT:
+            format = lexical.NumberFormat.ignore('_')
+            self.assertEqual(format.digit_separator, '_')
+            self.assertEqual(format.flags, lexical.NumberFormatFlags.DigitSeparatorFlagMask)
+
     def test_constants(self):
         if lexical.HAVE_FORMAT:
             constants = [
