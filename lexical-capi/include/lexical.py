@@ -336,12 +336,6 @@ if HAVE_FORMAT:
             | SpecialDigitSeparator
         )
 
-        # HIDDEN DEFAULTS
-
-        Permissive = 0
-        Standard = RequiredExponentDigits
-        Ignore = DigitSeparatorFlagMask
-
 class NumberFormat(Structure):
     '''Immutable wrapper around bitflags for a serialized number format.'''
 
@@ -1740,29 +1734,6 @@ class LexicalError(Exception):
             return 'Number was found with invalid leading zeros at index {}'.format(self.error.index)
         else:
             raise ValueError('Invalid ErrorCode for lexical error.')
-
-# OPTIONS
-
-def _set_exponent_char(builder, exponent_char, callback):
-    return callback(builder, _to_c_ubyte(exponent_char))
-
-def _set_format(builder, format, callback):
-    return callback(builder, )
-
-def _set_lossy(builder, lossy, callback):
-    return callback(builder, _to_type(lossy, c_bool))
-
-def _set_radix(builder, radix, callback):
-    return callback(builder, _to_type(radix, c_uint8))
-
-def _set_rounding(builder, rounding, callback):
-    return callback(builder, _to_type(rounding, RoundingKind))
-
-def _set_string(builder, string, callback):
-    return callback(builder, *_to_string(string))
-
-def _set_trim_floats(builder, trim_floats, callback):
-    return callback(builder, _to_type(trim_floats, c_bool))
 
 # PARSE INTEGER OPTIONS
 

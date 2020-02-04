@@ -272,7 +272,7 @@ lexical_is_error(invalid_leading_zeros);
 
 // CONSTANT TESTS
 
-TEST(test_size, constant_tests)
+TEST(size, constant_tests)
 {
     // Check all the sizes can be used.
     EXPECT_GE(LEXICAL_I8_FORMATTED_SIZE, 0);
@@ -304,7 +304,7 @@ TEST(test_size, constant_tests)
 
 // ERROR TESTS
 
-TEST(test_is_overflow, error_tests)
+TEST(is_overflow, error_tests)
 {
     lexical_error overflow = { lexical_overflow, 0 };
     lexical_error underflow = { lexical_underflow, 0 };
@@ -312,7 +312,7 @@ TEST(test_is_overflow, error_tests)
     EXPECT_FALSE(lexical_error_is_overflow(&underflow));
 }
 
-TEST(test_is_underflow, error_tests)
+TEST(is_underflow, error_tests)
 {
     lexical_error overflow = { lexical_overflow, 0 };
     lexical_error underflow = { lexical_underflow, 0 };
@@ -320,7 +320,7 @@ TEST(test_is_underflow, error_tests)
     EXPECT_TRUE(lexical_error_is_underflow(&underflow));
 }
 
-TEST(test_is_invalid_digit, error_tests)
+TEST(is_invalid_digit, error_tests)
 {
     lexical_error overflow = { lexical_overflow, 0 };
     lexical_error invalid_digit = { lexical_invalid_digit, 0 };
@@ -328,7 +328,7 @@ TEST(test_is_invalid_digit, error_tests)
     EXPECT_TRUE(lexical_error_is_invalid_digit(&invalid_digit));
 }
 
-TEST(test_is_empty, error_tests)
+TEST(is_empty, error_tests)
 {
     lexical_error overflow = { lexical_overflow, 0 };
     lexical_error empty = { lexical_empty, 0 };
@@ -336,7 +336,7 @@ TEST(test_is_empty, error_tests)
     EXPECT_TRUE(lexical_error_is_empty(&empty));
 }
 
-TEST(test_is_empty_mantissa, error_tests)
+TEST(is_empty_mantissa, error_tests)
 {
     lexical_error overflow = { lexical_overflow, 0 };
     lexical_error empty_mantissa = { lexical_empty_mantissa, 0 };
@@ -344,7 +344,7 @@ TEST(test_is_empty_mantissa, error_tests)
     EXPECT_TRUE(lexical_error_is_empty_mantissa(&empty_mantissa));
 }
 
-TEST(test_is_empty_exponent, error_tests)
+TEST(is_empty_exponent, error_tests)
 {
     lexical_error overflow = { lexical_overflow, 0 };
     lexical_error empty_exponent = { lexical_empty_exponent, 0 };
@@ -352,7 +352,7 @@ TEST(test_is_empty_exponent, error_tests)
     EXPECT_TRUE(lexical_error_is_empty_exponent(&empty_exponent));
 }
 
-TEST(test_is_empty_integer, error_tests)
+TEST(is_empty_integer, error_tests)
 {
     lexical_error overflow = { lexical_overflow, 0 };
     lexical_error empty_integer = { lexical_empty_integer, 0 };
@@ -360,7 +360,7 @@ TEST(test_is_empty_integer, error_tests)
     EXPECT_TRUE(lexical_error_is_empty_integer(&empty_integer));
 }
 
-TEST(test_is_empty_fraction, error_tests)
+TEST(is_empty_fraction, error_tests)
 {
     lexical_error overflow = { lexical_overflow, 0 };
     lexical_error empty_fraction = { lexical_empty_fraction, 0 };
@@ -368,7 +368,7 @@ TEST(test_is_empty_fraction, error_tests)
     EXPECT_TRUE(lexical_error_is_empty_fraction(&empty_fraction));
 }
 
-TEST(test_is_invalid_positive_mantissa_sign, error_tests)
+TEST(is_invalid_positive_mantissa_sign, error_tests)
 {
     lexical_error overflow = { lexical_overflow, 0 };
     lexical_error invalid_positive_mantissa_sign = { lexical_invalid_positive_mantissa_sign, 0 };
@@ -376,7 +376,7 @@ TEST(test_is_invalid_positive_mantissa_sign, error_tests)
     EXPECT_TRUE(lexical_error_is_invalid_positive_mantissa_sign(&invalid_positive_mantissa_sign));
 }
 
-TEST(test_is_missing_mantissa_sign, error_tests)
+TEST(is_missing_mantissa_sign, error_tests)
 {
     lexical_error overflow = { lexical_overflow, 0 };
     lexical_error missing_mantissa_sign = { lexical_missing_mantissa_sign, 0 };
@@ -384,7 +384,7 @@ TEST(test_is_missing_mantissa_sign, error_tests)
     EXPECT_TRUE(lexical_error_is_missing_mantissa_sign(&missing_mantissa_sign));
 }
 
-TEST(test_is_invalid_exponent, error_tests)
+TEST(is_invalid_exponent, error_tests)
 {
     lexical_error overflow = { lexical_overflow, 0 };
     lexical_error invalid_exponent = { lexical_invalid_exponent, 0 };
@@ -392,7 +392,7 @@ TEST(test_is_invalid_exponent, error_tests)
     EXPECT_TRUE(lexical_error_is_invalid_exponent(&invalid_exponent));
 }
 
-TEST(test_is_invalid_positive_exponent_sign, error_tests)
+TEST(is_invalid_positive_exponent_sign, error_tests)
 {
     lexical_error overflow = { lexical_overflow, 0 };
     lexical_error invalid_positive_exponent_sign = { lexical_invalid_positive_exponent_sign, 0 };
@@ -400,7 +400,7 @@ TEST(test_is_invalid_positive_exponent_sign, error_tests)
     EXPECT_TRUE(lexical_error_is_invalid_positive_exponent_sign(&invalid_positive_exponent_sign));
 }
 
-TEST(test_is_missing_exponent_sign, error_tests)
+TEST(is_missing_exponent_sign, error_tests)
 {
     lexical_error overflow = { lexical_overflow, 0 };
     lexical_error missing_exponent_sign = { lexical_missing_exponent_sign, 0 };
@@ -408,7 +408,7 @@ TEST(test_is_missing_exponent_sign, error_tests)
     EXPECT_TRUE(lexical_error_is_missing_exponent_sign(&missing_exponent_sign));
 }
 
-TEST(test_is_exponent_without_fraction, error_tests)
+TEST(is_exponent_without_fraction, error_tests)
 {
     lexical_error overflow = { lexical_overflow, 0 };
     lexical_error exponent_without_fraction = { lexical_exponent_without_fraction, 0 };
@@ -416,12 +416,305 @@ TEST(test_is_exponent_without_fraction, error_tests)
     EXPECT_TRUE(lexical_error_is_exponent_without_fraction(&exponent_without_fraction));
 }
 
-TEST(test_is_invalid_leading_zeros, error_tests)
+TEST(is_invalid_leading_zeros, error_tests)
 {
     lexical_error overflow = { lexical_overflow, 0 };
     lexical_error invalid_leading_zeros = { lexical_invalid_leading_zeros, 0 };
     EXPECT_FALSE(lexical_error_is_invalid_leading_zeros(&overflow));
     EXPECT_TRUE(lexical_error_is_invalid_leading_zeros(&invalid_leading_zeros));
+}
+
+// NUMBER FORMAT TESTS
+
+TEST(number_format, builder_tests)
+{
+    lexical_number_format_builder_t builder = lexical_number_format_builder();
+#ifdef HAVE_FORMAT
+    builder.digit_separator = uint8_t('_');
+    builder.required_integer_digits = false;
+    builder.required_fraction_digits = false;
+    builder.required_exponent_digits = false;
+    builder.no_positive_mantissa_sign = false;
+    builder.required_mantissa_sign = false;
+    builder.no_exponent_notation = false;
+    builder.no_positive_exponent_sign = false;
+    builder.required_exponent_sign = false;
+    builder.no_exponent_without_fraction = false;
+    builder.no_special = false;
+    builder.case_sensitive_special = false;
+    builder.no_integer_leading_zeros = false;
+    builder.no_float_leading_zeros = false;
+    builder.integer_internal_digit_separator = false;
+    builder.fraction_internal_digit_separator = false;
+    builder.exponent_internal_digit_separator = false;
+    builder.integer_leading_digit_separator = false;
+    builder.fraction_leading_digit_separator = false;
+    builder.exponent_leading_digit_separator = false;
+    builder.integer_trailing_digit_separator = false;
+    builder.fraction_trailing_digit_separator = false;
+    builder.exponent_trailing_digit_separator = false;
+    builder.integer_consecutive_digit_separator = false;
+    builder.fraction_consecutive_digit_separator = false;
+    builder.exponent_consecutive_digit_separator = false;
+    builder.special_digit_separator = false;
+#endif  // HAVE_FORMAT
+
+    lexical_number_format_option option = lexical_number_format_build(builder);
+    EXPECT_TRUE(lexical_number_format_option_is_some(&option));
+
+    lexical_number_format format = lexical_number_format_option_unwrap(option);
+#ifdef HAVE_FORMAT
+    EXPECT_EQ(lexical_number_format_digit_separator(format), uint8_t('\x00'));
+    EXPECT_EQ(lexical_number_format_required_integer_digits(format), false);
+    EXPECT_EQ(lexical_number_format_required_fraction_digits(format), false);
+    EXPECT_EQ(lexical_number_format_required_exponent_digits(format), false);
+    EXPECT_EQ(lexical_number_format_no_positive_mantissa_sign(format), false);
+    EXPECT_EQ(lexical_number_format_required_mantissa_sign(format), false);
+    EXPECT_EQ(lexical_number_format_no_exponent_notation(format), false);
+    EXPECT_EQ(lexical_number_format_no_positive_exponent_sign(format), false);
+    EXPECT_EQ(lexical_number_format_required_exponent_sign(format), false);
+    EXPECT_EQ(lexical_number_format_no_exponent_without_fraction(format), false);
+    EXPECT_EQ(lexical_number_format_no_special(format), false);
+    EXPECT_EQ(lexical_number_format_case_sensitive_special(format), false);
+    EXPECT_EQ(lexical_number_format_no_integer_leading_zeros(format), false);
+    EXPECT_EQ(lexical_number_format_no_float_leading_zeros(format), false);
+    EXPECT_EQ(lexical_number_format_integer_internal_digit_separator(format), false);
+    EXPECT_EQ(lexical_number_format_fraction_internal_digit_separator(format), false);
+    EXPECT_EQ(lexical_number_format_exponent_internal_digit_separator(format), false);
+    EXPECT_EQ(lexical_number_format_integer_leading_digit_separator(format), false);
+    EXPECT_EQ(lexical_number_format_fraction_leading_digit_separator(format), false);
+    EXPECT_EQ(lexical_number_format_exponent_leading_digit_separator(format), false);
+    EXPECT_EQ(lexical_number_format_integer_trailing_digit_separator(format), false);
+    EXPECT_EQ(lexical_number_format_fraction_trailing_digit_separator(format), false);
+    EXPECT_EQ(lexical_number_format_exponent_trailing_digit_separator(format), false);
+    EXPECT_EQ(lexical_number_format_integer_consecutive_digit_separator(format), false);
+    EXPECT_EQ(lexical_number_format_fraction_consecutive_digit_separator(format), false);
+    EXPECT_EQ(lexical_number_format_exponent_consecutive_digit_separator(format), false);
+    EXPECT_EQ(lexical_number_format_special_digit_separator(format), false);
+#endif  // HAVE_FORMAT
+}
+
+TEST(number_format, constant_tests)
+{
+#ifdef HAVE_FORMAT
+    lexical_number_format constants[] = {
+        lexical_rust_literal,
+        lexical_rust_string,
+        lexical_rust_string_strict,
+        lexical_python_literal,
+        lexical_python_string,
+        lexical_cxx17_literal,
+        lexical_cxx17_string,
+        lexical_cxx14_literal,
+        lexical_cxx14_string,
+        lexical_cxx11_literal,
+        lexical_cxx11_string,
+        lexical_cxx03_literal,
+        lexical_cxx03_string,
+        lexical_cxx98_literal,
+        lexical_cxx98_string,
+        lexical_c18_literal,
+        lexical_c18_string,
+        lexical_c11_literal,
+        lexical_c11_string,
+        lexical_c99_literal,
+        lexical_c99_string,
+        lexical_c90_literal,
+        lexical_c90_string,
+        lexical_c89_literal,
+        lexical_c89_string,
+        lexical_ruby_literal,
+        lexical_ruby_string,
+        lexical_swift_literal,
+        lexical_swift_string,
+        lexical_go_literal,
+        lexical_go_string,
+        lexical_haskell_literal,
+        lexical_haskell_string,
+        lexical_javascript_literal,
+        lexical_javascript_string,
+        lexical_perl_literal,
+        lexical_perl_string,
+        lexical_php_literal,
+        lexical_php_string,
+        lexical_java_literal,
+        lexical_java_string,
+        lexical_r_literal,
+        lexical_r_string,
+        lexical_kotlin_literal,
+        lexical_kotlin_string,
+        lexical_julia_literal,
+        lexical_julia_string,
+        lexical_csharp7_literal,
+        lexical_csharp7_string,
+        lexical_csharp6_literal,
+        lexical_csharp6_string,
+        lexical_csharp5_literal,
+        lexical_csharp5_string,
+        lexical_csharp4_literal,
+        lexical_csharp4_string,
+        lexical_csharp3_literal,
+        lexical_csharp3_string,
+        lexical_csharp2_literal,
+        lexical_csharp2_string,
+        lexical_csharp1_literal,
+        lexical_csharp1_string,
+        lexical_kawa_literal,
+        lexical_kawa_string,
+        lexical_gambitc_literal,
+        lexical_gambitc_string,
+        lexical_guile_literal,
+        lexical_guile_string,
+        lexical_clojure_literal,
+        lexical_clojure_string,
+        lexical_erlang_literal,
+        lexical_erlang_string,
+        lexical_elm_literal,
+        lexical_elm_string,
+        lexical_scala_literal,
+        lexical_scala_string,
+        lexical_elixir_literal,
+        lexical_elixir_string,
+        lexical_fortran_literal,
+        lexical_fortran_string,
+        lexical_d_literal,
+        lexical_d_string,
+        lexical_coffeescript_literal,
+        lexical_coffeescript_string,
+        lexical_cobol_literal,
+        lexical_cobol_string,
+        lexical_fsharp_literal,
+        lexical_fsharp_string,
+        lexical_vb_literal,
+        lexical_vb_string,
+        lexical_ocaml_literal,
+        lexical_ocaml_string,
+        lexical_objectivec_literal,
+        lexical_objectivec_string,
+        lexical_reasonml_literal,
+        lexical_reasonml_string,
+        lexical_octave_literal,
+        lexical_octave_string,
+        lexical_matlab_literal,
+        lexical_matlab_string,
+        lexical_zig_literal,
+        lexical_zig_string,
+        lexical_sage_literal,
+        lexical_sage_string,
+        lexical_json,
+        lexical_toml,
+        lexical_yaml,
+        lexical_xml,
+        lexical_sqlite,
+        lexical_postgresql,
+        lexical_mysql,
+        lexical_mongodb
+    };
+    // Just insure we can compile them.
+    for (lexical_number_format value: constants);
+#endif  // HAVE_FORMAT
+}
+
+// PARSE INTEGER OPTIONS TESTS
+
+TEST(parse_integer_options, builder_tests)
+{
+    lexical_parse_integer_options_builder_t builder = lexical_parse_integer_options_builder();
+#ifdef  HAVE_RADIX
+    builder.radix = 2;
+#endif  // HAVE_RADIX
+#ifdef  HAVE_FORMAT
+    builder.format = lexical_json;
+#endif  // HAVE_FORMAT
+
+    lexical_parse_integer_options_option option = lexical_parse_integer_options_build(builder);
+    ASSERT_TRUE(lexical_parse_integer_options_option_is_some(&option));
+    lexical_parse_integer_options options = lexical_parse_integer_options_option_unwrap(option);
+    // Ignore the fields, we just want to ensure it compiles.
+}
+
+// PARSE FLOAT OPTIONS TESTS
+
+TEST(parse_float_options, builder_tests)
+{
+    constexpr char const* nan_string = "NAN";
+    constexpr char const* inf_string = "INF";
+    constexpr char const* infinity_string = "INFINITY";
+
+    lexical_parse_float_options_builder_t builder = lexical_parse_float_options_builder();
+    builder.lossy = true;
+    builder.exponent_char = uint8_t('e');
+    builder.nan_string_ptr = reinterpret_cast<uint8_t const*>(nan_string);
+    builder.nan_string_length = strlen(nan_string);
+    builder.inf_string_ptr = reinterpret_cast<uint8_t const*>(inf_string);
+    builder.inf_string_length = strlen(inf_string);
+    builder.infinity_string_ptr = reinterpret_cast<uint8_t const*>(infinity_string);
+    builder.infinity_string_length = strlen(infinity_string);
+#ifdef  HAVE_RADIX
+    builder.radix = 2;
+#endif  // HAVE_RADIX
+#ifdef  HAVE_FORMAT
+    builder.format = lexical_json;
+#endif  // HAVE_FORMAT
+#ifdef  HAVE_ROUNDING
+    builder.rounding = lexical_toward_zero;
+#endif  // HAVE_ROUNDING
+
+    lexical_parse_float_options_option option = lexical_parse_float_options_build(builder);
+    ASSERT_TRUE(lexical_parse_float_options_option_is_some(&option));
+    lexical_parse_float_options options = lexical_parse_float_options_option_unwrap(option);
+    EXPECT_EQ(options.lossy, true);
+    EXPECT_EQ(options.exponent_char, uint8_t('e'));
+    EXPECT_EQ(options.nan_string_ptr, reinterpret_cast<uint8_t const*>(nan_string));
+    EXPECT_EQ(options.nan_string_length, 3);
+    EXPECT_EQ(options.inf_string_ptr, reinterpret_cast<uint8_t const*>(inf_string));
+    EXPECT_EQ(options.inf_string_length, 3);
+    EXPECT_EQ(options.infinity_string_ptr, reinterpret_cast<uint8_t const*>(infinity_string));
+    EXPECT_EQ(options.infinity_string_length, 8);
+}
+
+// WRITE INTEGER OPTIONS TESTS
+
+TEST(write_integer_options, builder_tests)
+{
+    lexical_write_integer_options_builder_t builder = lexical_write_integer_options_builder();
+#ifdef  HAVE_RADIX
+    builder.radix = 2;
+#endif  // HAVE_RADIX
+
+    lexical_write_integer_options_option option = lexical_write_integer_options_build(builder);
+    ASSERT_TRUE(lexical_write_integer_options_option_is_some(&option));
+    lexical_write_integer_options options = lexical_write_integer_options_option_unwrap(option);
+    // Ignore the fields, we just want to ensure it compiles.
+}
+
+// WRITE FLOAT OPTIONS TESTS
+
+TEST(write_float_options, builder_tests)
+{
+    constexpr char const* nan_string = "NAN";
+    constexpr char const* inf_string = "INF";
+
+    lexical_write_float_options_builder_t builder = lexical_write_float_options_builder();
+    builder.exponent_char = uint8_t('e');
+    builder.trim_floats = true;
+    builder.nan_string_ptr = reinterpret_cast<uint8_t const*>(nan_string);
+    builder.nan_string_length = strlen(nan_string);
+    builder.inf_string_ptr = reinterpret_cast<uint8_t const*>(inf_string);
+    builder.inf_string_length = strlen(inf_string);
+#ifdef  HAVE_RADIX
+    builder.radix = 2;
+#endif  // HAVE_RADIX
+
+    lexical_write_float_options_option option = lexical_write_float_options_build(builder);
+    EXPECT_TRUE(lexical_write_float_options_option_is_some(&option));
+    lexical_write_float_options options = lexical_write_float_options_option_unwrap(option);
+    EXPECT_EQ(options.exponent_char, uint8_t('e'));
+    EXPECT_EQ(options.trim_floats, true);
+    EXPECT_EQ(options.nan_string_ptr, reinterpret_cast<uint8_t const*>(nan_string));
+    EXPECT_EQ(options.nan_string_length, 3);
+    EXPECT_EQ(options.inf_string_ptr, reinterpret_cast<uint8_t const*>(inf_string));
+    EXPECT_EQ(options.inf_string_length, 3);
 }
 
 // RESULT TESTS
