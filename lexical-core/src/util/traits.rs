@@ -24,6 +24,8 @@ macro_rules! to_complete {
 
 /// Trait for numerical types that can be parsed from bytes.
 pub trait FromLexical: Number {
+    type Options;
+
     /// Checked parser for a string-to-number conversion.
     ///
     /// This method parses the entire string, returning an error if
@@ -38,6 +40,21 @@ pub trait FromLexical: Number {
     /// * `bytes`   - Slice containing a numeric string.
     fn from_lexical(bytes: &[u8]) -> Result<Self>;
 
+    /// Checked parser for a custom string-to-number conversion.
+    ///
+    /// This method parses the entire string, returning an error if
+    /// any invalid digits are found during parsing.
+    ///
+    /// Returns a `Result` containing either the parsed value,
+    /// or an error containing any errors that occurred during parsing.
+    ///
+    /// Numeric overflow takes precedence over the presence of an invalid
+    /// digit, and therefore may mask an invalid digit error.
+    ///
+    /// * `bytes`   - Slice containing a numeric string.
+    /// * `options` - Options to customize parsing the number.
+    fn from_lexical_with_options(bytes: &[u8], options: &Self::Options) -> Result<Self>;
+
     /// Checked parser for a string-to-number conversion.
     ///
     /// This method parses until an invalid digit is found (or the end
@@ -50,6 +67,20 @@ pub trait FromLexical: Number {
     ///
     /// * `bytes`   - Slice containing a numeric string.
     fn from_lexical_partial(bytes: &[u8]) -> Result<(Self, usize)>;
+
+    /// Checked parser for a custom string-to-number conversion.
+    ///
+    /// This method parses until an invalid digit is found (or the end
+    /// of the string), returning the number of processed digits
+    /// and the parsed value until that point.
+    ///
+    /// Returns a `Result` containing either the parsed value
+    /// and the number of processed digits, or an error containing
+    /// any errors that occurred during parsing.
+    ///
+    /// * `bytes`   - Slice containing a numeric string.
+    /// * `options` - Options to customize parsing the number.
+    fn from_lexical_partial_with_options(bytes: &[u8], options: &Self::Options) -> Result<(Self, usize)>;
 
     /// Checked parser for a string-to-number conversion.
     ///
@@ -69,6 +100,10 @@ pub trait FromLexical: Number {
     ///
     /// Panics if the radix is not in the range `[2, 36]`.
     #[cfg(feature = "radix")]
+    #[deprecated(
+        since = "0.8.0",
+        note = "Will be removed with 1.0. Use from_lexical_with_options with Self::Options."
+    )]
     fn from_lexical_radix(bytes: &[u8], radix: u8) -> Result<Self>;
 
     /// Checked parser for a string-to-number conversion.
@@ -88,37 +123,97 @@ pub trait FromLexical: Number {
     ///
     /// Panics if the radix is not in the range `[2, 36]`.
     #[cfg(feature = "radix")]
+    #[deprecated(
+        since = "0.8.0",
+        note = "Will be removed with 1.0. Use from_lexical_partial_with_options with Self::Options."
+    )]
     fn from_lexical_partial_radix(bytes: &[u8], radix: u8) -> Result<(Self, usize)>;
 }
 
 // Implement FromLexical for numeric type.
 macro_rules! from_lexical {
-    ($cb:expr, $t:ty) => (
-        impl FromLexical for $t {
+    (
+        type => $type:ty,
+        options => $options:ty,
+        parse => $parse:expr,
+        parse_with_options => $parse_with_options:expr
+    ) => (
+        #[allow(deprecated)]        // TODO(ahuszagh) Remove with 1.0
+        impl FromLexical for $type {
+            type Options = $options;
+
             #[inline]
-            fn from_lexical(bytes: &[u8]) -> Result<$t>
+            fn from_lexical(bytes: &[u8]) -> Result<$type>
             {
-                to_complete!($cb, bytes, 10)
+                to_complete!($parse, bytes)
             }
 
             #[inline]
-            fn from_lexical_partial(bytes: &[u8]) -> Result<($t, usize)>
+            fn from_lexical_with_options(bytes: &[u8], options: &$options) -> Result<$type>
             {
-                $cb(bytes, 10)
+                to_complete!($parse_with_options, bytes, options)
+            }
+
+            #[inline]
+            fn from_lexical_partial(bytes: &[u8]) -> Result<($type, usize)>
+            {
+                $parse(bytes)
+            }
+
+            #[inline]
+            fn from_lexical_partial_with_options(bytes: &[u8], options: &$options) -> Result<($type, usize)>
+            {
+                $parse_with_options(bytes, options)
+            }
+
+            #[inline]
+            #[cfg(feature = "radix")]
+            fn from_lexical_radix(bytes: &[u8], radix: u8) -> Result<$type>
+            {
+                let options = <$options>::from_radix(radix).expect("Numerical base must be from 2-36.");
+                to_complete!($parse_with_options, bytes, &options)
+            }
+
+            #[inline]
+            #[cfg(feature = "radix")]
+            fn from_lexical_partial_radix(bytes: &[u8], radix: u8) -> Result<($type, usize)>
+            {
+                let options = <$options>::from_radix(radix).expect("Numerical base must be from 2-36.");
+                $parse_with_options(bytes, &options)
+            }
+        }
+
+        #[allow(deprecated)]        // TODO(ahuszagh) Remove with 1.0
+        #[cfg(feature = "format")]
+        impl FromLexicalFormat for $type {
+            #[inline]
+            fn from_lexical_format(bytes: &[u8], format: NumberFormat) -> Result<$type>
+            {
+                let options = <$options>::from_format(format).expect("Invalid NumberFormat");
+                to_complete!($parse_with_options, bytes, &options)
+            }
+
+            #[inline]
+            fn from_lexical_partial_format(bytes: &[u8], format: NumberFormat) -> Result<($type, usize)>
+            {
+                let options = <$options>::from_format(format).expect("Invalid NumberFormat");
+                $parse_with_options(bytes, &options)
             }
 
             #[cfg(feature = "radix")]
             #[inline]
-            fn from_lexical_radix(bytes: &[u8], radix: u8) -> Result<$t>
+            fn from_lexical_format_radix(bytes: &[u8], radix: u8, format: NumberFormat) -> Result<$type>
             {
-                to_complete!($cb, bytes, radix.as_u32())
+                let options = <$options>::from_format_and_radix(format, radix).expect("Invalid NumberFormat or radix");
+                to_complete!($parse_with_options, bytes, &options)
             }
 
             #[cfg(feature = "radix")]
             #[inline]
-            fn from_lexical_partial_radix(bytes: &[u8], radix: u8) -> Result<($t, usize)>
+            fn from_lexical_partial_format_radix(bytes: &[u8], radix: u8, format: NumberFormat) -> Result<($type, usize)>
             {
-                $cb(bytes, radix.as_u32())
+                let options = <$options>::from_format_and_radix(format, radix).expect("Invalid NumberFormat or radix");
+                $parse_with_options(bytes, &options)
             }
         }
     )
@@ -127,6 +222,10 @@ macro_rules! from_lexical {
 // FROM LEXICAL LOSSY
 
 /// Trait for floating-point types that can be parsed using lossy algorithms from bytes.
+#[deprecated(
+    since = "0.8.0",
+    note = "Will be removed with 1.0. Use FromLexical with Self::Options."
+)]
 pub trait FromLexicalLossy: FromLexical {
     /// Lossy, checked parser for a string-to-number conversion.
     ///
@@ -138,6 +237,10 @@ pub trait FromLexicalLossy: FromLexical {
     /// or an error containing any errors that occurred during parsing.
     ///
     /// * `bytes`   - Slice containing a numeric string.
+    #[deprecated(
+        since = "0.8.0",
+        note = "Will be removed with 1.0. Use from_lexical_with_options with Self::Options."
+    )]
     fn from_lexical_lossy(bytes: &[u8]) -> Result<Self>;
 
     /// Lossy, checked parser for a string-to-number conversion.
@@ -152,6 +255,10 @@ pub trait FromLexicalLossy: FromLexical {
     /// any errors that occurred during parsing.
     ///
     /// * `bytes`   - Slice containing a numeric string.
+    #[deprecated(
+        since = "0.8.0",
+        note = "Will be removed with 1.0. Use from_lexical_partial_with_options with Self::Options."
+    )]
     fn from_lexical_partial_lossy(bytes: &[u8]) -> Result<(Self, usize)>;
 
     /// Lossy, checked parser for a string-to-number conversion.
@@ -170,6 +277,10 @@ pub trait FromLexicalLossy: FromLexical {
     ///
     /// Panics if the radix is not in the range `[2, 36]`.
     #[cfg(feature = "radix")]
+    #[deprecated(
+        since = "0.8.0",
+        note = "Will be removed with 1.0. Use from_lexical_with_options with Self::Options."
+    )]
     fn from_lexical_lossy_radix(bytes: &[u8], radix: u8) -> Result<Self>;
 
     /// Lossy, checked parser for a string-to-number conversion.
@@ -190,37 +301,84 @@ pub trait FromLexicalLossy: FromLexical {
     ///
     /// Panics if the radix is not in the range `[2, 36]`.
     #[cfg(feature = "radix")]
+    #[deprecated(
+        since = "0.8.0",
+        note = "Will be removed with 1.0. Use from_lexical_partial_with_options with Self::Options."
+    )]
     fn from_lexical_partial_lossy_radix(bytes: &[u8], radix: u8) -> Result<(Self, usize)>;
 }
 
 // Implement FromLexicalLossy for numeric type.
 macro_rules! from_lexical_lossy {
-    ($cb:expr, $t:ty) => (
-        impl FromLexicalLossy for $t {
+    (
+        type => $type:ty,
+        options => $options:ty,
+        parse_with_options => $parse_with_options:expr
+    ) => (
+        #[allow(deprecated)]        // TODO(ahuszagh) Remove with 1.0
+        impl FromLexicalLossy for $type {
             #[inline]
-            fn from_lexical_lossy(bytes: &[u8]) -> Result<$t>
+            fn from_lexical_lossy(bytes: &[u8]) -> Result<$type>
             {
-                to_complete!($cb, bytes, 10)
+                let options = <$options>::from_lossy(true).expect("Invalid use of lossy parser.");
+                to_complete!($parse_with_options, bytes, &options)
             }
 
             #[inline]
-            fn from_lexical_partial_lossy(bytes: &[u8]) -> Result<($t, usize)>
+            fn from_lexical_partial_lossy(bytes: &[u8]) -> Result<($type, usize)>
             {
-                $cb(bytes, 10)
+                let options = <$options>::from_lossy(true).expect("Invalid use of lossy parser.");
+                $parse_with_options(bytes, &options)
+            }
+
+            #[inline]
+            #[cfg(feature = "radix")]
+            fn from_lexical_lossy_radix(bytes: &[u8], radix: u8) -> Result<$type>
+            {
+                let options = <$options>::from_lossy_and_radix(true, radix).expect("Numerical base must be from 2-36.");
+                to_complete!($parse_with_options, bytes, &options)
+            }
+
+            #[inline]
+            #[cfg(feature = "radix")]
+            fn from_lexical_partial_lossy_radix(bytes: &[u8], radix: u8) -> Result<($type, usize)>
+            {
+                let options = <$options>::from_lossy_and_radix(true, radix).expect("Numerical base must be from 2-36.");
+                $parse_with_options(bytes, &options)
+            }
+        }
+
+        #[cfg(feature = "format")]
+        #[allow(deprecated)]        // TODO(ahuszagh) Remove with 1.0
+        impl FromLexicalLossyFormat for $type {
+            #[inline]
+            fn from_lexical_lossy_format(bytes: &[u8], format: NumberFormat) -> Result<$type>
+            {
+                let options = <$options>::from_lossy_and_format(true, format).expect("Invalid NumberFormat");
+                to_complete!($parse_with_options, bytes, &options)
+            }
+
+            #[inline]
+            fn from_lexical_partial_lossy_format(bytes: &[u8], format: NumberFormat) -> Result<($type, usize)>
+            {
+                let options = <$options>::from_lossy_and_format(true, format).expect("Invalid NumberFormat");
+                $parse_with_options(bytes, &options)
             }
 
             #[cfg(feature = "radix")]
             #[inline]
-            fn from_lexical_lossy_radix(bytes: &[u8], radix: u8) -> Result<$t>
+            fn from_lexical_lossy_format_radix(bytes: &[u8], radix: u8, format: NumberFormat) -> Result<$type>
             {
-                to_complete!($cb, bytes, radix.as_u32())
+                let options = <$options>::from_lossy_and_format_and_radix(true, format, radix).expect("Invalid NumberFormat or radix");
+                to_complete!($parse_with_options, bytes, &options)
             }
 
             #[cfg(feature = "radix")]
             #[inline]
-            fn from_lexical_partial_lossy_radix(bytes: &[u8], radix: u8) -> Result<($t, usize)>
+            fn from_lexical_partial_lossy_format_radix(bytes: &[u8], radix: u8, format: NumberFormat) -> Result<($type, usize)>
             {
-                $cb(bytes, radix.as_u32())
+                let options = <$options>::from_lossy_and_format_and_radix(true, format, radix).expect("Invalid NumberFormat or radix");
+                $parse_with_options(bytes, &options)
             }
         }
     )
@@ -230,6 +388,10 @@ macro_rules! from_lexical_lossy {
 
 /// Trait for number that can be parsed using a custom format specification.
 #[cfg(feature = "format")]
+#[deprecated(
+    since = "0.8.0",
+    note = "Will be removed with 1.0. Use FromLexical with Self::Options."
+)]
 pub trait FromLexicalFormat: FromLexical {
     /// Checked parser for a string-to-number conversion.
     ///
@@ -243,6 +405,10 @@ pub trait FromLexicalFormat: FromLexical {
     ///
     /// * `bytes`   - Slice containing a numeric string.
     /// * `format`  - Numerical format.
+    #[deprecated(
+        since = "0.8.0",
+        note = "Will be removed with 1.0. Use from_lexical_with_options with Self::Options."
+    )]
     fn from_lexical_format(bytes: &[u8], format: NumberFormat) -> Result<Self>;
 
     /// Checked parser for a string-to-number conversion.
@@ -259,6 +425,10 @@ pub trait FromLexicalFormat: FromLexical {
     ///
     /// * `bytes`   - Slice containing a numeric string.
     /// * `format`  - Numerical format.
+    #[deprecated(
+        since = "0.8.0",
+        note = "Will be removed with 1.0. Use from_lexical_partial_with_options with Self::Options."
+    )]
     fn from_lexical_partial_format(bytes: &[u8], format: NumberFormat) -> Result<(Self, usize)>;
 
     /// Checked parser for a string-to-number conversion.
@@ -279,6 +449,10 @@ pub trait FromLexicalFormat: FromLexical {
     ///
     /// Panics if the radix is not in the range `[2, 36]`.
     #[cfg(feature = "radix")]
+    #[deprecated(
+        since = "0.8.0",
+        note = "Will be removed with 1.0. Use from_lexical_with_options with Self::Options."
+    )]
     fn from_lexical_format_radix(bytes: &[u8], radix: u8, format: NumberFormat) -> Result<Self>;
 
     /// Checked parser for a string-to-number conversion.
@@ -301,47 +475,21 @@ pub trait FromLexicalFormat: FromLexical {
     ///
     /// Panics if the radix is not in the range `[2, 36]`.
     #[cfg(feature = "radix")]
+    #[deprecated(
+        since = "0.8.0",
+        note = "Will be removed with 1.0. Use from_lexical_partial_with_options with Self::Options."
+    )]
     fn from_lexical_partial_format_radix(bytes: &[u8], radix: u8, format: NumberFormat) -> Result<(Self, usize)>;
-}
-
-// Implement FromLexicalFormat for numeric type.
-#[cfg(feature = "format")]
-macro_rules! from_lexical_format {
-    ($cb:expr, $t:ty) => (
-        impl FromLexicalFormat for $t {
-            #[inline]
-            fn from_lexical_format(bytes: &[u8], format: NumberFormat) -> Result<$t>
-            {
-                to_complete!($cb, bytes, 10, format)
-            }
-
-            #[inline]
-            fn from_lexical_partial_format(bytes: &[u8], format: NumberFormat) -> Result<($t, usize)>
-            {
-                $cb(bytes, 10, format)
-            }
-
-            #[cfg(feature = "radix")]
-            #[inline]
-            fn from_lexical_format_radix(bytes: &[u8], radix: u8, format: NumberFormat) -> Result<$t>
-            {
-                to_complete!($cb, bytes, radix.as_u32(), format)
-            }
-
-            #[cfg(feature = "radix")]
-            #[inline]
-            fn from_lexical_partial_format_radix(bytes: &[u8], radix: u8, format: NumberFormat) -> Result<($t, usize)>
-            {
-                $cb(bytes, radix.as_u32(), format)
-            }
-        }
-    )
 }
 
 // FROM LEXICAL LOSSY
 
 /// Trait for floating-point types that can be parsed using lossy algorithms with a custom format specification.
 #[cfg(feature = "format")]
+#[deprecated(
+    since = "0.8.0",
+    note = "Will be removed with 1.0. Use FromLexical with Self::Options."
+)]
 pub trait FromLexicalLossyFormat: FromLexical {
     /// Lossy, checked parser for a string-to-number conversion.
     ///
@@ -357,6 +505,10 @@ pub trait FromLexicalLossyFormat: FromLexical {
     ///
     /// * `bytes`   - Slice containing a numeric string.
     /// * `format`  - Numerical format.
+    #[deprecated(
+        since = "0.8.0",
+        note = "Will be removed with 1.0. Use from_lexical_with_options with Self::Options."
+    )]
     fn from_lexical_lossy_format(bytes: &[u8], format: NumberFormat) -> Result<Self>;
 
     /// Lossy, checked parser for a string-to-number conversion.
@@ -375,6 +527,10 @@ pub trait FromLexicalLossyFormat: FromLexical {
     ///
     /// * `bytes`   - Slice containing a numeric string.
     /// * `format`  - Numerical format.
+    #[deprecated(
+        since = "0.8.0",
+        note = "Will be removed with 1.0. Use from_lexical_partial_with_options with Self::Options."
+    )]
     fn from_lexical_partial_lossy_format(bytes: &[u8], format: NumberFormat) -> Result<(Self, usize)>;
 
     /// Lossy, checked parser for a string-to-number conversion.
@@ -397,6 +553,10 @@ pub trait FromLexicalLossyFormat: FromLexical {
     ///
     /// Panics if the radix is not in the range `[2, 36]`.
     #[cfg(feature = "radix")]
+    #[deprecated(
+        since = "0.8.0",
+        note = "Will be removed with 1.0. Use from_lexical_with_options with Self::Options."
+    )]
     fn from_lexical_lossy_format_radix(bytes: &[u8], radix: u8, format: NumberFormat) -> Result<Self>;
 
     /// Lossy, checked parser for a string-to-number conversion.
@@ -421,45 +581,11 @@ pub trait FromLexicalLossyFormat: FromLexical {
     ///
     /// Panics if the radix is not in the range `[2, 36]`.
     #[cfg(feature = "radix")]
+    #[deprecated(
+        since = "0.8.0",
+        note = "Will be removed with 1.0. Use from_lexical_partial_with_options with Self::Options."
+    )]
     fn from_lexical_partial_lossy_format_radix(bytes: &[u8], radix: u8, format: NumberFormat) -> Result<(Self, usize)>;
-}
-
-// Implement FromLexicalLossyFormat for numeric type.
-#[cfg(feature = "format")]
-macro_rules! from_lexical_lossy_format {
-    ($cb:expr, $t:ty) => (
-        impl FromLexicalLossyFormat for $t {
-            #[inline]
-            fn from_lexical_lossy_format(bytes: &[u8], format: NumberFormat)
-                -> Result<$t>
-            {
-                to_complete!($cb, bytes, 10, format)
-            }
-
-            #[inline]
-            fn from_lexical_partial_lossy_format(bytes: &[u8], format: NumberFormat)
-                -> Result<($t, usize)>
-            {
-                $cb(bytes, 10, format)
-            }
-
-            #[cfg(feature = "radix")]
-            #[inline]
-            fn from_lexical_lossy_format_radix(bytes: &[u8], radix: u8, format: NumberFormat)
-                -> Result<$t>
-            {
-                to_complete!($cb, bytes, radix.as_u32(), format)
-            }
-
-            #[cfg(feature = "radix")]
-            #[inline]
-            fn from_lexical_partial_lossy_format_radix(bytes: &[u8], radix: u8, format: NumberFormat)
-                -> Result<($t, usize)>
-            {
-                $cb(bytes, radix.as_u32(), format)
-            }
-        }
-    )
 }
 
 // TO LEXICAL
@@ -474,7 +600,10 @@ macro_rules! from_lexical_lossy_format {
 /// [`FORMATTED_SIZE`]: trait.Number.html#associatedconstant.FORMATTED_SIZE
 /// [`FORMATTED_SIZE_DECIMAL`]: trait.Number.html#associatedconstant.FORMATTED_SIZE_DECIMAL
 pub trait ToLexical: Number {
-    /// Serializer for a number-to-string conversion.
+    /// Associated options type.
+    type Options;
+
+    /// Writer for a number-to-string conversion.
     ///
     /// Returns a subslice of the input buffer containing the written bytes,
     /// starting from the same address in memory as the input slice.
@@ -492,7 +621,26 @@ pub trait ToLexical: Number {
     /// [`FORMATTED_SIZE_DECIMAL`]: trait.Number.html#associatedconstant.FORMATTED_SIZE_DECIMAL
     fn to_lexical<'a>(self, bytes: &'a mut [u8]) -> &'a mut [u8];
 
-     /// Serializer for a number-to-string conversion.
+    /// Writer for a custom number-to-string conversion.
+    ///
+    /// Returns a subslice of the input buffer containing the written bytes,
+    /// starting from the same address in memory as the input slice.
+    ///
+    /// * `value`   - Number to serialize.
+    /// * `bytes`   - Slice containing a numeric string.
+    /// * `options` - Options to specialize writing the number.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the buffer is not of sufficient size. The caller
+    /// must provide a slice of sufficient size. In order to ensure
+    /// the function will not panic, ensure the buffer has at least
+    /// [`FORMATTED_SIZE`] elements.
+    ///
+    /// [`FORMATTED_SIZE`]: trait.Number.html#associatedconstant.FORMATTED_SIZE
+    fn to_lexical_with_options<'a>(self, bytes: &'a mut [u8], options: &Self::Options) -> &'a mut [u8];
+
+    /// Writer for a number-to-string conversion.
     ///
     /// Returns a subslice of the input buffer containing the written bytes,
     /// starting from the same address in memory as the input slice.
@@ -512,32 +660,53 @@ pub trait ToLexical: Number {
     ///
     /// [`FORMATTED_SIZE`]: trait.Number.html#associatedconstant.FORMATTED_SIZE
     #[cfg(feature = "radix")]
+    #[deprecated(
+        since = "0.8.0",
+        note = "Will be removed with 1.0. Use to_lexical_with_options with Self::Options."
+    )]
     fn to_lexical_radix<'a>(self, radix: u8, bytes: &'a mut [u8]) -> &'a mut [u8];
 }
 
 // Implement ToLexical for numeric type.
 macro_rules! to_lexical {
-    ($cb:expr, $t:ty) => (
-        impl ToLexical for $t {
+    (
+        type => $type:ty,
+        options => $options:ty,
+        write => $write:expr,
+        write_with_options => $write_with_options:expr
+    ) => (
+        #[allow(deprecated)]        // TODO(ahuszagh) Remove with 1.0
+        impl ToLexical for $type {
+            type Options = $options;
+
             #[inline]
             fn to_lexical<'a>(self, bytes: &'a mut [u8])
                 -> &'a mut [u8]
             {
-                assert_buffer!(10, bytes, $t);
-                let len = $cb(self, 10, bytes);
+                assert_buffer!(10, bytes, $type);
+                let len = $write(self, bytes);
                 &mut index_mut!(bytes[..len])
             }
 
-            #[cfg(feature = "radix")]
             #[inline]
+            fn to_lexical_with_options<'a>(self, bytes: &'a mut [u8], options: &$options)
+                -> &'a mut [u8]
+            {
+                assert_buffer!(options.radix(), bytes, $type);
+                let len = $write_with_options(self, bytes, options);
+                &mut index_mut!(bytes[..len])
+            }
+
+            #[inline]
+            #[cfg(feature = "radix")]
             fn to_lexical_radix<'a>(self, radix: u8, bytes: &'a mut [u8])
                 -> &'a mut [u8]
             {
-                assert_radix!(radix);
-                assert_buffer!(radix, bytes, $t);
-                let len = $cb(self, radix.as_u32(), bytes);
+                let options = <$options>::from_radix(radix).expect("Numerical base must be from 2-36.");
+                assert_buffer!(radix, bytes, $type);
+                let len = $write_with_options(self, bytes, &options);
                 &mut index_mut!(bytes[..len])
             }
         }
-    )
+    );
 }

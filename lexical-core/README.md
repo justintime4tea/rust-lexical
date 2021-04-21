@@ -85,8 +85,6 @@ assert_eq!(slc, b"15.1");
 
 - **correct** Use a correct string-to-float parser.
     <blockquote>Enabled by default, and may be turned off by setting <code>default-features = false</code>. If neither <code>algorithm_m</code> nor <code>bhcomp</code> is enabled while <code>correct</code> is enabled, lexical uses the <code>bigcomp</code> algorithm.</blockquote>
-- **trim_floats** Export floats without a fraction as an integer.
-    <blockquote>For example, <code>0.0f64</code> will be serialized to "0" and not "0.0", and <code>-0.0</code> as "0" and not "-0.0".</blockquote>
 - **radix** Allow conversions to and from non-decimal strings.
     <blockquote>With radix enabled, any radix from 2 to 36 (inclusive) is valid, otherwise, only 10 is valid.</blockquote>
 - **format** Customize accepted inputs for number parsing.

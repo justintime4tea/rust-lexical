@@ -13,4 +13,4 @@ pub use self::mantissa::Mantissa;
 pub use self::rounding::{FloatRounding};
 
 #[cfg(feature = "correct")]
-pub(crate) use self::rounding::global_rounding;
+pub(crate) use self::rounding::internal_rounding;

@@ -50,27 +50,27 @@ fn process_fraction<'a, F, Data>(data: &Data, radix: u32)
 
 // Convert the float string to a native floating-point number.
 perftools_inline!{
-fn to_native<'a, F, Data>(mut data: Data, bytes: &'a [u8], radix: u32)
+fn to_native<'a, F, Data>(mut data: Data, bytes: &'a [u8], options: &ParseFloatOptions)
     -> ParseResult<(F, *const u8)>
     where F: StablePower,
           Data: FastDataInterface<'a>
 {
-    let ptr = data.extract(bytes, radix)?;
-    let integer: F = process_integer(&data, radix);
-    let fraction: F = process_fraction(&data, radix);
+    let ptr = data.extract(bytes, options.radix(), options.exponent_char())?;
+    let integer: F = process_integer(&data, options.radix());
+    let fraction: F = process_fraction(&data, options.radix());
     let mut value = integer + fraction;
     if !data.raw_exponent().is_zero() && !value.is_zero() {
-        value = value.iterative_pow(radix, data.raw_exponent());
+        value = value.iterative_pow(options.radix(), data.raw_exponent());
     }
     Ok((value, ptr))
 }}
 
 perftools_inline!{
-pub(crate) fn atof_generic<'a, F>(bytes: &'a [u8], radix: u32, _: bool, _: Sign, format: NumberFormat)
+pub(crate) fn atof_generic<'a, F>(bytes: &'a [u8], options: &ParseFloatOptions, _: Sign)
     -> ParseResult<(F, *const u8)>
     where F: StablePower
 {
-    apply_interface!(to_native, format, bytes, radix)
+    apply_interface!(to_native, options.format(), bytes, options)
 }}
 
 // ATOF/ATOD
@@ -78,18 +78,18 @@ pub(crate) fn atof_generic<'a, F>(bytes: &'a [u8], radix: u32, _: bool, _: Sign,
 
 // Parse 32-bit float from string.
 perftools_inline!{
-pub(crate) fn atof<'a>(bytes: &'a [u8], radix: u32, lossy: bool, sign: Sign, format: NumberFormat)
+pub(crate) fn atof<'a>(bytes: &'a [u8], options: &ParseFloatOptions, sign: Sign)
     -> ParseResult<(f32, *const u8)>
 {
-    atof_generic(bytes, radix, lossy, sign, format)
+    atof_generic(bytes, options, sign)
 }}
 
 // Parse 64-bit float from string.
 perftools_inline!{
-pub(crate) fn atod<'a>(bytes: &'a [u8], radix: u32, lossy: bool, sign: Sign, format: NumberFormat)
+pub(crate) fn atod<'a>(bytes: &'a [u8], options: &ParseFloatOptions, sign: Sign)
     -> ParseResult<(f64, *const u8)>
 {
-    atof_generic(bytes, radix, lossy, sign, format)
+    atof_generic(bytes, options, sign)
 }}
 
 // TESTS
@@ -129,10 +129,8 @@ mod tests {
 
     #[test]
     fn atof_test() {
-        let atof10 = move |x| match atof(x, 10, false, Sign::Positive, NumberFormat::standard().unwrap()) {
-            Ok((v, p))  => Ok((v, distance(x.as_ptr(), p))),
-            Err((v, p)) => Err((v, distance(x.as_ptr(), p))),
-        };
+        let opts10 = ParseFloatOptions::decimal();
+        let atof10 = wrap_pointer_serializer!(atof, opts10);
 
         assert_eq!(Ok((1.2345, 6)), atof10(b"1.2345"));
         assert_eq!(Ok((12.345, 6)), atof10(b"12.345"));
@@ -142,10 +140,8 @@ mod tests {
 
     #[test]
     fn atod_test() {
-        let atod10 = move |x| match atod(x, 10, false, Sign::Positive, NumberFormat::standard().unwrap()) {
-            Ok((v, p))  => Ok((v, distance(x.as_ptr(), p))),
-            Err((v, p)) => Err((v, distance(x.as_ptr(), p))),
-        };
+        let opts10 = ParseFloatOptions::decimal();
+        let atod10 = wrap_pointer_serializer!(atod, opts10);
 
         assert_eq!(Ok((1.2345, 6)), atod10(b"1.2345"));
         assert_eq!(Ok((12.345, 6)), atod10(b"12.345"));
@@ -159,10 +155,8 @@ mod tests {
 
     #[test]
     fn atof_lossy_test() {
-        let atof10 = move |x| match atof(x, 10, true, Sign::Positive, NumberFormat::standard().unwrap()) {
-            Ok((v, p))  => Ok((v, distance(x.as_ptr(), p))),
-            Err((v, p)) => Err((v, distance(x.as_ptr(), p))),
-        };
+        let opts10 = parse_float_options!(lossy: true,);
+        let atof10 = wrap_pointer_serializer!(atof, opts10);
 
         assert_eq!(Ok((1.2345, 6)), atof10(b"1.2345"));
         assert_eq!(Ok((12.345, 6)), atof10(b"12.345"));
@@ -172,10 +166,8 @@ mod tests {
 
     #[test]
     fn atod_lossy_test() {
-        let atod10 = move |x| match atod(x, 10, true, Sign::Positive, NumberFormat::standard().unwrap()) {
-            Ok((v, p))  => Ok((v, distance(x.as_ptr(), p))),
-            Err((v, p)) => Err((v, distance(x.as_ptr(), p))),
-        };
+        let opts10 = parse_float_options!(lossy: true,);
+        let atod10 = wrap_pointer_serializer!(atod, opts10);
 
         assert_eq!(Ok((1.2345, 6)), atod10(b"1.2345"));
         assert_eq!(Ok((12.345, 6)), atod10(b"12.345"));

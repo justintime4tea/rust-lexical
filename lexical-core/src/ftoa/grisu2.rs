@@ -372,7 +372,7 @@ fn emit_digits(digits: &mut [u8], mut ndigits: usize, dest: &mut [u8], k: i32)
         }
     }
 
-    *dst_iter.next().unwrap() = exponent_notation_char(10);
+    *dst_iter.next().unwrap() = b'e';
 
     *dst_iter.next().unwrap() = match k + ndigits.as_i32() - 1 < 0 {
         true    => b'-',

@@ -1,6 +1,15 @@
 //! Test utilities.
 
-use super::config::BUFFER_SIZE;
+use super::algorithm::*;
+use super::config::*;
+use super::error::*;
+use super::options::*;
+use super::result::*;
+use super::sign::*;
+use crate::lib::result::Result as StdResult;
+
+#[cfg(feature = "format")]
+use super::format::NumberFormat;
 
 cfg_if! {
 if #[cfg(feature = "correct")] {
@@ -23,6 +32,18 @@ pub(crate) const BASE_POWN: [u32; 30] = [
 
 #[cfg(not(feature = "radix"))]
 pub(crate) const BASE_POWN: [u32; 1] = [10];
+
+// POINTER SERIALIZER WRAPPER
+
+/// Wrap a method that returns
+macro_rules! wrap_pointer_serializer {
+    ($cb:expr, $options:expr) => (
+        move | bytes | match $cb(bytes, &$options, Sign::Positive) {
+            Ok((v, p))  => Ok((v, distance(bytes.as_ptr(), p))),
+            Err((v, p)) => Err((v, distance(bytes.as_ptr(), p))),
+        };
+    );
+}
 
 // BUFFER
 
@@ -121,3 +142,89 @@ if #[cfg(feature = "correct")] {
         ($l:expr, $r:expr) => (approx::assert_relative_eq!($l, $r, epsilon=1e-20, max_relative=1e-12););
     }
 }}  // cfg_if
+
+// OPTIONS
+
+/// Macro to create an argument with a default value.
+macro_rules! default_argument {
+    ($default:expr,) => ($default);
+    ($default:expr, $argument:expr) => ($argument);
+}
+
+/// Macro to create named arguments for ParseIntegerOptions::create.
+/// Use like parse_integer_options!(radix: 16,);
+#[cfg(any(feature = "format", feature = "radix"))]
+macro_rules! parse_integer_options {
+    // Actual macro.
+    (
+        $(radix: $radix:expr,)?
+        $(format: $format:expr,)?
+    ) => {
+        ParseIntegerOptions::create(
+            default_argument!(DEFAULT_RADIX, $($radix)?),
+            default_argument!(DEFAULT_FORMAT, $($format)?),
+        ).unwrap()
+    };
+}
+
+/// Macro to create named arguments for ParseFloatOptions::create.
+/// Use like parse_float_options!(lossy: true,);
+macro_rules! parse_float_options {
+    // Actual macro.
+    (
+        $(lossy: $lossy:expr,)?
+        $(exponent_char: $exponent_char:expr,)?
+        $(radix: $radix:expr,)?
+        $(format: $format:expr,)?
+        $(rounding: $rounding:expr,)?
+        $(nan_string: $nan_string:expr,)?
+        $(inf_string: $inf_string:expr,)?
+        $(infinity_string: $infinity_string:expr,)?
+    ) => {
+        ParseFloatOptions::create(
+            default_argument!(DEFAULT_LOSSY, $($lossy)?),
+            default_argument!(DEFAULT_EXPONENT_CHAR, $($exponent_char)?),
+            default_argument!(DEFAULT_RADIX, $($radix)?),
+            default_argument!(DEFAULT_FORMAT, $($format)?),
+            default_argument!(DEFAULT_ROUNDING, $($rounding)?),
+            default_argument!(DEFAULT_NAN_STRING, $($nan_string)?),
+            default_argument!(DEFAULT_INF_STRING, $($inf_string)?),
+            default_argument!(DEFAULT_INFINITY_STRING, $($infinity_string)?),
+        ).unwrap()
+    };
+}
+
+/// Macro to create named arguments for WriteIntegerOptions::create.
+/// Use like write_integer_options!(radix: 16,);
+#[cfg(feature = "radix")]
+macro_rules! write_integer_options {
+    // Actual macro.
+    (
+        $(radix: $radix:expr,)?
+    ) => {
+        WriteIntegerOptions::create(
+            default_argument!(DEFAULT_RADIX, $($radix)?),
+        ).unwrap()
+    };
+}
+
+/// Macro to create named arguments for WriteFloatOptions::create.
+/// Use like write_float_options!(radix: 16,);
+macro_rules! write_float_options {
+    // Actual macro.
+    (
+        $(exponent_char: $exponent_char:expr,)?
+        $(radix: $radix:expr,)?
+        $(trim_floats: $trim_floats:expr,)?
+        $(nan_string: $nan_string:expr,)?
+        $(inf_string: $inf_string:expr,)?
+    ) => {
+        WriteFloatOptions::create(
+            default_argument!(DEFAULT_EXPONENT_CHAR, $($exponent_char)?),
+            default_argument!(DEFAULT_RADIX, $($radix)?),
+            default_argument!(DEFAULT_TRIM_FLOATS, $($trim_floats)?),
+            default_argument!(DEFAULT_NAN_STRING, $($nan_string)?),
+            default_argument!(DEFAULT_INF_STRING, $($inf_string)?),
+        ).unwrap()
+    };
+}

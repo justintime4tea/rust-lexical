@@ -263,18 +263,18 @@ pub(super) fn moderate_path<F, M>(mantissa: M, radix: u32, exponent: i32, trunca
 
 /// Fallback method. Do not inline so the stack requirements only occur
 /// if required.
-fn pown_fallback<'a, F, Data>(data: Data, mantissa: u64, radix: u32, lossy: bool, sign: Sign)
+fn pown_fallback<'a, F, Data>(data: Data, mantissa: u64, options: &ParseFloatOptions, sign: Sign)
     -> F
     where F: FloatType,
           Data: SlowDataInterface<'a>
 {
-    let kind = global_rounding(sign);
+    let kind = internal_rounding(options.rounding(), sign);
 
     // Moderate path (use an extended 80-bit representation).
     let exponent = data.mantissa_exponent();
     let is_truncated = data.truncated_digits() != 0;
-    let (fp, valid) = moderate_path::<F, _>(mantissa, radix, exponent, is_truncated, kind);
-    if valid || lossy {
+    let (fp, valid) = moderate_path::<F, _>(mantissa, options.radix(), exponent, is_truncated, kind);
+    if valid || options.lossy() {
         let float = fp.into_rounded_float_impl::<F>(kind);
         return float;
     }
@@ -285,20 +285,20 @@ fn pown_fallback<'a, F, Data>(data: Data, mantissa: u64, radix: u32, lossy: bool
         // We have a non-finite number, we get to leave early.
         return b;
     } else {
-        let float = bhcomp::atof(data, radix, b, kind);
+        let float = bhcomp::atof(data, options.radix(), b, kind);
         return float;
     }
 }
 
 /// Parse non-power-of-two radix string to native float.
-fn pown_to_native<'a, F, Data>(mut data: Data, bytes: &'a [u8], radix: u32, lossy: bool, sign: Sign)
+fn pown_to_native<'a, F, Data>(mut data: Data, bytes: &'a [u8], options: &ParseFloatOptions, sign: Sign)
     -> ParseResult<(F, *const u8)>
     where F: FloatType,
           Data: FastDataInterface<'a>
 {
     // Parse the mantissa and exponent.
-    let ptr = data.extract(bytes, radix)?;
-    let (mantissa, truncated) = process_mantissa::<u64, _>(&data, radix);
+    let ptr = data.extract(bytes, options.radix(), options.exponent_char())?;
+    let (mantissa, truncated) = process_mantissa::<u64, _>(&data, options.radix());
 
     // Process the state to a float.
     let float = if mantissa.is_zero() {
@@ -309,16 +309,16 @@ fn pown_to_native<'a, F, Data>(mut data: Data, bytes: &'a [u8], radix: u32, loss
     } else if truncated.is_zero() {
         // Try the fast path, no mantissa truncation.
         let mant_exp = data.mantissa_exponent(0);
-        if let Some(float) = fast_path::<F>(mantissa, radix, mant_exp) {
+        if let Some(float) = fast_path::<F>(mantissa, options.radix(), mant_exp) {
             float
         } else {
             let slow = data.to_slow(truncated);
-            pown_fallback(slow, mantissa, radix, lossy, sign)
+            pown_fallback(slow, mantissa, options, sign)
         }
     } else {
         // Can only use the moderate/slow path.
         let slow = data.to_slow(truncated);
-        pown_fallback(slow, mantissa, radix, lossy, sign)
+        pown_fallback(slow, mantissa, options, sign)
     };
     Ok((float, ptr))
 }
@@ -327,14 +327,14 @@ fn pown_to_native<'a, F, Data>(mut data: Data, bytes: &'a [u8], radix: u32, loss
 
 /// Parse power-of-two radix string to native float.
 #[cfg(feature = "radix")]
-fn pow2_to_native<'a, F, Data>(mut data: Data, bytes: &'a [u8], radix: u32, pow2_exp: i32, sign: Sign)
+fn pow2_to_native<'a, F, Data>(mut data: Data, bytes: &'a [u8], options: &ParseFloatOptions, pow2_exp: i32, sign: Sign)
     -> ParseResult<(F, *const u8)>
     where F: FloatType,
           Data: FastDataInterface<'a>
 {
     // Parse the mantissa and exponent.
-    let ptr = data.extract(bytes, radix)?;
-    let (mut mantissa, truncated) = process_mantissa::<u64, _>(&data, radix);
+    let ptr = data.extract(bytes, options.radix(), options.exponent_char())?;
+    let (mut mantissa, truncated) = process_mantissa::<u64, _>(&data, options.radix());
 
     // We have a power of 2, can get an exact value even if the mantissa
     // was truncated. Check to see if there are any truncated digits, depending
@@ -342,7 +342,7 @@ fn pow2_to_native<'a, F, Data>(mut data: Data, bytes: &'a [u8], radix: u32, pow2
     let mantissa_size = F::MANTISSA_SIZE + 1;
     let float = if !truncated.is_zero() {
         // Truncated mantissa.
-        let kind = global_rounding(sign);
+        let kind = internal_rounding(options.rounding(), sign);
         let slow = data.to_slow(truncated);
         if kind != RoundingKind::Downward {
             if cfg!(feature = "rounding") || kind == RoundingKind::NearestTieEven {
@@ -374,7 +374,7 @@ fn pow2_to_native<'a, F, Data>(mut data: Data, bytes: &'a [u8], radix: u32, pow2
         fp.into_rounded_float_impl::<F>(kind)
     } else if mantissa >> mantissa_size != 0 {
         // Would be truncated, use the extended float.
-        let kind = global_rounding(sign);
+        let kind = internal_rounding(options.rounding(), sign);
         let slow = data.to_slow(truncated);
         let exponent = slow.mantissa_exponent().saturating_mul(pow2_exp);
         let fp = ExtendedFloat { mant: mantissa, exp: exponent };
@@ -382,7 +382,7 @@ fn pow2_to_native<'a, F, Data>(mut data: Data, bytes: &'a [u8], radix: u32, pow2
     } else {
         // Nothing above the hidden bit, so no rounding-error, can use the fast path.
         let mant_exp = data.mantissa_exponent(0);
-        pow2_fast_path(mantissa, radix, pow2_exp, mant_exp)
+        pow2_fast_path(mantissa, options.radix(), pow2_exp, mant_exp)
     };
     Ok((float, ptr))
 }
@@ -406,19 +406,19 @@ fn pow2_exponent(radix: u32) -> i32 {
 //
 // The float string must be non-special, non-zero, and positive.
 perftools_inline!{
-fn to_native<F>(bytes: &[u8], radix: u32, lossy: bool, sign: Sign, format: NumberFormat)
+fn to_native<F>(bytes: &[u8], options: &ParseFloatOptions, sign: Sign)
     -> ParseResult<(F, *const u8)>
     where F: FloatType
 {
     #[cfg(not(feature = "radix"))] {
-        apply_interface!(pown_to_native, format, bytes, radix,  lossy, sign)
+        apply_interface!(pown_to_native, options.format(), bytes, options, sign)
     }
 
     #[cfg(feature = "radix")] {
-        let pow2_exp = pow2_exponent(radix);
+        let pow2_exp = pow2_exponent(options.radix());
         match pow2_exp {
-            0 => apply_interface!(pown_to_native, format, bytes, radix, lossy, sign),
-            _ => apply_interface!(pow2_to_native, format, bytes, radix, pow2_exp, sign)
+            0 => apply_interface!(pown_to_native, options.format(), bytes, options, sign),
+            _ => apply_interface!(pow2_to_native, options.format(), bytes, options, pow2_exp, sign)
         }
     }
 }}
@@ -428,18 +428,18 @@ fn to_native<F>(bytes: &[u8], radix: u32, lossy: bool, sign: Sign, format: Numbe
 
 // Parse 32-bit float from string.
 perftools_inline!{
-pub(crate) fn atof(bytes: &[u8], radix: u32, lossy: bool, sign: Sign, format: NumberFormat)
+pub(crate) fn atof(bytes: &[u8], options: &ParseFloatOptions, sign: Sign)
     -> ParseResult<(f32, *const u8)>
 {
-    to_native::<f32>(bytes, radix, lossy, sign, format)
+    to_native::<f32>(bytes, options, sign)
 }}
 
 // Parse 64-bit float from string.
 perftools_inline!{
-pub(crate) fn atod(bytes: &[u8], radix: u32, lossy: bool, sign: Sign, format: NumberFormat)
+pub(crate) fn atod(bytes: &[u8], options: &ParseFloatOptions, sign: Sign)
     -> ParseResult<(f64, *const u8)>
 {
-    to_native::<f64>(bytes, radix, lossy, sign, format)
+    to_native::<f64>(bytes, options, sign)
 }}
 
 // TESTS
@@ -726,10 +726,8 @@ mod tests {
 
     #[test]
     fn atof_test() {
-        let atof10 = move |x| match atof(x, 10, false, Sign::Positive, NumberFormat::standard().unwrap()) {
-            Ok((v, p))  => Ok((v, distance(x.as_ptr(), p))),
-            Err((v, p)) => Err((v, distance(x.as_ptr(), p))),
-        };
+        let opts10 = ParseFloatOptions::decimal();
+        let atof10 = wrap_pointer_serializer!(atof, opts10);
 
         assert_eq!(Ok((0.0, 1)), atof10(b"0"));
         assert_eq!(Ok((1.2345, 6)), atof10(b"1.2345"));
@@ -780,13 +778,14 @@ mod tests {
 
     #[test]
     fn atod_test() {
-        let adod_impl = move | x, r | match atod(x, r, false, Sign::Positive, NumberFormat::standard().unwrap()) {
-            Ok((v, p))  => Ok((v, distance(x.as_ptr(), p))),
-            Err((v, p)) => Err((v, distance(x.as_ptr(), p))),
-        };
         #[cfg(feature = "radix")]
-        let atod2 = move |x| adod_impl(x, 2);
-        let atod10 = move |x| adod_impl(x, 10);
+        let opts2 = ParseFloatOptions::binary();
+
+        #[cfg(feature = "radix")]
+        let atod2 = wrap_pointer_serializer!(atod, opts2);
+
+        let opts10 = ParseFloatOptions::decimal();
+        let atod10 = wrap_pointer_serializer!(atod, opts10);
 
         assert_eq!(Ok((0.0, 1)), atod10(b"0"));
         assert_eq!(Ok((1.2345, 6)), atod10(b"1.2345"));
@@ -881,10 +880,8 @@ mod tests {
 
     #[test]
     fn atof_lossy_test() {
-        let atof10 = move |x| match atof(x, 10, true, Sign::Positive, NumberFormat::standard().unwrap()) {
-            Ok((v, p))  => Ok((v, distance(x.as_ptr(), p))),
-            Err((v, p)) => Err((v, distance(x.as_ptr(), p))),
-        };
+        let opts10 = parse_float_options!(lossy: true,);
+        let atof10 = wrap_pointer_serializer!(atof, opts10);
 
         assert_eq!(Ok((1.2345, 6)), atof10(b"1.2345"));
         assert_eq!(Ok((12.345, 6)), atof10(b"12.345"));
@@ -894,10 +891,8 @@ mod tests {
 
     #[test]
     fn atod_lossy_test() {
-        let atod10 = move |x| match atod(x, 10, true, Sign::Positive, NumberFormat::standard().unwrap()) {
-            Ok((v, p))  => Ok((v, distance(x.as_ptr(), p))),
-            Err((v, p)) => Err((v, distance(x.as_ptr(), p))),
-        };
+        let opts10 = parse_float_options!(lossy: true,);
+        let atod10 = wrap_pointer_serializer!(atod, opts10);
 
         assert_eq!(Ok((1.2345, 6)), atod10(b"1.2345"));
         assert_eq!(Ok((12.345, 6)), atod10(b"12.345"));

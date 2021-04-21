@@ -10,7 +10,7 @@ license = "MIT/Apache-2.0"
 name = "lexical"
 readme = "README.md"
 repository = "https://github.com/Alexhuszagh/rust-lexical"
-version = "5.2.0"
+version = "5.3.0"
 exclude = [
     "data/*",
     "benches/*",
@@ -23,7 +23,7 @@ travis-ci = { repository = "Alexhuszagh/rust-lexical" }
 
 [dependencies]
 cfg-if = "1.0"
-lexical-core = { path = "lexical-core", version = "^0.7.4", default-features = false }
+lexical-core = { path = "lexical-core", version = "^0.8.0", default-features = false }
 # The following are only required for comprehensive float unittests.
 # IE, internal testing only:
 rand = { version = "0.4", optional = true }
@@ -57,8 +57,6 @@ rounding = ["lexical-core/rounding"]
 ryu = ["lexical-core/ryu"]
 # Use the `std` library.
 std = ["lexical-core/std"]
-# Trim a trailing ".0" from an exported float string, and represent -0.0 as "0".
-trim_floats = ["lexical-core/trim_floats"]
 # Don't force bounds checking with indexing not-known to be valid at compile time.
 # This may lead to memory safety issues.
 unchecked_index = ["lexical-core/unchecked_index"]

@@ -317,20 +317,6 @@ pub(crate) fn internal_rounding(kind: RoundingKind, sign: Sign)
     }
 }}
 
-// Get the global, default rounding scheme.
-perftools_inline!{
-#[cfg(feature = "correct")]
-#[allow(unused_variables)]
-pub(crate) fn global_rounding(sign: Sign) -> RoundingKind {
-    #[cfg(not(feature = "rounding"))] {
-        RoundingKind::NearestTieEven
-    }
-
-    #[cfg(feature = "rounding")] {
-        internal_rounding(get_float_rounding(), sign)
-    }
-}}
-
 // TESTS
 // -----
 

@@ -26,5 +26,3 @@ rounding = ["lexical-core/rounding"]
 ryu = ["lexical-core/ryu"]
 # Use the `std` library.
 std = ["lexical-core/std"]
-# Trim a trailing ".0" from an exported float string, and represent -0.0 as "0".
-trim_floats = ["lexical-core/trim_floats"]

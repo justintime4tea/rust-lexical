@@ -10,7 +10,7 @@ license = "MIT/Apache-2.0"
 name = "lexical-core"
 readme = "README.md"
 repository = "https://github.com/Alexhuszagh/rust-lexical/tree/master/lexical-core"
-version = "0.7.4"
+version = "0.8.0"
 build = "build.rs"
 exclude = [
     "fuzz/*",
@@ -58,8 +58,6 @@ rounding = []
 std = []
 # Use precompiled tables for faster performance and accuracy, at the cost of larger binaries.
 table = []
-# Trim a trailing ".0" from an exported float string, and represent -0.0 as "0".
-trim_floats = []
 # Don't force bounds checking with indexing not-known to be valid at compile time.
 # This may lead to memory safety issues.
 unchecked_index = []

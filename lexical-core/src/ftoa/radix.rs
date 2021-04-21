@@ -33,10 +33,10 @@ pub(crate) fn naive_exponent(d: f64, radix: u32) -> i32
 /// and non-zero.
 ///
 /// Adapted from the V8 implementation.
-fn ftoa_naive<'a>(value: f64, radix: u32, bytes: &'a mut [u8])
+fn ftoa_naive<'a>(value: f64, bytes: &'a mut [u8], options: &WriteFloatOptions)
     -> usize
 {
-    debug_assert_radix!(radix);
+    debug_assert_radix!(options.radix());
 
     // Assert no special cases remain, no non-zero values,
     // and no negative numbers.
@@ -73,6 +73,7 @@ fn ftoa_naive<'a>(value: f64, radix: u32, bytes: &'a mut [u8])
     let initial_position: usize = SIZE / 2;
     let mut integer_cursor = initial_position;
     let mut fraction_cursor = initial_position;
+    let radix = options.radix();
     let base = radix as f64;
 
     // Split the value into an integer part and a fractional part.
@@ -176,7 +177,7 @@ fn ftoa_naive<'a>(value: f64, radix: u32, bytes: &'a mut [u8])
         let bytes = &mut bytes[count+2..];
 
         // write the exponent component
-        bytes[0] = exponent_notation_char(radix);
+        bytes[0] = options.exponent_char();
         // Handle negative exponents.
         let exp: u32;
         if exponent < 0 {
@@ -221,10 +222,10 @@ fn ftoa_naive<'a>(value: f64, radix: u32, bytes: &'a mut [u8])
 // `f` must be non-special (NaN or infinite), non-negative,
 // and non-zero.
 perftools_inline!{
-pub(crate) fn float_radix<'a>(f: f32, radix: u32, bytes: &'a mut [u8])
+pub(crate) fn float_radix<'a>(f: f32, bytes: &'a mut [u8], options: &WriteFloatOptions)
     -> usize
 {
-    double_radix(f as f64, radix, bytes)
+    double_radix(f as f64, bytes, options)
 }}
 
 // F64
@@ -234,8 +235,8 @@ pub(crate) fn float_radix<'a>(f: f32, radix: u32, bytes: &'a mut [u8])
 // `d` must be non-special (NaN or infinite), non-negative,
 // and non-zero.
 perftools_inline!{
-pub(crate) fn double_radix<'a>(value: f64, radix: u32, bytes: &'a mut [u8])
+pub(crate) fn double_radix<'a>(value: f64, bytes: &'a mut [u8], options: &WriteFloatOptions)
     -> usize
 {
-    ftoa_naive(value, radix, bytes)
+    ftoa_naive(value, bytes, options)
 }}

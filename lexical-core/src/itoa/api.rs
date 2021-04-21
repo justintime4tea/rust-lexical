@@ -105,18 +105,34 @@ pub(crate) fn itoa_positive<T>(value: T, radix: u32, buffer: &mut [u8])
 
 // Callback for unsigned integer formatter.
 perftools_inline!{
-fn unsigned<Narrow, Wide>(value: Narrow, radix: u32, buffer: &mut [u8])
+fn unsigned<Narrow, Wide>(value: Narrow, buffer: &mut [u8])
+    -> usize
+    where Narrow: UnsignedInteger,
+          Wide: Itoa
+{
+    let options = WriteIntegerOptions::new();
+    unsigned_with_options::<Narrow, Wide>(value, buffer, &options)
+}}
+
+// Callback for unsigned integer formatter.
+perftools_inline!{
+fn unsigned_with_options<Narrow, Wide>(value: Narrow, buffer: &mut [u8], options: &WriteIntegerOptions)
     -> usize
     where Narrow: UnsignedInteger,
           Wide: Itoa
 {
     let value: Wide = as_cast(value);
-    itoa_positive(value, radix, buffer)
+    itoa_positive(value, options.radix(), buffer)
 }}
 
 macro_rules! unsigned_to_lexical {
     ($narrow:ty, $wide:ty) => (
-        to_lexical!(unsigned::<$narrow, $wide>, $narrow);
+        to_lexical!(
+            type => $narrow,
+            options => WriteIntegerOptions,
+            write => unsigned::<$narrow, $wide>,
+            write_with_options => unsigned_with_options::<$narrow, $wide>
+        );
     );
 }
 
@@ -134,7 +150,19 @@ unsigned_to_lexical!(usize, u64);
 
 // Callback for signed integer formatter.
 perftools_inline!{
-fn signed<Narrow, Wide, Unsigned>(value: Narrow, radix: u32, buffer: &mut [u8])
+fn signed<Narrow, Wide, Unsigned>(value: Narrow, buffer: &mut [u8])
+    -> usize
+    where Narrow: SignedInteger,
+          Wide: SignedInteger,
+          Unsigned: Itoa
+{
+    let options = WriteIntegerOptions::new();
+    signed_with_options::<Narrow, Wide, Unsigned>(value, buffer, &options)
+}}
+
+// Callback for signed integer formatter.
+perftools_inline!{
+fn signed_with_options<Narrow, Wide, Unsigned>(value: Narrow, buffer: &mut [u8], options: &WriteIntegerOptions)
     -> usize
     where Narrow: SignedInteger,
           Wide: SignedInteger,
@@ -144,16 +172,21 @@ fn signed<Narrow, Wide, Unsigned>(value: Narrow, radix: u32, buffer: &mut [u8])
         unchecked_index_mut!(buffer[0] = b'-');
         let value: Wide = as_cast(value);
         let value: Unsigned = as_cast(value.wrapping_neg());
-        itoa_positive(value, radix, &mut unchecked_index_mut!(buffer[1..])) + 1
+        itoa_positive(value, options.radix(), &mut unchecked_index_mut!(buffer[1..])) + 1
     } else {
         let value: Unsigned = as_cast(value);
-        itoa_positive(value, radix, buffer)
+        itoa_positive(value, options.radix(), buffer)
     }
 }}
 
 macro_rules! signed_to_lexical {
     ($narrow:ty, $wide:ty, $unsigned:ty) => (
-        to_lexical!(signed::<$narrow, $wide, $unsigned>, $narrow);
+        to_lexical!(
+            type => $narrow,
+            options => WriteIntegerOptions,
+            write => signed::<$narrow, $wide, $unsigned>,
+            write_with_options => signed_with_options::<$narrow, $wide, $unsigned>
+        );
     );
 }
 
@@ -348,7 +381,8 @@ mod tests {
 
         let mut buffer = new_buffer();
         for (base, expected) in data.iter() {
-            assert_eq!(expected.as_bytes(), 37.to_lexical_radix(*base, &mut buffer));
+            let options = write_integer_options!(radix: *base,);
+            assert_eq!(expected.as_bytes(), 37.to_lexical_with_options(&mut buffer, &options));
         }
     }
 

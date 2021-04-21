@@ -8,11 +8,10 @@ use super::generic::*;
 
 pub(crate) trait Atoi: Integer {
     // Parse integer from string.
-    fn atoi(bytes: &[u8], radix: u32) -> ParseResult<(Self, *const u8)>;
+    fn parse(bytes: &[u8]) -> ParseResult<(Self, *const u8)>;
 
-    // Parse integer from string with format.
-    #[cfg(feature = "format")]
-    fn atoi_format(bytes: &[u8], radix: u32, format: NumberFormat) -> ParseResult<(Self, *const u8)>;
+    // Parse integer from string with options.
+    fn parse_with_options(bytes: &[u8], options: &ParseIntegerOptions) -> ParseResult<(Self, *const u8)>;
 }
 
 // Implement atoi for type.
@@ -20,18 +19,17 @@ macro_rules! atoi_impl {
     ($($t:ty)*) => ($(
         impl Atoi for $t {
             perftools_inline_always!{
-            fn atoi(bytes: &[u8], radix: u32)
+            fn parse(bytes: &[u8])
                 -> ParseResult<($t, *const u8)>
             {
-                standalone_no_separator(bytes, radix)
+                standalone_no_options(bytes)
             }}
 
             perftools_inline_always!{
-            #[cfg(feature = "format")]
-            fn atoi_format(bytes: &[u8], radix: u32, format: NumberFormat)
+            fn parse_with_options(bytes: &[u8], options: &ParseIntegerOptions)
                 -> ParseResult<($t, *const u8)>
             {
-                standalone_separator(bytes, radix, format)
+                standalone_options(bytes, options)
             }}
         }
     )*);
@@ -41,35 +39,33 @@ atoi_impl! { u8 u16 u32 u64 usize i8 i16 i32 i64 isize }
 
 impl Atoi for u128 {
     perftools_inline_always!{
-    fn atoi(bytes: &[u8], radix: u32)
+    fn parse(bytes: &[u8])
         -> ParseResult<(u128, *const u8)>
     {
-        standalone_128_no_separator::<u128, u64>(bytes, radix)
+        standalone_128_no_options::<u128, u64>(bytes)
     }}
 
     perftools_inline_always!{
-    #[cfg(feature = "format")]
-    fn atoi_format(bytes: &[u8], radix: u32, format: NumberFormat)
+    fn parse_with_options(bytes: &[u8], options: &ParseIntegerOptions)
         -> ParseResult<(u128, *const u8)>
     {
-        standalone_128_separator::<u128, u64>(bytes, radix, format)
+        standalone_128_options::<u128, u64>(bytes, options)
     }}
 }
 
 impl Atoi for i128 {
     perftools_inline_always!{
-    fn atoi(bytes: &[u8], radix: u32)
+    fn parse(bytes: &[u8])
         -> ParseResult<(i128, *const u8)>
     {
-        standalone_128_no_separator::<i128, i64>(bytes, radix)
+        standalone_128_no_options::<i128, i64>(bytes)
     }}
 
     perftools_inline_always!{
-    #[cfg(feature = "format")]
-    fn atoi_format(bytes: &[u8], radix: u32, format: NumberFormat)
+    fn parse_with_options(bytes: &[u8], options: &ParseIntegerOptions)
         -> ParseResult<(i128, *const u8)>
     {
-        standalone_128_separator::<i128, i64>(bytes, radix, format)
+        standalone_128_options::<i128, i64>(bytes, options)
     }}
 }
 
@@ -77,25 +73,24 @@ impl Atoi for i128 {
 // ----
 
 perftools_inline!{
-pub(crate) fn atoi<'a, T>(bytes: &'a [u8], radix: u32)
+pub(crate) fn parse<'a, T>(bytes: &'a [u8])
     -> Result<(T, usize)>
     where T: Atoi
 {
     let index = | ptr | distance(bytes.as_ptr(), ptr);
-    match T::atoi(bytes, radix) {
+    match T::parse(bytes) {
         Ok((value, ptr)) => Ok((value, index(ptr))),
         Err((code, ptr)) => Err((code, index(ptr)).into()),
     }
 }}
 
 perftools_inline!{
-#[cfg(feature = "format")]
-pub(crate) fn atoi_format<'a, T>(bytes: &'a [u8], radix: u32, format: NumberFormat)
+pub(crate) fn parse_with_options<'a, T>(bytes: &'a [u8], options: &ParseIntegerOptions)
     -> Result<(T, usize)>
     where T: Atoi
 {
     let index = | ptr | distance(bytes.as_ptr(), ptr);
-    match T::atoi_format(bytes, radix, format) {
+    match T::parse_with_options(bytes, &options) {
         Ok((value, ptr)) => Ok((value, index(ptr))),
         Err((code, ptr)) => Err((code, index(ptr)).into()),
     }
@@ -104,36 +99,18 @@ pub(crate) fn atoi_format<'a, T>(bytes: &'a [u8], radix: u32, format: NumberForm
 // FROM LEXICAL
 // ------------
 
-from_lexical!(atoi, u8);
-from_lexical!(atoi, u16);
-from_lexical!(atoi, u32);
-from_lexical!(atoi, u64);
-from_lexical!(atoi, usize);
-from_lexical!(atoi, u128);
+macro_rules! atoi_from_lexical {
+    ($($type:ident)*) => ($(
+        from_lexical!(
+            type => $type,
+            options => ParseIntegerOptions,
+            parse => parse,
+            parse_with_options => parse_with_options
+        );
+    )*);
+}
 
-from_lexical!(atoi, i8);
-from_lexical!(atoi, i16);
-from_lexical!(atoi, i32);
-from_lexical!(atoi, i64);
-from_lexical!(atoi, isize);
-from_lexical!(atoi, i128);
-
-cfg_if!{
-if #[cfg(feature = "format")] {
-    from_lexical_format!(atoi_format, u8);
-    from_lexical_format!(atoi_format, u16);
-    from_lexical_format!(atoi_format, u32);
-    from_lexical_format!(atoi_format, u64);
-    from_lexical_format!(atoi_format, usize);
-    from_lexical_format!(atoi_format, u128);
-
-    from_lexical_format!(atoi_format, i8);
-    from_lexical_format!(atoi_format, i16);
-    from_lexical_format!(atoi_format, i32);
-    from_lexical_format!(atoi_format, i64);
-    from_lexical_format!(atoi_format, isize);
-    from_lexical_format!(atoi_format, i128);
-}}
+atoi_from_lexical! { u8 u16 u32 u64 u128 usize i8 i16 i32 i64 isize i128 }
 
 // TESTS
 // -----
@@ -194,11 +171,12 @@ mod tests {
         assert_eq!(Err((ErrorCode::InvalidDigit, 1).into()), u8::from_lexical(b"1a"));
     }
 
-    #[cfg(feature = "radix")]
     #[test]
+    #[cfg(feature = "radix")]
     fn u8_radix_test() {
         for (b, s) in DATA.iter() {
-            assert_eq!(u8::from_lexical_radix(s.as_bytes(), *b), Ok(37));
+            let options = parse_integer_options!(radix: *b,);
+            assert_eq!(u8::from_lexical_with_options(s.as_bytes(), &options), Ok(37));
         }
     }
 
@@ -212,11 +190,12 @@ mod tests {
         assert_eq!(Err((ErrorCode::InvalidDigit, 1).into()), i8::from_lexical(b"1a"));
     }
 
-    #[cfg(feature = "radix")]
     #[test]
+    #[cfg(feature = "radix")]
     fn i8_radix_test() {
         for (b, s) in DATA.iter() {
-            assert_eq!(i8::from_lexical_radix(s.as_bytes(), *b), Ok(37));
+            let options = parse_integer_options!(radix: *b,);
+            assert_eq!(i8::from_lexical_with_options(s.as_bytes(), &options), Ok(37));
         }
     }
 
@@ -240,13 +219,15 @@ mod tests {
         assert_eq!(Err((ErrorCode::InvalidDigit, 1).into()), i16::from_lexical(b"1a"));
     }
 
-    #[cfg(feature = "radix")]
     #[test]
+    #[cfg(feature = "radix")]
     fn i16_radix_test() {
         for (b, s) in DATA.iter() {
-            assert_eq!(i16::from_lexical_radix(s.as_bytes(), *b), Ok(37));
+            let options = parse_integer_options!(radix: *b,);
+            assert_eq!(i16::from_lexical_with_options(s.as_bytes(), &options), Ok(37));
         }
-        assert_eq!(i16::from_lexical_radix(b"YA", 36), Ok(1234));
+        let options = parse_integer_options!(radix: 36,);
+        assert_eq!(i16::from_lexical_with_options(b"YA", &options), Ok(1234));
     }
 
     #[test]
@@ -316,38 +297,42 @@ mod tests {
     #[cfg(feature = "format")]
     fn i32_no_leading_zeros_test() {
         let format = NumberFormat::NO_INTEGER_LEADING_ZEROS;
-        assert!(i32::from_lexical_format(b"1", format).is_ok());
-        assert!(i32::from_lexical_format(b"0", format).is_ok());
-        assert!(i32::from_lexical_format(b"01", format).is_err());
-        assert!(i32::from_lexical_format(b"10", format).is_ok());
-        assert!(i32::from_lexical_format(b"010", format).is_err());
+        let options = parse_integer_options!(format: format,);
+        assert!(i32::from_lexical_with_options(b"1", &options).is_ok());
+        assert!(i32::from_lexical_with_options(b"0", &options).is_ok());
+        assert!(i32::from_lexical_with_options(b"01", &options).is_err());
+        assert!(i32::from_lexical_with_options(b"10", &options).is_ok());
+        assert!(i32::from_lexical_with_options(b"010", &options).is_err());
     }
 
     #[test]
     #[cfg(feature = "format")]
     fn i32_integer_internal_digit_separator_test() {
         let format = NumberFormat::from_separator(b'_') | NumberFormat::INTEGER_INTERNAL_DIGIT_SEPARATOR;
-        assert!(i32::from_lexical_format(b"3_1", format).is_ok());
-        assert!(i32::from_lexical_format(b"_31", format).is_err());
-        assert!(i32::from_lexical_format(b"31_", format).is_err());
+        let options = parse_integer_options!(format: format,);
+        assert!(i32::from_lexical_with_options(b"3_1", &options).is_ok());
+        assert!(i32::from_lexical_with_options(b"_31", &options).is_err());
+        assert!(i32::from_lexical_with_options(b"31_", &options).is_err());
     }
 
     #[test]
     #[cfg(feature = "format")]
     fn i32_integer_leading_digit_separator_test() {
         let format = NumberFormat::from_separator(b'_') | NumberFormat::INTEGER_LEADING_DIGIT_SEPARATOR;
-        assert!(i32::from_lexical_format(b"3_1", format).is_err());
-        assert!(i32::from_lexical_format(b"_31", format).is_ok());
-        assert!(i32::from_lexical_format(b"31_", format).is_err());
+        let options = parse_integer_options!(format: format,);
+        assert!(i32::from_lexical_with_options(b"3_1", &options).is_err());
+        assert!(i32::from_lexical_with_options(b"_31", &options).is_ok());
+        assert!(i32::from_lexical_with_options(b"31_", &options).is_err());
     }
 
     #[test]
     #[cfg(feature = "format")]
     fn i32_integer_trailing_digit_separator_test() {
         let format = NumberFormat::from_separator(b'_') | NumberFormat::INTEGER_TRAILING_DIGIT_SEPARATOR;
-        assert!(i32::from_lexical_format(b"3_1", format).is_err());
-        assert!(i32::from_lexical_format(b"_31", format).is_err());
-        assert!(i32::from_lexical_format(b"31_", format).is_ok());
+        let options = parse_integer_options!(format: format,);
+        assert!(i32::from_lexical_with_options(b"3_1", &options).is_err());
+        assert!(i32::from_lexical_with_options(b"_31", &options).is_err());
+        assert!(i32::from_lexical_with_options(b"31_", &options).is_ok());
     }
 
     #[test]
@@ -356,20 +341,22 @@ mod tests {
         let format = NumberFormat::from_separator(b'_')
             | NumberFormat::INTEGER_INTERNAL_DIGIT_SEPARATOR
             | NumberFormat::INTEGER_CONSECUTIVE_DIGIT_SEPARATOR;
-        assert!(i32::from_lexical_format(b"3_1", format).is_ok());
-        assert!(i32::from_lexical_format(b"3__1", format).is_ok());
-        assert!(i32::from_lexical_format(b"_31", format).is_err());
-        assert!(i32::from_lexical_format(b"31_", format).is_err());
+        let options = parse_integer_options!(format: format,);
+        assert!(i32::from_lexical_with_options(b"3_1", &options).is_ok());
+        assert!(i32::from_lexical_with_options(b"3__1", &options).is_ok());
+        assert!(i32::from_lexical_with_options(b"_31", &options).is_err());
+        assert!(i32::from_lexical_with_options(b"31_", &options).is_err());
     }
 
     #[test]
     #[cfg(feature = "format")]
     fn i32_json_no_leading_zero() {
         let format = NumberFormat::JSON;
-        assert!(i32::from_lexical_format(b"12", format).is_ok());
-        assert!(i32::from_lexical_format(b"-12", format).is_ok());
-        assert!(i32::from_lexical_format(b"012", format).is_err());
-        assert!(i32::from_lexical_format(b"-012", format).is_err());
+        let options = parse_integer_options!(format: format,);
+        assert!(i32::from_lexical_with_options(b"12", &options).is_ok());
+        assert!(i32::from_lexical_with_options(b"-12", &options).is_ok());
+        assert!(i32::from_lexical_with_options(b"012", &options).is_err());
+        assert!(i32::from_lexical_with_options(b"-012", &options).is_err());
     }
 
     #[cfg(all(feature = "std", feature = "property_tests"))]

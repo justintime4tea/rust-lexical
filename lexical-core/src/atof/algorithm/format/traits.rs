@@ -250,13 +250,15 @@ pub(crate) trait FastDataInterface<'a>: FastDataInterfaceImpl<'a> {
 
     perftools_inline!{
     /// Extract float subcomponents from input bytes.
-    fn extract(&mut self, bytes: &'a [u8], radix: u32) -> ParseResult<*const u8> {
+    fn extract(&mut self, bytes: &'a [u8], radix: u32, exponent_char: u8)
+        -> ParseResult<*const u8>
+    {
         // Parse the integer, aka, the digits preceding any control characters.
         let mut digits = bytes;
         digits = self.extract_integer(digits, radix);
 
         // Parse and validate a fraction, if present.
-        let exp_char = exponent_notation_char(radix).to_ascii_lowercase();
+        let exp_char = exponent_char.to_ascii_lowercase();
         if let Some(&b'.') = digits.first() {
             digits = self.extract_fraction(digits, radix);
         }
@@ -312,7 +314,7 @@ pub(crate) trait FastDataInterface<'a>: FastDataInterfaceImpl<'a> {
     #[cfg(test)]
     fn check_extract(&mut self, digits: &'a [u8], expected: &ParseTestResult<Self>) {
         let expected = expected.as_ref();
-        match self.extract(digits, 10) {
+        match self.extract(digits, 10, b'e') {
             Ok(_)       => {
                 let expected = expected.unwrap();
                 assert_eq!(self.integer(), expected.integer());

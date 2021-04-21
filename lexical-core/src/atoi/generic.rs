@@ -295,19 +295,19 @@ standalone_atoi_separator!(
 
 // API
 
-// Standalone atoi processor without a digit separator.
+// Standalone atoi processor without any custom options.
 perftools_inline_always!{
-pub(crate) fn standalone_no_separator<T>(bytes: &[u8], radix: u32)
+pub(crate) fn standalone_no_options<T>(bytes: &[u8])
     -> ParseResult<(T, *const u8)>
     where T: Integer
 {
-    standalone(bytes, radix)
+    standalone(bytes, DEFAULT_RADIX as u32)
 }}
 
-// Extract exponent with a digit separator in the exponent component.
+// Standalone atoi processor with custom options.
 perftools_inline_always!{
 #[cfg(feature = "format")]
-pub(crate) fn standalone_separator<V>(bytes: &[u8], radix: u32, format: NumberFormat)
+pub(crate) fn standalone_options<V>(bytes: &[u8], options: &ParseIntegerOptions)
     -> ParseResult<(V, *const u8)>
     where V: Integer
 {
@@ -327,6 +327,8 @@ pub(crate) fn standalone_separator<V>(bytes: &[u8], radix: u32, format: NumberFo
     const LTC: NumberFormat = NumberFormat::from_bits_truncate(LT.bits() | C.bits());
     const ILTC: NumberFormat = NumberFormat::from_bits_truncate(ILT.bits() | C.bits());
 
+    let format = options.format();
+    let radix = options.radix();
     let digit_separator = format.digit_separator();
     let (value, ptr) = match format & NumberFormat::INTEGER_DIGIT_SEPARATOR_FLAG_MASK {
         I       => standalone_i(bytes, radix, digit_separator),
@@ -353,6 +355,16 @@ pub(crate) fn standalone_separator<V>(bytes: &[u8], radix: u32, format: NumberFo
     }
 
     Ok((value, ptr))
+}}
+
+// Standalone atoi processor with custom options.
+perftools_inline_always!{
+#[cfg(not(feature = "format"))]
+pub(crate) fn standalone_options<V>(bytes: &[u8], options: &ParseIntegerOptions)
+    -> ParseResult<(V, *const u8)>
+    where V: Integer
+{
+    standalone(bytes, options.radix())
 }}
 
 // STANDALONE U128
@@ -617,20 +629,20 @@ standalone_atoi_128_separator!(
 
 // API
 
-// Standalone atoi processor for u128 without a digit separator.
+// Standalone atoi processor for u128 without any custom options.
 perftools_inline_always!{
-pub(crate) fn standalone_128_no_separator<W, N>(bytes: &[u8], radix: u32)
+pub(crate) fn standalone_128_no_options<W, N>(bytes: &[u8])
     -> ParseResult<(W, *const u8)>
     where W: Integer,
           N: Integer
 {
-    standalone_128::<W, N>(bytes, radix)
+    standalone_128::<W, N>(bytes, DEFAULT_RADIX as u32)
 }}
 
-// Extract exponent with a digit separator in the exponent component.
+// Standalone atoi processor for u128 with custom options.
 perftools_inline_always!{
 #[cfg(feature = "format")]
-pub(crate) fn standalone_128_separator<W, N>(bytes: &[u8], radix: u32, format: NumberFormat)
+pub(crate) fn standalone_128_options<W, N>(bytes: &[u8], options: &ParseIntegerOptions)
     -> ParseResult<(W, *const u8)>
     where W: Integer,
           N: Integer
@@ -651,6 +663,8 @@ pub(crate) fn standalone_128_separator<W, N>(bytes: &[u8], radix: u32, format: N
     const LTC: NumberFormat = NumberFormat::from_bits_truncate(LT.bits() | C.bits());
     const ILTC: NumberFormat = NumberFormat::from_bits_truncate(ILT.bits() | C.bits());
 
+    let format = options.format();
+    let radix = options.radix();
     let digit_separator = format.digit_separator();
     let (value, ptr) = match format & NumberFormat::INTEGER_DIGIT_SEPARATOR_FLAG_MASK {
         I       => standalone_128_i::<W, N>(bytes, radix, digit_separator),
@@ -667,7 +681,7 @@ pub(crate) fn standalone_128_separator<W, N>(bytes: &[u8], radix: u32, format: N
         LTC     => standalone_128_ltc::<W, N>(bytes, radix, digit_separator),
         ILT     => standalone_128_ilt::<W, N>(bytes, radix, digit_separator),
         ILTC    => standalone_128_iltc::<W, N>(bytes, radix, digit_separator),
-        // No digit separator match.
+        // No format match.
         _       => standalone_128::<W, N>(bytes, radix)
     }?;
 
@@ -677,4 +691,15 @@ pub(crate) fn standalone_128_separator<W, N>(bytes: &[u8], radix: u32, format: N
     }
 
     Ok((value, ptr))
+}}
+
+// Standalone atoi processor for u128 with custom options.
+perftools_inline_always!{
+#[cfg(not(feature = "format"))]
+pub(crate) fn standalone_128_options<W, N>(bytes: &[u8], options: &ParseIntegerOptions)
+    -> ParseResult<(W, *const u8)>
+    where W: Integer,
+          N: Integer
+{
+    standalone_128::<W, N>(bytes, options.radix())
 }}

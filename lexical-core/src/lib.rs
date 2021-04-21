@@ -138,7 +138,14 @@
 // DEPENDENCIES
 
 #[macro_use]
+extern crate bitflags;
+
+#[macro_use]
 extern crate cfg_if;
+
+#[cfg(any(feature = "correct", feature = "format"))]
+#[macro_use]
+extern crate static_assertions;
 
 // Use vec if there is a system allocator, which we require only if
 // we're using the correct and radix features.
@@ -241,6 +248,29 @@ pub fn write<'a, N: ToLexical>(n: N, bytes: &'a mut [u8])
     n.to_lexical(bytes)
 }
 
+/// Write number to string.
+///
+/// Returns a subslice of the input buffer containing the written bytes,
+/// starting from the same address in memory as the input slice.
+///
+/// * `value`   - Number to serialize.
+/// * `bytes`   - Slice containing a numeric string.
+/// * `options` - Options to specialize writing the number.
+///
+/// # Panics
+///
+/// Panics if the buffer may not be large enough to hold the serialized
+/// number. In order to ensure the function will not panic, provide a
+/// buffer with at least [`FORMATTED_SIZE_DECIMAL`] elements.
+///
+/// [`FORMATTED_SIZE_DECIMAL`]: trait.Number.html#associatedconstant.FORMATTED_SIZE_DECIMAL
+#[inline]
+pub fn write_with_options<'a, N: ToLexical>(n: N, bytes: &'a mut [u8], options: &N::Options)
+    -> &'a mut [u8]
+{
+    n.to_lexical_with_options(bytes, options)
+}
+
 /// Write number to string with a custom radix.
 ///
 /// Returns a subslice of the input buffer containing the written bytes,
@@ -261,6 +291,11 @@ pub fn write<'a, N: ToLexical>(n: N, bytes: &'a mut [u8])
 /// [`FORMATTED_SIZE`]: trait.Number.html#associatedconstant.FORMATTED_SIZE
 #[inline]
 #[cfg(feature = "radix")]
+#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0
+#[deprecated(
+    since = "0.8.0",
+    note = "Will be removed with 1.0. Use write_with_options with ToLexical::Options."
+)]
 pub fn write_radix<'a, N: ToLexical>(n: N, radix: u8, bytes: &'a mut [u8])
     -> &'a mut [u8]
 {
@@ -282,6 +317,20 @@ pub fn parse<N: FromLexical>(bytes: &[u8])
 
 /// Parse number from string.
 ///
+/// This method parses the entire string, returning an error if
+/// any invalid digits are found during parsing.
+///
+/// * `bytes`   - Byte slice containing a numeric string.
+/// * `options` - Options to specialize parsing the number.
+#[inline]
+pub fn parse_with_options<N: FromLexical>(bytes: &[u8], options: &N::Options)
+    -> Result<N>
+{
+    N::from_lexical_with_options(bytes, options)
+}
+
+/// Parse number from string.
+///
 /// This method parses until an invalid digit is found (or the end
 /// of the string), returning the number of processed digits
 /// and the parsed value until that point.
@@ -294,6 +343,21 @@ pub fn parse_partial<N: FromLexical>(bytes: &[u8])
     N::from_lexical_partial(bytes)
 }
 
+/// Parse number from string.
+///
+/// This method parses until an invalid digit is found (or the end
+/// of the string), returning the number of processed digits
+/// and the parsed value until that point.
+///
+/// * `bytes`   - Byte slice containing a numeric string.
+/// * `options` - Options to specialize parsing the number.
+#[inline]
+pub fn parse_partial_with_options<N: FromLexical>(bytes: &[u8], options: &N::Options)
+    -> Result<(N, usize)>
+{
+    N::from_lexical_partial_with_options(bytes, options)
+}
+
 /// Lossily parse number from string.
 ///
 /// This method parses the entire string, returning an error if
@@ -302,6 +366,11 @@ pub fn parse_partial<N: FromLexical>(bytes: &[u8])
 ///
 /// * `bytes`   - Byte slice containing a numeric string.
 #[inline]
+#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0
+#[deprecated(
+    since = "0.8.0",
+    note = "Will be removed with 1.0. Use parse_with_options with FromLexical::Options."
+)]
 pub fn parse_lossy<N: FromLexicalLossy>(bytes: &[u8])
     -> Result<N>
 {
@@ -317,6 +386,11 @@ pub fn parse_lossy<N: FromLexicalLossy>(bytes: &[u8])
 ///
 /// * `bytes`   - Byte slice containing a numeric string.
 #[inline]
+#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0
+#[deprecated(
+    since = "0.8.0",
+    note = "Will be removed with 1.0. Use parse_partial_with_options with FromLexical::Options."
+)]
 pub fn parse_partial_lossy<N: FromLexicalLossy>(bytes: &[u8])
     -> Result<(N, usize)>
 {
@@ -336,6 +410,11 @@ pub fn parse_partial_lossy<N: FromLexicalLossy>(bytes: &[u8])
 /// Panics if the radix is not in the range `[2, 36]`.
 #[inline]
 #[cfg(feature = "radix")]
+#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0
+#[deprecated(
+    since = "0.8.0",
+    note = "Will be removed with 1.0. Use parse_with_options with FromLexical::Options."
+)]
 pub fn parse_radix<N: FromLexical>(bytes: &[u8], radix: u8)
     -> Result<N>
 {
@@ -356,6 +435,11 @@ pub fn parse_radix<N: FromLexical>(bytes: &[u8], radix: u8)
 /// Panics if the radix is not in the range `[2, 36]`.
 #[inline]
 #[cfg(feature = "radix")]
+#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0
+#[deprecated(
+    since = "0.8.0",
+    note = "Will be removed with 1.0. Use parse_partial_with_options with FromLexical::Options."
+)]
 pub fn parse_partial_radix<N: FromLexical>(bytes: &[u8], radix: u8)
     -> Result<(N, usize)>
 {
@@ -376,6 +460,11 @@ pub fn parse_partial_radix<N: FromLexical>(bytes: &[u8], radix: u8)
 /// Panics if the radix is not in the range `[2, 36]`.
 #[inline]
 #[cfg(feature = "radix")]
+#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0
+#[deprecated(
+    since = "0.8.0",
+    note = "Will be removed with 1.0. Use parse_with_options with FromLexical::Options."
+)]
 pub fn parse_lossy_radix<N: FromLexicalLossy>(bytes: &[u8], radix: u8)
     -> Result<N>
 {
@@ -397,6 +486,11 @@ pub fn parse_lossy_radix<N: FromLexicalLossy>(bytes: &[u8], radix: u8)
 /// Panics if the radix is not in the range `[2, 36]`.
 #[inline]
 #[cfg(feature = "radix")]
+#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0
+#[deprecated(
+    since = "0.8.0",
+    note = "Will be removed with 1.0. Use parse_partial_with_options with FromLexical::Options."
+)]
 pub fn parse_partial_lossy_radix<N: FromLexicalLossy>(bytes: &[u8], radix: u8)
     -> Result<(N, usize)>
 {
@@ -414,6 +508,11 @@ pub fn parse_partial_lossy_radix<N: FromLexicalLossy>(bytes: &[u8], radix: u8)
 /// * `format`  - Numerical format.
 #[inline]
 #[cfg(feature = "format")]
+#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0
+#[deprecated(
+    since = "0.8.0",
+    note = "Will be removed with 1.0. Use parse_with_options with FromLexical::Options."
+)]
 pub fn parse_format<N: FromLexicalFormat>(bytes: &[u8], format: NumberFormat)
     -> Result<N>
 {
@@ -432,6 +531,11 @@ pub fn parse_format<N: FromLexicalFormat>(bytes: &[u8], format: NumberFormat)
 /// * `format`  - Numerical format.
 #[inline]
 #[cfg(feature = "format")]
+#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0
+#[deprecated(
+    since = "0.8.0",
+    note = "Will be removed with 1.0. Use parse_partial_with_options with FromLexical::Options."
+)]
 pub fn parse_partial_format<N: FromLexicalFormat>(bytes: &[u8], format: NumberFormat)
     -> Result<(N, usize)>
 {
@@ -451,6 +555,11 @@ pub fn parse_partial_format<N: FromLexicalFormat>(bytes: &[u8], format: NumberFo
 /// * `format`  - Numerical format.
 #[inline]
 #[cfg(feature = "format")]
+#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0
+#[deprecated(
+    since = "0.8.0",
+    note = "Will be removed with 1.0. Use parse_with_options with FromLexical::Options."
+)]
 pub fn parse_lossy_format<N: FromLexicalLossyFormat>(bytes: &[u8], format: NumberFormat)
     -> Result<N>
 {
@@ -471,6 +580,11 @@ pub fn parse_lossy_format<N: FromLexicalLossyFormat>(bytes: &[u8], format: Numbe
 /// * `format`  - Numerical format.
 #[inline]
 #[cfg(feature = "format")]
+#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0
+#[deprecated(
+    since = "0.8.0",
+    note = "Will be removed with 1.0. Use parse_partial_with_options with FromLexical::Options."
+)]
 pub fn parse_partial_lossy_format<N: FromLexicalLossyFormat>(bytes: &[u8], format: NumberFormat)
     -> Result<(N, usize)>
 {
@@ -493,6 +607,11 @@ pub fn parse_partial_lossy_format<N: FromLexicalLossyFormat>(bytes: &[u8], forma
 /// Panics if the radix is not in the range `[2, 36]`.
 #[inline]
 #[cfg(all(feature = "radix", feature = "format"))]
+#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0
+#[deprecated(
+    since = "0.8.0",
+    note = "Will be removed with 1.0. Use parse_with_options with FromLexical::Options."
+)]
 pub fn parse_format_radix<N: FromLexicalFormat>(bytes: &[u8], radix: u8, format: NumberFormat)
     -> Result<N>
 {
@@ -516,6 +635,11 @@ pub fn parse_format_radix<N: FromLexicalFormat>(bytes: &[u8], radix: u8, format:
 /// Panics if the radix is not in the range `[2, 36]`.
 #[inline]
 #[cfg(all(feature = "radix", feature = "format"))]
+#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0
+#[deprecated(
+    since = "0.8.0",
+    note = "Will be removed with 1.0. Use parse_partial_with_options with FromLexical::Options."
+)]
 pub fn parse_partial_format_radix<N: FromLexicalFormat>(bytes: &[u8], radix: u8, format: NumberFormat)
     -> Result<(N, usize)>
 {
@@ -540,6 +664,11 @@ pub fn parse_partial_format_radix<N: FromLexicalFormat>(bytes: &[u8], radix: u8,
 /// Panics if the radix is not in the range `[2, 36]`.
 #[inline]
 #[cfg(all(feature = "radix", feature = "format"))]
+#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0
+#[deprecated(
+    since = "0.8.0",
+    note = "Will be removed with 1.0. Use parse_with_options with FromLexical::Options."
+)]
 pub fn parse_lossy_format_radix<N: FromLexicalLossyFormat>(bytes: &[u8], radix: u8, format: NumberFormat)
     -> Result<N>
 {
@@ -565,6 +694,11 @@ pub fn parse_lossy_format_radix<N: FromLexicalLossyFormat>(bytes: &[u8], radix: 
 /// Panics if the radix is not in the range `[2, 36]`.
 #[inline]
 #[cfg(all(feature = "radix", feature = "format"))]
+#[allow(deprecated)]    // TODO(ahuszagh) Remove with 1.0
+#[deprecated(
+    since = "0.8.0",
+    note = "Will be removed with 1.0. Use parse_partial_with_options with FromLexical::Options."
+)]
 pub fn parse_partial_lossy_format_radix<N: FromLexicalLossyFormat>(bytes: &[u8], radix: u8, format: NumberFormat)
     -> Result<(N, usize)>
 {
