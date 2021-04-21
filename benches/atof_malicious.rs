@@ -16,21 +16,15 @@ macro_rules! lexical_generator {
                 $data.iter().for_each(|x| {
                     black_box(lexical_core::parse::<$t>(x.as_bytes()).unwrap());
                 })
-            });
+            }));
         }
     };
 }
 
 // Lexical atoi generator.
 macro_rules! lexical_lossy_generator {
-    ($name:ident, $data:ident, $t:ty) => {
+    ($name:ident, $data:ident, $t:ty) => (
         fn $name(criterion: &mut Criterion) {
-            criterion.bench_function(stringify!($name), |b| {
-                b.iter(|| {
-                    $data.iter().for_each(|x| {
-                        black_box(lexical_parse_lossy::<$t>(x.as_bytes()).unwrap());
-                        black_box(lexical_parse::<$t>(x.as_bytes()).unwrap());
-                    })
             let options = lexical_core::ParseFloatOptions::builder()
                 .lossy(true)
                 .build()
@@ -39,9 +33,9 @@ macro_rules! lexical_lossy_generator {
                 $data.iter().for_each(|x| {
                     black_box(lexical_core::parse_with_options::<$t>(x.as_bytes(), &options).unwrap());
                 })
-            });
+            }));
         }
-    };
+    );
 }
 
 // Parse atoi generator.

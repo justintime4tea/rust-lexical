@@ -13,7 +13,7 @@ macro_rules! lexical_generator {
                 $data.iter().for_each(|x| {
                     black_box(lexical_core::parse::<$t>(x.as_bytes()).unwrap());
                 })
-            });
+            }));
         }
     };
 }

@@ -20,7 +20,7 @@ macro_rules! lexical_generator {
                 $iter.for_each(|x| {
                     black_box(lexical_core::write(*x, &mut buffer));
                 })
-            });
+            }));
         }
     };
 }
@@ -36,7 +36,7 @@ macro_rules! dtoa_generator {
                     black_box(&buffer);
                     unsafe { buffer.set_len(0); } // Way faster than Vec::clear().
                 })
-            });
+            }));
         }
     };
 }
@@ -52,7 +52,7 @@ macro_rules! ryu_generator {
                         black_box(ryu_impl::raw::$fmt(*x, buffer.as_mut_ptr()));
                     }
                 })
-            });
+            }));
         }
     };
 }

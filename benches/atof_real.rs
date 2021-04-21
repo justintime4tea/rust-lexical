@@ -74,8 +74,8 @@ macro_rules! lexical_generator {
                     for item in line.split(',') {
                         black_box(lexical_core::parse::<$t>(item.as_bytes()).unwrap());
                     }
-                })
-            });
+                }
+            }));
         }
     };
 }
